@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>GPS - V1 Norte</title>
+
+
+  <style>
+
+    body {
+
+      font-family: Arial, sans-serif;
+
+      max-width: 600px;
+
+      margin: 30px auto;
+
+      padding: 20px;
+
+      background: #f5f5f5;
+
+    }
+
+
+    .contenedor {
+
+      background: white;
+
+      padding: 25px;
+
+      border-radius: 10px;
+
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+
+    }
+
+
+    h1 {
+
+      margin-top: 0;
+
+    }
+
+
+    .info {
+
+      padding: 15px;
+
+      background: #f1f1f1;
+
+      border-radius: 8px;
+
+      margin: 15px 0;
+
+    }
+
+
+    button {
+
+      width: 100%;
+
+      padding: 16px;
+
+      margin-top: 10px;
+
+      font-size: 18px;
+
+      border: none;
+
+      border-radius: 8px;
+
+      cursor: pointer;
+
+    }
+
+
+    #btnGPS {
+
+      background: #1976d2;
+
+      color: white;
+
+    }
+
+
+    #btnEnviar {
+
+      background: #388e3c;
+
+      color: white;
+
+    }
+
+
+    #btnEnviar:disabled {
+
+      background: #aaa;
+
+      cursor: not-allowed;
+
+    }
+
+
+    #resultado {
+
+      margin-top: 20px;
+
+      padding: 15px;
+
+      background: #f1f1f1;
+
+      border-radius: 8px;
+
+      white-space: pre-wrap;
+
+      word-break: break-word;
+
+    }
+
+
+    .coordenadas {
+
+      font-size: 18px;
+
+      line-height: 1.8;
+
+    }
+
+  </style>
+
+</head>
+
+
+<body>
+
+
+<div class="contenedor">
+
+
+  <h1>🚗 GPS — V1 Norte</h1>
+
+
+  <div class="info">
+
+    <strong>Vehículo:</strong> V1<br>
+
+    <strong>Tablet:</strong> Tablet 1<br>
+
+    <strong>Ruta:</strong> Norte
+
+  </div>
+
+
+  <button
+    id="btnGPS"
+    onclick="obtenerGPS()"
+  >
+
+    📍 OBTENER MI POSICIÓN
+
+  </button>
+
+
+  <div
+    id="coordenadas"
+    class="coordenadas"
+  >
+
+    Esperando posición GPS...
+
+  </div>
+
+
+  <button
+    id="btnEnviar"
+    onclick="enviarPosicion()"
+    disabled
+  >
+
+    📡 ENVIAR POSICIÓN
+
+  </button>
+
+
+  <div id="resultado">
+
+    Esperando...
+
+  </div>
+
+
+</div>
+
+
+
+<script>
+
+
+// ==========================================================
+// URL DE GOOGLE APPS SCRIPT
+// ==========================================================
+
+const URL_GPS =
+  'https://script.google.com/macros/s/AKfycbz66qLX5891EHttT-WDBSRJxt54T_lUdYGVXtAD0PHrQgpqI3o4gp4XrIg_5tc64CvN/exec';
+
+
+// ==========================================================
+// VARIABLES
+// ==========================================================
+
+let posicionActual = null;
+
+
+
+// ==========================================================
+// OBTENER GPS
+// ==========================================================
+
+function obtenerGPS() {
+
+
+  const coordenadas =
+    document.getElementById('coordenadas');
+
+
+  const resultado =
+    document.getElementById('resultado');
+
+
+  const btnEnviar =
+    document.getElementById('btnEnviar');
+
+
+  // Comprobar si el navegador soporta geolocalización
+
+  if (!navigator.geolocation) {
+
+    coordenadas.textContent =
+      '❌ Este navegador no soporta geolocalización.';
+
+    return;
+
+  }
+
+
+  coordenadas.textContent =
+    '📡 Obteniendo posición GPS...';
+
+
+  resultado.textContent =
+    'Solicitando ubicación al dispositivo...';
+
+
+  navigator.geolocation.getCurrentPosition(
+
+    function(position) {
+
+
+      // Guardar posición
+
+      posicionActual = {
+
+        latitud:
+          position.coords.latitude,
+
+        longitud:
+          position.coords.longitude,
+
+        precision:
+          position.coords.accuracy
+
+      };
+
+
+      // Mostrar información
+
+      coordenadas.textContent =
+
+        '📍 POSICIÓN OBTENIDA\n\n' +
+
+        'Latitud: ' +
+        posicionActual.latitud +
+        '\n' +
+
+        'Longitud: ' +
+        posicionActual.longitud +
+        '\n' +
+
+        'Precisión: ' +
+        posicionActual.precision.toFixed(1) +
+        ' metros';
+
+
+      resultado.textContent =
+
+        'GPS listo para enviar.';
+
+
+      // Activar botón
+
+      btnEnviar.disabled = false;
+
+
+    },
+
+
+    function(error) {
+
+
+      let mensaje =
+        'Error al obtener GPS:\n\n';
+
+
+      switch (error.code) {
+
+
+        case error.PERMISSION_DENIED:
+
+          mensaje +=
+            'Permiso de ubicación denegado.';
+
+          break;
+
+
+        case error.POSITION_UNAVAILABLE:
+
+          mensaje +=
+            'La ubicación no está disponible.';
+
+          break;
+
+
+        case error.TIMEOUT:
+
+          mensaje +=
+            'Se agotó el tiempo de espera.';
+
+          break;
+
+
+        default:
+
+          mensaje +=
+            'Error desconocido.';
+
+      }
+
+
+      coordenadas.textContent =
+        '❌ No se pudo obtener la ubicación.';
+
+
+      resultado.textContent =
+        mensaje;
+
+
+    },
+
+
+    {
+
+      enableHighAccuracy: true,
+
+      timeout: 15000,
+
+      maximumAge: 0
+
+    }
+
+  );
+
+}
+
+
+
+// ==========================================================
+// ENVIAR POSICIÓN A APPS SCRIPT
+// ==========================================================
+
+async function enviarPosicion() {
+
+
+  const resultado =
+    document.getElementById('resultado');
+
+
+  if (!posicionActual) {
+
+    resultado.textContent =
+      '❌ Primero debes obtener la posición GPS.';
+
+    return;
+
+  }
+
+
+  resultado.textContent =
+    '📡 Enviando posición...';
+
+
+  const datos = {
+
+
+    vehiculo: 'V1',
+
+
+    tablet: 'Tablet 1',
+
+
+    latitud:
+      posicionActual.latitud,
+
+
+    longitud:
+      posicionActual.longitud,
+
+
+    precision:
+      posicionActual.precision
+
+
+  };
+
+
+  try {
+
+
+    const respuesta =
+
+      await fetch(
+
+        URL_GPS,
+
+        {
+
+          method: 'POST',
+
+          headers: {
+
+            'Content-Type':
+              'text/plain;charset=utf-8'
+
+          },
+
+          body:
+            JSON.stringify(datos)
+
+        }
+
+      );
+
+
+    const respuestaServidor =
+
+      await respuesta.text();
+
+
+    resultado.textContent =
+
+      '✅ POSICIÓN ENVIADA\n\n' +
+
+      respuestaServidor;
+
+
+  }
+
+
+  catch (error) {
+
+
+    resultado.textContent =
+
+      '❌ ERROR AL ENVIAR\n\n' +
+
+      error.message;
+
+
+    console.error(error);
+
+  }
+
+}
+
+
+</script>
+
+
+</body>
+
+</html>
