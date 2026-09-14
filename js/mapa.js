@@ -1,552 +1,719 @@
-/* =========================================================
-   MAPA
-========================================================= */
+```javascript
+/* ============================================================
+   MAPA OPERATIVO
+   Rutas, vehículos, puntos y avisos son capas independientes.
+============================================================ */
 
-let mapa;
+let mapa = null;
 
-let capaRutas;
-let capaPuntos;
-let capaAvisos;
-let capaVehiculos;
+let capas = {
+    rutas: null,
+    puntos: null,
+    avisos: null,
+    vehiculos: null
+};
 
-const marcadoresVehiculos = {};
-const marcadoresAvisos = {};
-const marcadoresPuntos = {};
+let marcadoresVehiculos = {};
+let posicionesVehiculos = {};
 
-const polilineasRutas = {};
+const VALENCIA_CENTER = [39.4699, -0.3763];
 
+
+/* ============================================================
+   INICIALIZAR MAPA
+============================================================ */
 
 function inicializarMapa() {
 
-    mapa = L.map("map").setView(
-        CONFIG.mapa.centro,
-        CONFIG.mapa.zoom
-    );
-
+    mapa = L.map("map", {
+        zoomControl: true,
+        preferCanvas: true
+    }).setView(VALENCIA_CENTER, 9);
 
     L.tileLayer(
         "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
         {
             maxZoom: 19,
-            attribution:
-                '&copy; OpenStreetMap contributors'
+            attribution: '&copy; OpenStreetMap contributors'
         }
     ).addTo(mapa);
 
 
-    capaRutas = L.layerGroup().addTo(mapa);
-
-    capaPuntos = L.layerGroup().addTo(mapa);
-
-    capaAvisos = L.layerGroup().addTo(mapa);
-
-    capaVehiculos = L.layerGroup().addTo(mapa);
+    capas.rutas = L.layerGroup().addTo(mapa);
+    capas.puntos = L.layerGroup().addTo(mapa);
+    capas.avisos = L.layerGroup().addTo(mapa);
+    capas.vehiculos = L.layerGroup().addTo(mapa);
 
 
-    document
-        .getElementById("capaRutas")
-        .addEventListener(
-            "change",
-            controlarCapas
-        );
+    dibujarRutas();
+    dibujarPuntos();
+    dibujarAvisos();
+    dibujarVehiculos();
 
-    document
-        .getElementById("capaPuntos")
-        .addEventListener(
-            "change",
-            controlarCapas
-        );
 
-    document
-        .getElementById("capaAvisos")
-        .addEventListener(
-            "change",
-            controlarCapas
-        );
-
-    document
-        .getElementById("capaVehiculos")
-        .addEventListener(
-            "change",
-            controlarCapas
-        );
+    configurarCapasMapa();
 }
 
 
-/* =========================================================
+/* ============================================================
+   UTILIDADES
+============================================================ */
+
+function obtenerLat(obj) {
+
+    return Number(
+        obj?.lat ??
+        obj?.latitud ??
+        obj?.latitude ??
+        obj?.y
+    );
+}
+
+
+function obtenerLng(obj) {
+
+    return Number(
+        obj?.lng ??
+        obj?.longitud ??
+        obj?.longitude ??
+        obj?.lon ??
+        obj?.x
+    );
+}
+
+
+function coordenadasValidas(lat, lng) {
+
+    return Number.isFinite(lat) &&
+           Number.isFinite(lng) &&
+           lat >= -90 &&
+           lat <= 90 &&
+           lng >= -180 &&
+           lng <= 180;
+}
+
+
+function obtenerNombreRuta(ruta) {
+
+    return ruta?.nombre ||
+           ruta?.ruta_nombre ||
+           ruta?.ruta_id ||
+           ruta?.id ||
+           "Ruta";
+}
+
+
+function obtenerColorRuta(ruta) {
+
+    const id = String(
+        ruta?.ruta_id ||
+        ruta?.id ||
+        ""
+    ).toUpperCase();
+
+    if (id === "R1") return "#1976D2";
+    if (id === "R2") return "#388E3C";
+    if (id === "R3") return "#F57C00";
+
+    return "#467886";
+}
+
+
+/* ============================================================
    RUTAS
-========================================================= */
+============================================================ */
 
-function dibujarRutas(rutas) {
+function dibujarRutas() {
 
-    capaRutas.clearLayers();
+    capas.rutas.clearLayers();
 
-    rutas.forEach(ruta => {
+    const rutas = Array.isArray(window.DATOS_MOCK?.RUTAS)
+        ? window.DATOS_MOCK.RUTAS
+        : [];
 
-        const coordenadas =
-            obtenerCoordenadasRuta(
-                ruta.id
-            );
+    const rutasMock = obtenerRutasGeometricasMock();
 
-        if (!coordenadas.length) {
+    rutasMock.forEach(ruta => {
+
+        const coordenadas = ruta.coordenadas;
+
+        if (!coordenadas || coordenadas.length < 2) {
             return;
         }
+
+        const color = obtenerColorRuta(ruta);
 
         const linea = L.polyline(
             coordenadas,
             {
-                color: ruta.color,
-
+                color: color,
                 weight: 5,
-
-                opacity: 0.65,
-
-                lineCap: "round",
-
+                opacity: 0.78,
                 lineJoin: "round"
             }
         );
 
-        linea.bindTooltip(
-            `Ruta ${ruta.id} · ${ruta.nombre}`,
-            {
-                sticky: true
-            }
-        );
+        linea.bindPopup(`
+            <strong>${escapeHtml(obtenerNombreRuta(ruta))}</strong>
+            <br>
+            Ruta planificada
+            <br>
+            <small>La posición GPS del vehículo se muestra por separado.</small>
+        `);
 
-        linea.addTo(capaRutas);
-
-        polilineasRutas[ruta.id] = linea;
+        linea.addTo(capas.rutas);
     });
 }
 
 
-/* =========================================================
-   COORDENADAS SIMULADAS DE LAS RUTAS
-========================================================= */
+/* ============================================================
+   GEOMETRÍA MOCK
+   Solo demostración.
+   Posteriormente llegará desde RUTAS / planificación.
+============================================================ */
 
-function obtenerCoordenadasRuta(id) {
+function obtenerRutasGeometricasMock() {
 
-    const rutas = {
+    return [
 
-        R1: [
+        {
+            ruta_id: "R1",
+            nombre: "R1 · Norte",
+            coordenadas: [
+                [39.470, -0.377],
+                [39.515, -0.350],
+                [39.555, -0.300],
+                [39.610, -0.290],
+                [39.670, -0.300],
+                [39.735, -0.340]
+            ]
+        },
 
-            [39.4699, -0.3763],
-            [39.4900, -0.3900],
-            [39.5100, -0.4050],
-            [39.5000, -0.3490],
-            [39.5400, -0.3500],
-            [39.5800, -0.3900]
+        {
+            ruta_id: "R2",
+            nombre: "R2 · Interior",
+            coordenadas: [
+                [39.470, -0.377],
+                [39.440, -0.450],
+                [39.470, -0.530],
+                [39.500, -0.600],
+                [39.550, -0.650]
+            ]
+        },
 
-        ],
+        {
+            ruta_id: "R3",
+            nombre: "R3 · Sur",
+            coordenadas: [
+                [39.470, -0.377],
+                [39.425, -0.400],
+                [39.370, -0.430],
+                [39.300, -0.460],
+                [39.240, -0.470],
+                [39.170, -0.500]
+            ]
+        }
 
-        R2: [
-
-            [39.4699, -0.3763],
-            [39.4700, -0.5000],
-            [39.4720, -0.7170],
-            [39.4940, -0.6860],
-            [39.5890, -0.4610]
-
-        ],
-
-        R3: [
-
-            [39.4699, -0.3763],
-            [39.4300, -0.4000],
-            [39.4050, -0.4020],
-            [39.3000, -0.4200],
-            [39.1920, -0.4350],
-            [39.1500, -0.4500]
-
-        ]
-
-    };
-
-    return rutas[id] || [];
+    ];
 }
 
 
-/* =========================================================
-   PUNTOS PERMANENTES
-========================================================= */
+/* ============================================================
+   PUNTOS COLABORADORES
+============================================================ */
 
-function dibujarPuntos(puntos) {
+function dibujarPuntos() {
 
-    capaPuntos.clearLayers();
+    capas.puntos.clearLayers();
+
+    const puntos = Array.isArray(window.DATOS_MOCK?.PUNTOS_RECOGIDA)
+        ? window.DATOS_MOCK.PUNTOS_RECOGIDA
+        : [];
 
     puntos.forEach(punto => {
 
+        const lat = obtenerLat(punto);
+        const lng = obtenerLng(punto);
+
+        if (!coordenadasValidas(lat, lng)) {
+            return;
+        }
+
         const icono = L.divIcon({
-
-            className: "",
-
-            html:
-                `<div class="point-marker">P</div>`,
-
-            iconSize: [25, 25],
-
-            iconAnchor: [12, 12]
-
+            className: "point-map-marker-wrapper",
+            html: `<div class="point-map-marker"></div>`,
+            iconSize: [14, 14],
+            iconAnchor: [7, 7]
         });
 
-
-        const marcador = L.marker(
-            [
-                punto.latitud,
-                punto.longitud
-            ],
-            {
-                icon: icono
-            }
+        const marker = L.marker(
+            [lat, lng],
+            { icon: icono }
         );
 
-
-        marcador.bindPopup(`
-
-            <strong>${punto.nombre}</strong>
-
+        marker.bindPopup(`
+            <strong>${escapeHtml(
+                punto.nombre ||
+                punto.nombre_punto ||
+                "Punto colaborador"
+            )}</strong>
             <br>
-
-            ${punto.municipio}
-
-            <br><br>
-
-            <small>
-                Punto permanente
-            </small>
-
+            ${escapeHtml(
+                punto.tipo ||
+                "Colaborador"
+            )}
+            <br>
+            <small>${escapeHtml(
+                punto.municipio ||
+                ""
+            )}</small>
         `);
 
-
-        marcador.addTo(capaPuntos);
-
-        marcadoresPuntos[punto.id] =
-            marcador;
+        marker.addTo(capas.puntos);
     });
 }
 
 
-/* =========================================================
+/* ============================================================
    AVISOS
-========================================================= */
+============================================================ */
 
-function dibujarAvisos(avisos) {
+function dibujarAvisos() {
 
-    capaAvisos.clearLayers();
+    capas.avisos.clearLayers();
+
+    const avisos = Array.isArray(window.DATOS_MOCK?.AVISOS)
+        ? window.DATOS_MOCK.AVISOS
+        : [];
 
     avisos.forEach(aviso => {
 
-        let clase = "pending";
+        const lat = obtenerLat(aviso);
+        const lng = obtenerLng(aviso);
 
-        let simbolo = "!";
-
-        if (aviso.estado === "ASIGNADO") {
-
-            clase = "assigned";
-
-            simbolo = "→";
-
+        if (!coordenadasValidas(lat, lng)) {
+            return;
         }
 
-        if (aviso.estado === "RECOGIDO") {
+        const estado = normalizarEstadoAviso(aviso.estado);
 
-            clase = "collected";
+        let clase = "alert-pending";
 
-            simbolo = "✓";
+        if (estado === "ASIGNADO") {
+            clase = "alert-assigned";
         }
+
+        if (estado === "RECOGIDO") {
+            clase = "alert-collected";
+        }
+
+        const icono = L.divIcon({
+            className: "alert-map-marker-wrapper",
+            html: `<div class="alert-map-marker ${clase}">!</div>`,
+            iconSize: [25, 25],
+            iconAnchor: [12, 12]
+        });
+
+        const marker = L.marker(
+            [lat, lng],
+            { icon: icono }
+        );
+
+        marker.bindPopup(`
+            <strong>${escapeHtml(
+                aviso.id_aviso ||
+                aviso.aviso_id ||
+                aviso.id ||
+                "Aviso"
+            )}</strong>
+            <br>
+            <b>${escapeHtml(
+                aviso.especie ||
+                aviso.especie_reportada ||
+                "Especie no determinada"
+            )}</b>
+            <br>
+            Estado: ${escapeHtml(estado)}
+            <br>
+            ${escapeHtml(
+                aviso.observaciones ||
+                ""
+            )}
+        `);
+
+        marker.on("click", () => {
+
+            if (typeof seleccionarAviso === "function") {
+                seleccionarAviso(aviso);
+            }
+        });
+
+        marker.addTo(capas.avisos);
+    });
+}
+
+
+/* ============================================================
+   VEHÍCULOS
+============================================================ */
+
+function dibujarVehiculos() {
+
+    capas.vehiculos.clearLayers();
+
+    marcadoresVehiculos = {};
+
+    const vehiculos = Array.isArray(window.DATOS_MOCK?.VEHICULOS)
+        ? window.DATOS_MOCK.VEHICULOS
+        : [];
+
+    const posiciones = Array.isArray(window.DATOS_MOCK?.POSICIONES)
+        ? window.DATOS_MOCK.POSICIONES
+        : [];
+
+
+    vehiculos.forEach((vehiculo, indice) => {
+
+        const id = String(
+            vehiculo.id_vehiculo ||
+            vehiculo.vehiculo_id ||
+            vehiculo.id ||
+            `V${indice + 1}`
+        );
+
+
+        let posicion = posiciones.find(pos =>
+            String(
+                pos.id_vehiculo ||
+                pos.vehiculo_id ||
+                pos.id ||
+                ""
+            ) === id
+        );
+
+
+        /*
+         * Si POSICIONES no tiene una posición válida,
+         * utilizamos una posición inicial de demostración.
+         */
+        let lat = obtenerLat(posicion);
+        let lng = obtenerLng(posicion);
+
+
+        if (!coordenadasValidas(lat, lng)) {
+
+            const posicionesIniciales = [
+                [39.485, -0.410],
+                [39.440, -0.475],
+                [39.400, -0.355]
+            ];
+
+            const inicial =
+                posicionesIniciales[indice] ||
+                VALENCIA_CENTER;
+
+            lat = inicial[0];
+            lng = inicial[1];
+        }
+
+
+        posicionesVehiculos[id] = {
+            lat,
+            lng
+        };
+
+
+        const rutaId = String(
+            vehiculo.ruta_id ||
+            vehiculo.ruta_habitual ||
+            vehiculo.ruta ||
+            `R${indice + 1}`
+        ).toUpperCase();
+
+
+        const color =
+            rutaId === "R1"
+                ? "#1976D2"
+                : rutaId === "R2"
+                    ? "#388E3C"
+                    : "#F57C00";
 
 
         const icono = L.divIcon({
 
-            className: "",
+            className: "vehicle-map-marker",
 
-            html:
-                `<div class="notice-marker ${clase}">
-                    ${simbolo}
-                </div>`,
+            html: `
+                <div
+                    class="vehicle-marker"
+                    style="border-color:${color}"
+                >
+                    🚐
+                </div>
 
-            iconSize: [28, 28],
+                <div class="vehicle-marker-label">
+                    ${escapeHtml(id)}
+                </div>
+            `,
 
-            iconAnchor: [14, 14]
-
+            iconSize: [38, 38],
+            iconAnchor: [19, 19],
+            popupAnchor: [0, -20]
         });
 
 
-        const marcador = L.marker(
-
-            [
-                aviso.latitud,
-                aviso.longitud
-            ],
-
-            {
-                icon: icono
-            }
-
-        );
-
-
-        marcador.bindPopup(`
-
-            <strong>${aviso.punto}</strong>
-
-            <br><br>
-
-            <strong>Especie:</strong>
-            ${aviso.especie}
-
-            <br>
-
-            <strong>Animales:</strong>
-            ${aviso.cantidad}
-
-            <br>
-
-            <strong>Estado:</strong>
-            ${aviso.estado}
-
-            <br>
-
-            <strong>Ruta:</strong>
-            ${aviso.ruta}
-
-            <br>
-
-            <strong>Vehículo:</strong>
-            ${aviso.vehiculo || "Sin asignar"}
-
-            <br><br>
-
-            <small>
-                ${aviso.observaciones}
-            </small>
-
-        `);
-
-
-        marcador.addTo(capaAvisos);
-
-        marcadoresAvisos[aviso.id] =
-            marcador;
-    });
-}
-
-
-/* =========================================================
-   VEHÍCULOS
-========================================================= */
-
-function dibujarVehiculos(posiciones) {
-
-    capaVehiculos.clearLayers();
-
-    Object
-        .values(posiciones)
-        .forEach(posicion => {
-
-            crearOMoverVehiculo(
-                posicion
-            );
-
-        });
-}
-
-
-function crearOMoverVehiculo(posicion) {
-
-    const vehiculo =
-        MOCK_DATA.vehiculos.find(
-            v => v.id === posicion.vehiculo
-        );
-
-    if (!vehiculo) {
-        return;
-    }
-
-
-    const claseRuta =
-        vehiculo.rutaHabitual
-            .toLowerCase();
-
-
-    const icono = L.divIcon({
-
-        className: "",
-
-        html:
-            `<div class="vehicle-marker ${claseRuta}">
-                🚐
-            </div>`,
-
-        iconSize: [34, 34],
-
-        iconAnchor: [17, 17]
-
-    });
-
-
-    let marcador =
-        marcadoresVehiculos[
-            posicion.vehiculo
-        ];
-
-
-    if (!marcador) {
-
-        marcador = L.marker(
-
-            [
-                posicion.latitud,
-                posicion.longitud
-            ],
-
+        const marker = L.marker(
+            [lat, lng],
             {
                 icon: icono,
                 zIndexOffset: 1000
             }
-
         );
 
 
-        marcador.bindPopup(`
-            <strong>${vehiculo.nombre}</strong>
+        marker.bindPopup(`
+            <strong>${escapeHtml(
+                vehiculo.nombre ||
+                vehiculo.matricula ||
+                id
+            )}</strong>
             <br>
-            Tablet: ${vehiculo.tablet}
+            Vehículo: ${escapeHtml(id)}
             <br>
-            Ruta habitual: ${vehiculo.rutaHabitual}
+            Ruta habitual: ${escapeHtml(rutaId)}
             <br>
-            <small>
-                GPS independiente de la planificación
-            </small>
+            <small>Posición GPS independiente de la ruta planificada.</small>
         `);
 
 
-        marcador.addTo(capaVehiculos);
+        marker.on("click", () => {
 
-        marcadoresVehiculos[
-            posicion.vehiculo
-        ] = marcador;
+            if (typeof seleccionarVehiculo === "function") {
+                seleccionarVehiculo(id);
+            }
 
-    } else {
+        });
 
-        marcador.setLatLng([
 
-            posicion.latitud,
+        marker.addTo(capas.vehiculos);
 
-            posicion.longitud
+        marcadoresVehiculos[id] = marker;
+    });
 
-        ]);
-    }
+
+    /*
+     * Si hay vehículos, guardamos una posición inicial
+     * también en window para la simulación GPS.
+     */
+    window.POSICIONES_VEHICULOS = posicionesVehiculos;
 }
 
 
-/* =========================================================
-   CENTRAR EN VEHÍCULO
-========================================================= */
+/* ============================================================
+   ACTUALIZAR POSICIÓN DE VEHÍCULO
+============================================================ */
 
-function centrarVehiculo(id) {
+function actualizarPosicionVehiculo(idVehiculo, lat, lng) {
 
-    const marcador =
-        marcadoresVehiculos[id];
+    if (!coordenadasValidas(lat, lng)) {
+        return;
+    }
 
-    if (!marcador) {
+    if (!marcadoresVehiculos[idVehiculo]) {
+        return;
+    }
+
+    marcadoresVehiculos[idVehiculo].setLatLng([lat, lng]);
+
+    posicionesVehiculos[idVehiculo] = {
+        lat,
+        lng
+    };
+}
+
+
+/* ============================================================
+   CENTRAR VEHÍCULO
+============================================================ */
+
+function centrarVehiculo(idVehiculo) {
+
+    const marker = marcadoresVehiculos[idVehiculo];
+
+    if (!marker) {
         return;
     }
 
     mapa.setView(
-        marcador.getLatLng(),
-        12,
+        marker.getLatLng(),
+        Math.max(mapa.getZoom(), 11),
         {
             animate: true
         }
     );
 
-    marcador.openPopup();
+    marker.openPopup();
 }
 
 
-/* =========================================================
-   CENTRAR EN AVISO
-========================================================= */
+/* ============================================================
+   CENTRAR TODOS
+============================================================ */
 
-function centrarAviso(id) {
+function centrarTodosLosVehiculos() {
 
-    const marcador =
-        marcadoresAvisos[id];
+    const markers = Object.values(marcadoresVehiculos);
 
-    if (!marcador) {
+    if (!markers.length) {
+        mapa.setView(VALENCIA_CENTER, 9);
         return;
     }
 
+    const grupo = L.featureGroup(markers);
+
+    mapa.fitBounds(
+        grupo.getBounds().pad(0.25),
+        {
+            animate: true,
+            maxZoom: 10
+        }
+    );
+}
+
+
+/* ============================================================
+   CENTRAR VALENCIA
+============================================================ */
+
+function centrarValencia() {
+
     mapa.setView(
-        marcador.getLatLng(),
-        13,
+        VALENCIA_CENTER,
+        9,
         {
             animate: true
         }
     );
-
-    marcador.openPopup();
 }
 
 
-/* =========================================================
+/* ============================================================
    CAPAS
-========================================================= */
+============================================================ */
 
-function controlarCapas() {
+function configurarCapasMapa() {
 
-    const controles = [
+    document
+        .getElementById("layer-vehiculos")
+        ?.addEventListener("change", event => {
 
-        {
-            id: "capaRutas",
-            capa: capaRutas
-        },
-
-        {
-            id: "capaPuntos",
-            capa: capaPuntos
-        },
-
-        {
-            id: "capaAvisos",
-            capa: capaAvisos
-        },
-
-        {
-            id: "capaVehiculos",
-            capa: capaVehiculos
-        }
-
-    ];
-
-
-    controles.forEach(control => {
-
-        const checkbox =
-            document.getElementById(
-                control.id
+            cambiarVisibilidadCapa(
+                "vehiculos",
+                event.target.checked
             );
 
-        if (checkbox.checked) {
+        });
 
-            if (!mapa.hasLayer(control.capa)) {
 
-                mapa.addLayer(
-                    control.capa
-                );
-            }
+    document
+        .getElementById("layer-rutas")
+        ?.addEventListener("change", event => {
 
-        } else {
+            cambiarVisibilidadCapa(
+                "rutas",
+                event.target.checked
+            );
 
-            if (mapa.hasLayer(control.capa)) {
+        });
 
-                mapa.removeLayer(
-                    control.capa
-                );
-            }
-        }
 
-    });
+    document
+        .getElementById("layer-puntos")
+        ?.addEventListener("change", event => {
+
+            cambiarVisibilidadCapa(
+                "puntos",
+                event.target.checked
+            );
+
+        });
+
+
+    document
+        .getElementById("layer-avisos")
+        ?.addEventListener("change", event => {
+
+            cambiarVisibilidadCapa(
+                "avisos",
+                event.target.checked
+            );
+
+        });
+
+
+    document
+        .getElementById("btn-centrar-todos")
+        ?.addEventListener("click", centrarTodosLosVehiculos);
+
+
+    document
+        .getElementById("btn-zoom-valencia")
+        ?.addEventListener("click", centrarValencia);
 }
+
+
+function cambiarVisibilidadCapa(nombre, visible) {
+
+    if (!mapa || !capas[nombre]) {
+        return;
+    }
+
+    if (visible) {
+        capas[nombre].addTo(mapa);
+    } else {
+        mapa.removeLayer(capas[nombre]);
+    }
+}
+
+
+/* ============================================================
+   ESTADO DE AVISO
+============================================================ */
+
+function normalizarEstadoAviso(estado) {
+
+    const valor = String(
+        estado || "PENDIENTE"
+    ).trim().toUpperCase();
+
+    if (
+        valor.includes("RECOG") ||
+        valor.includes("COMPLET")
+    ) {
+        return "RECOGIDO";
+    }
+
+    if (
+        valor.includes("ASIGN")
+    ) {
+        return "ASIGNADO";
+    }
+
+    return "PENDIENTE";
+}
+
+
+/* ============================================================
+   ESCAPE HTML
+============================================================ */
+
+function escapeHtml(valor) {
+
+    return String(valor ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+```
