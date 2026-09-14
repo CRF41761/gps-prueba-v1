@@ -1,82 +1,109 @@
-/* =========================================================
+```javascript
+/* ============================================================
    VEHÍCULOS
-========================================================= */
+============================================================ */
 
-function renderizarVehiculos(vehiculos) {
+let vehiculoSeleccionado = null;
+
+
+/* ============================================================
+   RENDER
+============================================================ */
+
+function renderizarVehiculos() {
 
     const contenedor =
-        document.getElementById(
-            "listaVehiculos"
-        );
+        document.getElementById("lista-vehiculos");
+
+    if (!contenedor) {
+        return;
+    }
+
+    const vehiculos =
+        Array.isArray(window.DATOS_MOCK?.VEHICULOS)
+            ? window.DATOS_MOCK.VEHICULOS
+            : [];
+
 
     contenedor.innerHTML = "";
 
 
-    vehiculos.forEach(vehiculo => {
+    vehiculos.forEach((vehiculo, indice) => {
+
+        const id = String(
+            vehiculo.id_vehiculo ||
+            vehiculo.vehiculo_id ||
+            vehiculo.id ||
+            `V${indice + 1}`
+        );
+
+
+        const nombre =
+            vehiculo.nombre ||
+            `Vehículo ${indice + 1}`;
+
 
         const ruta =
-            CONFIG.nombresRutas[
-                vehiculo.rutaHabitual
-            ];
+            vehiculo.ruta_id ||
+            vehiculo.ruta_habitual ||
+            vehiculo.ruta ||
+            `R${indice + 1}`;
 
 
-        const claseRuta =
-            vehiculo.rutaHabitual
-                .toLowerCase();
+        const activo =
+            vehiculo.activo !== false;
 
 
-        const elemento =
-            document.createElement("div");
+        const tarjeta =
+            document.createElement("article");
 
 
-        elemento.className =
+        tarjeta.className =
             "vehicle-card";
 
 
-        elemento.dataset.vehiculo =
-            vehiculo.id;
+        tarjeta.dataset.id = id;
 
 
-        elemento.innerHTML = `
+        tarjeta.innerHTML = `
 
-            <div class="vehicle-header">
+            <div class="vehicle-top">
 
                 <div class="vehicle-name">
-                    ${vehiculo.nombre}
+
+                    <span class="vehicle-icon">
+                        🚐
+                    </span>
+
+                    <span>
+                        ${escapeHtml(
+                            nombre
+                        )}
+                    </span>
+
                 </div>
 
-                <div class="vehicle-state">
+                <div class="vehicle-status">
 
-                    <span class="status-dot"></span>
+                    <span class="vehicle-status-dot"></span>
 
-                    En ruta
+                    ${activo ? "En ruta" : "Inactivo"}
 
-                </div>
-
-            </div>
-
-
-            <div class="vehicle-details">
-
-                <div>
-                    Tablet: <strong>
-                    ${vehiculo.tablet}
-                    </strong>
-                </div>
-
-                <div>
-                    GPS: <strong>
-                    activo
-                    </strong>
                 </div>
 
             </div>
 
 
-            <div class="vehicle-route">
+            <div class="vehicle-meta">
 
-                <span class="route-chip route-${claseRuta}">
-                    ${vehiculo.rutaHabitual} · ${ruta}
+                <span>
+                    Vehículo
+                    <strong>${escapeHtml(id)}</strong>
+                </span>
+
+                <span>
+                    Ruta
+                    <strong>${escapeHtml(ruta)}</strong>
                 </span>
 
             </div>
@@ -84,43 +111,79 @@ function renderizarVehiculos(vehiculos) {
         `;
 
 
-        elemento.addEventListener(
+        tarjeta.addEventListener(
             "click",
-            () => {
-
-                document
-                    .querySelectorAll(
-                        ".vehicle-card"
-                    )
-                    .forEach(card =>
-                        card.classList.remove(
-                            "selected"
-                        )
-                    );
-
-
-                elemento.classList.add(
-                    "selected"
-                );
-
-
-                centrarVehiculo(
-                    vehiculo.id
-                );
-
-            }
+            () => seleccionarVehiculo(id)
         );
 
 
-        contenedor.appendChild(
-            elemento
-        );
-
+        contenedor.appendChild(tarjeta);
     });
 
 
-    document.getElementById(
-        "contadorVehiculos"
-    ).textContent =
-        vehiculos.length;
+    actualizarKpiVehiculos(vehiculos);
 }
+
+
+/* ============================================================
+   SELECCIONAR
+============================================================ */
+
+function seleccionarVehiculo(idVehiculo) {
+
+    vehiculoSeleccionado = idVehiculo;
+
+
+    document
+        .querySelectorAll(".vehicle-card")
+        .forEach(card => {
+
+            card.classList.toggle(
+                "active",
+                card.dataset.id === idVehiculo
+            );
+
+        });
+
+
+    if (typeof centrarVehiculo === "function") {
+        centrarVehiculo(idVehiculo);
+    }
+}
+
+
+/* ============================================================
+   KPI
+============================================================ */
+
+function actualizarKpiVehiculos(vehiculos) {
+
+    const activos =
+        vehiculos.filter(
+            v => v.activo !== false
+        ).length;
+
+
+    const elemento =
+        document.getElementById("kpi-vehiculos");
+
+
+    if (elemento) {
+        elemento.textContent = activos;
+    }
+}
+
+
+/* ============================================================
+   REFRESCAR
+============================================================ */
+
+function refrescarVehiculos() {
+
+    renderizarVehiculos();
+
+    if (typeof dibujarVehiculos === "function") {
+        dibujarVehiculos();
+    }
+}
+```
