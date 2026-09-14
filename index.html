@@ -1,246 +1,397 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Coordinación Recogidas CRF</title>
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Coordinación de Recogidas · CRF La Granja de El Saler
+    </title>
 
     <link
         rel="stylesheet"
         href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
     >
 
-    <link rel="stylesheet" href="styles.css">
+    <link
+        rel="stylesheet"
+        href="styles.css"
+    >
+
 </head>
+
 
 <body>
 
-    <!-- =========================================================
+<div id="app">
+
+
+    <!-- ========================================================
          CABECERA
-    ========================================================== -->
+    ========================================================= -->
 
     <header class="topbar">
 
-        <div class="topbar-title">
-            <div class="topbar-title-main">
-                COORDINACIÓN DE RECOGIDAS
+        <div class="brand">
+
+            <div class="brand-mark">
+                CRF
             </div>
 
-            <div class="topbar-title-sub">
-                Centro de Recuperación de Fauna La Granja de El Saler
+            <div class="brand-text">
+
+                <strong>
+                    COORDINACIÓN DE RECOGIDAS
+                </strong>
+
+                <span>
+                    Centro de Recuperación de Fauna La Granja de El Saler
+                </span>
+
             </div>
+
         </div>
 
-        <div class="topbar-status">
+
+        <div class="system-status">
+
             <span class="status-dot"></span>
-            Sistema operativo
+
+            <div>
+
+                <strong>
+                    Sistema operativo
+                </strong>
+
+                <small>
+                    GPS y comunicaciones activos
+                </small>
+
+            </div>
+
+        </div>
+
+
+        <div
+            id="reloj"
+            class="top-clock"
+        >
+            --:--:--
         </div>
 
     </header>
 
 
-    <!-- =========================================================
+
+    <!-- ========================================================
          NAVEGACIÓN PRINCIPAL
-    ========================================================== -->
+    ========================================================= -->
 
     <nav class="main-nav">
 
+
         <button
-            class="nav-button active"
+            type="button"
+            class="nav-item nav-button active"
             data-section="inicio"
-            type="button"
         >
-            Inicio
+
+            <span>
+                🏠
+            </span>
+
+            <strong>
+                Inicio
+            </strong>
+
         </button>
 
+
         <button
-            class="nav-button"
+            type="button"
+            class="nav-item nav-button"
             data-section="planificacion"
-            type="button"
         >
-            Planificación
+
+            <span>
+                📋
+            </span>
+
+            <strong>
+                Planificación
+            </strong>
+
         </button>
 
+
         <button
-            class="nav-button"
+            type="button"
+            class="nav-item nav-button"
             data-section="avisos"
-            type="button"
         >
-            Avisos
+
+            <span>
+                🔔
+            </span>
+
+            <strong>
+                Avisos
+            </strong>
+
+            <span
+                id="nav-badge-avisos"
+                class="nav-badge"
+            >
+                0
+            </span>
+
         </button>
 
+
         <button
-            class="nav-button"
+            type="button"
+            class="nav-item nav-button"
             data-section="vehiculos"
-            type="button"
         >
-            Vehículos
+
+            <span>
+                🚐
+            </span>
+
+            <strong>
+                Vehículos
+            </strong>
+
         </button>
 
+
         <button
-            class="nav-button"
+            type="button"
+            class="nav-item nav-button"
             data-section="puntos"
-            type="button"
         >
-            Puntos colaboradores
+
+            <span>
+                📍
+            </span>
+
+            <strong>
+                Puntos colaboradores
+            </strong>
+
         </button>
 
+
         <button
-            class="nav-button"
+            type="button"
+            class="nav-item nav-button"
             data-section="rutas"
-            type="button"
         >
-            Rutas y zonas
+
+            <span>
+                🛣️
+            </span>
+
+            <strong>
+                Rutas y zonas
+            </strong>
+
         </button>
 
+
         <button
-            class="nav-button"
+            type="button"
+            class="nav-item nav-button"
             data-section="historial"
-            type="button"
         >
-            Historial
+
+            <span>
+                🕘
+            </span>
+
+            <strong>
+                Historial
+            </strong>
+
         </button>
 
+
         <button
-            class="nav-button"
+            type="button"
+            class="nav-item nav-button"
             data-section="estadisticas"
-            type="button"
         >
-            Estadísticas
+
+            <span>
+                📊
+            </span>
+
+            <strong>
+                Estadísticas
+            </strong>
+
         </button>
 
+
         <button
-            class="nav-button"
-            data-section="ajustes"
             type="button"
+            class="nav-item nav-button"
+            data-section="ajustes"
         >
-            Ajustes
+
+            <span>
+                ⚙️
+            </span>
+
+            <strong>
+                Ajustes
+            </strong>
+
         </button>
+
 
     </nav>
 
 
-    <!-- =========================================================
-         CONTENIDO PRINCIPAL
-    ========================================================== -->
+
+    <!-- ========================================================
+         DASHBOARD
+    ========================================================= -->
 
     <main class="dashboard">
 
 
-        <!-- =====================================================
-             KPIs GENERALES
-        ====================================================== -->
+        <!-- ====================================================
+             KPIs
+        ===================================================== -->
 
         <section class="kpi-row">
 
-            <div class="kpi-card">
-                <div class="kpi-label">
-                    Pendientes
+
+            <div class="kpi-card danger">
+
+                <div class="kpi-icon">
+                    🔴
                 </div>
 
-                <div
-                    class="kpi-value kpi-pendientes"
-                    id="kpi-pendientes"
-                >
-                    0
+                <div>
+
+                    <span>
+                        Pendientes
+                    </span>
+
+                    <strong id="kpi-pendientes">
+                        0
+                    </strong>
+
                 </div>
+
             </div>
 
 
-            <div class="kpi-card">
-                <div class="kpi-label">
-                    Asignados
+            <div class="kpi-card warning">
+
+                <div class="kpi-icon">
+                    🟠
                 </div>
 
-                <div
-                    class="kpi-value kpi-asignados"
-                    id="kpi-asignados"
-                >
-                    0
+                <div>
+
+                    <span>
+                        Asignados
+                    </span>
+
+                    <strong id="kpi-asignados">
+                        0
+                    </strong>
+
                 </div>
+
             </div>
 
 
-            <div class="kpi-card">
-                <div class="kpi-label">
-                    Recogidos
+            <div class="kpi-card success">
+
+                <div class="kpi-icon">
+                    🟢
                 </div>
 
-                <div
-                    class="kpi-value kpi-recogidos"
-                    id="kpi-recogidos"
-                >
-                    0
+                <div>
+
+                    <span>
+                        Recogidos
+                    </span>
+
+                    <strong id="kpi-recogidos">
+                        0
+                    </strong>
+
                 </div>
+
             </div>
 
 
-            <div class="kpi-card">
-                <div class="kpi-label">
-                    Vehículos activos
+            <div class="kpi-card primary">
+
+                <div class="kpi-icon">
+                    🚐
                 </div>
 
-                <div
-                    class="kpi-value kpi-vehiculos"
-                    id="kpi-vehiculos"
-                >
-                    0
+                <div>
+
+                    <span>
+                        Vehículos activos
+                    </span>
+
+                    <strong id="kpi-vehiculos">
+                        0
+                    </strong>
+
                 </div>
+
             </div>
 
-
-            <div class="kpi-card">
-                <div class="kpi-label">
-                    Puntos colaboradores
-                </div>
-
-                <div
-                    class="kpi-value kpi-puntos"
-                    id="kpi-puntos"
-                >
-                    0
-                </div>
-            </div>
-
-
-            <div class="kpi-card">
-                <div class="kpi-label">
-                    Última actualización
-                </div>
-
-                <div
-                    class="kpi-value kpi-hora"
-                    id="hora-actualizacion"
-                >
-                    --:--
-                </div>
-            </div>
 
         </section>
 
 
 
-        <!-- =====================================================
-             ESPACIO PRINCIPAL
+        <!-- ====================================================
+             WORKSPACE PRINCIPAL
              
-             IMPORTANTE:
-             Este bloque permanece siempre visible.
-             El mapa seguirá disponible aunque cambiemos de
-             sección.
-        ====================================================== -->
+             EL MAPA Y LOS PANELES PERMANECEN INTACTOS
+        ===================================================== -->
 
         <section class="workspace">
 
 
-            <!-- =================================================
+            <!-- ==================================================
                  PANEL IZQUIERDO
-            ================================================== -->
+            =================================================== -->
 
             <aside class="left-panel">
 
+
                 <div class="panel-header">
-                    <h2>Vehículos</h2>
+
+                    <div>
+
+                        <div class="eyebrow">
+                            OPERATIVA
+                        </div>
+
+                        <h2>
+                            Vehículos
+                        </h2>
+
+                    </div>
+
                 </div>
 
 
@@ -256,50 +407,100 @@
 
 
                 <div class="panel-header">
-                    <h2>Capas del mapa</h2>
+
+                    <div>
+
+                        <div class="eyebrow">
+                            VISUALIZACIÓN
+                        </div>
+
+                        <h2>
+                            Capas del mapa
+                        </h2>
+
+                    </div>
+
                 </div>
 
 
-                <div class="map-layers">
+                <div class="layer-list">
+
 
                     <label class="layer-option">
+
                         <input
                             type="checkbox"
                             id="capa-rutas"
                             checked
                         >
-                        <span>Rutas</span>
+
+                        <span class="layer-symbol route-symbol">
+                            ━
+                        </span>
+
+                        <span>
+                            Rutas
+                        </span>
+
                     </label>
 
 
                     <label class="layer-option">
+
                         <input
                             type="checkbox"
                             id="capa-puntos"
                             checked
                         >
-                        <span>Puntos colaboradores</span>
+
+                        <span class="layer-symbol point-symbol">
+                            ●
+                        </span>
+
+                        <span>
+                            Puntos colaboradores
+                        </span>
+
                     </label>
 
 
                     <label class="layer-option">
+
                         <input
                             type="checkbox"
                             id="capa-avisos"
                             checked
                         >
-                        <span>Avisos</span>
+
+                        <span class="layer-symbol alert-symbol">
+                            !
+                        </span>
+
+                        <span>
+                            Avisos
+                        </span>
+
                     </label>
 
 
                     <label class="layer-option">
+
                         <input
                             type="checkbox"
                             id="capa-vehiculos"
                             checked
                         >
-                        <span>Vehículos</span>
+
+                        <span class="layer-symbol">
+                            🚐
+                        </span>
+
+                        <span>
+                            Vehículos
+                        </span>
+
                     </label>
+
 
                 </div>
 
@@ -308,7 +509,19 @@
 
 
                 <div class="panel-header">
-                    <h2>Rutas</h2>
+
+                    <div>
+
+                        <div class="eyebrow">
+                            ZONAS DE TRABAJO
+                        </div>
+
+                        <h2>
+                            Rutas
+                        </h2>
+
+                    </div>
+
                 </div>
 
 
@@ -319,64 +532,98 @@
                     <!-- Generado por rutas.js -->
                 </div>
 
+
             </aside>
 
 
 
-            <!-- =================================================
+            <!-- ==================================================
                  MAPA
-            ================================================== -->
+            =================================================== -->
 
             <section class="map-panel">
 
-                <div class="map-header">
 
-                    <div>
-                        <h1>Situación operativa</h1>
-
-                        <div class="map-subtitle">
-                            Vehículos, avisos y puntos colaboradores
-                        </div>
-                    </div>
+                <div class="map-toolbar">
 
 
-                    <div
-                        id="map-status"
-                        class="map-status"
-                    >
-                        <span class="status-dot"></span>
+                    <div class="map-title">
 
-                        <span id="map-status-text">
-                            GPS operativo · posiciones simuladas
+                        <strong>
+                            Situación operativa
+                        </strong>
+
+                        <span>
+                            Vehículos · avisos · colaboradores
                         </span>
+
                     </div>
+
+
+                    <div class="map-tools">
+
+                        <button
+                            type="button"
+                            class="map-tool"
+                            id="btn-centrar-mapa"
+                        >
+                            🎯 Centrar
+                        </button>
+
+                    </div>
+
 
                 </div>
 
 
                 <div
                     id="map"
-                    class="map-container"
                 ></div>
+
+
+                <div
+                    id="map-status"
+                    class="map-status"
+                >
+
+                    <span class="status-dot"></span>
+
+                    <span id="map-status-text">
+                        GPS operativo · posiciones simuladas
+                    </span>
+
+                </div>
+
 
             </section>
 
 
 
-            <!-- =================================================
+            <!-- ==================================================
                  PANEL DERECHO
-            ================================================== -->
+            =================================================== -->
 
             <aside class="right-panel">
 
 
-                <div class="panel-header panel-header-with-action">
+                <div class="panel-header">
 
-                    <h2>Avisos</h2>
+                    <div>
+
+                        <div class="eyebrow">
+                            GESTIÓN DE AVISOS
+                        </div>
+
+                        <h2>
+                            Avisos
+                        </h2>
+
+                    </div>
+
 
                     <span
                         id="contador-avisos"
-                        class="panel-counter"
+                        class="counter-badge"
                     >
                         0
                     </span>
@@ -397,9 +644,17 @@
 
                 <div class="panel-header">
 
-                    <h2>
-                        Planificación del día
-                    </h2>
+                    <div>
+
+                        <div class="eyebrow">
+                            JORNADA
+                        </div>
+
+                        <h2>
+                            Planificación del día
+                        </h2>
+
+                    </div>
 
                 </div>
 
@@ -408,21 +663,20 @@
                     id="planificacion-dia"
                     class="planning-list"
                 >
-                    <!-- Resumen generado por rutas.js -->
+                    <!-- Generado por rutas.js -->
                 </div>
 
+
             </aside>
+
 
         </section>
 
 
 
-        <!-- =====================================================
-             VISTA: INICIO
-             
-             Esta vista contiene las acciones generales del
-             dashboard.
-        ====================================================== -->
+        <!-- ====================================================
+             VISTA INICIO
+        ===================================================== -->
 
         <section
             id="vista-inicio"
@@ -430,18 +684,27 @@
             data-view="inicio"
         >
 
+
             <section class="actions-panel">
 
-                <div class="actions-header">
+
+                <div class="actions-heading">
 
                     <div>
+
+                        <div class="eyebrow">
+                            GESTIÓN RÁPIDA
+                        </div>
+
                         <h2>
                             Acciones operativas
                         </h2>
 
-                        <p>
-                            Gestión rápida de la jornada.
-                        </p>
+                    </div>
+
+
+                    <div class="actions-info">
+                        Jornada actual
                     </div>
 
                 </div>
@@ -449,66 +712,122 @@
 
                 <div class="actions-grid">
 
+
                     <button
-                        id="btn-confirmar-rutas"
-                        class="action-button primary"
                         type="button"
+                        id="btn-confirmar-rutas"
+                        class="action-button primary-action"
                     >
-                        Confirmar rutas del día
+
+                        <div class="action-icon">
+                            ✓
+                        </div>
+
+                        <div>
+
+                            <strong>
+                                Confirmar rutas del día
+                            </strong>
+
+                            <small>
+                                Validar la planificación
+                            </small>
+
+                        </div>
+
                     </button>
 
 
                     <button
+                        type="button"
                         id="btn-nuevo-aviso"
                         class="action-button"
-                        type="button"
                     >
-                        Añadir aviso
+
+                        <div class="action-icon">
+                            +
+                        </div>
+
+                        <div>
+
+                            <strong>
+                                Añadir aviso
+                            </strong>
+
+                            <small>
+                                Registrar una nueva recogida
+                            </small>
+
+                        </div>
+
                     </button>
 
 
                     <button
+                        type="button"
                         id="btn-recalcular"
                         class="action-button"
-                        type="button"
                     >
-                        Recalcular planificación
+
+                        <div class="action-icon">
+                            ↻
+                        </div>
+
+                        <div>
+
+                            <strong>
+                                Recalcular planificación
+                            </strong>
+
+                            <small>
+                                Actualizar recorridos
+                            </small>
+
+                        </div>
+
                     </button>
 
 
                     <button
+                        type="button"
                         id="btn-exportar"
                         class="action-button"
-                        type="button"
                     >
-                        Imprimir / exportar
+
+                        <div class="action-icon">
+                            🖨
+                        </div>
+
+                        <div>
+
+                            <strong>
+                                Imprimir / exportar
+                            </strong>
+
+                            <small>
+                                Preparar información de la jornada
+                            </small>
+
+                        </div>
+
                     </button>
 
-
-                    <button
-                        id="btn-refrescar"
-                        class="action-button"
-                        type="button"
-                    >
-                        Actualizar datos
-                    </button>
 
                 </div>
 
+
             </section>
+
 
         </section>
 
 
 
-        <!-- =====================================================
-             VISTA: PLANIFICACIÓN
+        <!-- ====================================================
+             VISTA PLANIFICACIÓN
              
-             Nueva pantalla de planificación.
-             
-             El mapa permanece arriba y esta zona muestra la
-             planificación detallada de los vehículos.
-        ====================================================== -->
+             PREPARADA. APP.JS LA ACTIVARÁ DESPUÉS.
+        ===================================================== -->
 
         <section
             id="vista-planificacion"
@@ -516,125 +835,74 @@
             data-view="planificacion"
         >
 
-            <div class="section-page-header">
 
-                <div>
+            <section class="actions-panel">
 
-                    <div class="section-page-kicker">
-                        ORGANIZACIÓN DE LA JORNADA
+
+                <div class="actions-heading">
+
+                    <div>
+
+                        <div class="eyebrow">
+                            ORGANIZACIÓN DE LA JORNADA
+                        </div>
+
+                        <h2>
+                            Planificación del servicio
+                        </h2>
+
                     </div>
 
-                    <h2>
-                        Planificación del servicio
-                    </h2>
 
-                    <p>
-                        Configuración de las rutas y paradas antes
-                        de la salida de los vehículos.
-                    </p>
-
-                </div>
-
-
-                <div class="planning-date-box">
-
-                    <span class="planning-date-label">
-                        Fecha
-                    </span>
-
-                    <strong id="fecha-planificacion">
+                    <div
+                        id="fecha-planificacion"
+                        class="actions-info"
+                    >
                         --
-                    </strong>
-
-                </div>
-
-            </div>
-
-
-
-            <div class="planning-toolbar">
-
-                <div class="planning-toolbar-info">
-
-                    <strong>
-                        Ruta planificada del día
-                    </strong>
-
-                    <span>
-                        La ruta habitual del vehículo sirve como
-                        referencia. La planificación diaria puede
-                        adaptarse a los avisos existentes.
-                    </span>
-
-                </div>
-
-
-                <div class="planning-toolbar-actions">
-
-                    <button
-                        id="btn-recalcular-planificacion"
-                        class="action-button"
-                        type="button"
-                    >
-                        Recalcular
-                    </button>
-
-
-                    <button
-                        id="btn-confirmar-planificacion"
-                        class="action-button primary"
-                        type="button"
-                    >
-                        Confirmar planificación
-                    </button>
-
-                </div>
-
-            </div>
-
-
-
-            <!--
-                Aquí se mostrará la planificación detallada
-                de V1, V2 y V3.
-
-                rutas.js se encargará posteriormente de
-                renderizarla aquí.
-            -->
-
-            <div
-                id="planificacion-dia-completa"
-                class="planning-board"
-            >
-
-                <div class="planning-empty-state">
-
-                    <div class="planning-empty-icon">
-                        📋
                     </div>
 
-                    <h3>
-                        Planificación del día
-                    </h3>
+                </div>
 
-                    <p>
-                        Preparando las rutas y paradas de los
-                        vehículos...
-                    </p>
+
+                <div
+                    id="planificacion-dia-completa"
+                    class="planning-list"
+                >
+
+                    <div class="planning-item">
+
+                        <div class="planning-head">
+
+                            <span class="planning-vehicle">
+                                Planificación
+                            </span>
+
+                        </div>
+
+                        <div class="planning-description">
+
+                            Aquí aparecerá la planificación detallada
+                            de los vehículos y sus paradas.
+
+                        </div>
+
+                    </div>
 
                 </div>
 
-            </div>
+
+            </section>
+
 
         </section>
 
 
 
-        <!-- =====================================================
-             VISTA: PLACEHOLDER
+        <!-- ====================================================
+             VISTA PLACEHOLDER
              
-             Las demás secciones se desarrollarán posteriormente.
-        ====================================================== -->
+             Para las secciones que todavía no hemos desarrollado.
+        ===================================================== -->
 
         <section
             id="vista-placeholder"
@@ -642,90 +910,96 @@
             data-view="placeholder"
         >
 
-            <div class="section-page-header">
 
-                <div>
+            <section class="actions-panel">
 
-                    <div class="section-page-kicker">
-                        GESTIÓN CRF
+
+                <div class="actions-heading">
+
+                    <div>
+
+                        <div class="eyebrow">
+                            MÓDULO
+                        </div>
+
+                        <h2 id="placeholder-titulo">
+                            Sección
+                        </h2>
+
                     </div>
 
-                    <h2 id="placeholder-titulo">
-                        Sección
-                    </h2>
+                </div>
 
-                    <p id="placeholder-descripcion">
-                        Esta sección se implementará en la siguiente
-                        fase del sistema.
-                    </p>
+
+                <div class="planning-item">
+
+                    <div class="planning-description"
+                         id="placeholder-descripcion">
+
+                        Este módulo se desarrollará
+                        progresivamente.
+
+                    </div>
 
                 </div>
 
-            </div>
 
+            </section>
 
-            <div class="placeholder-panel">
-
-                <div class="placeholder-icon">
-                    ⚙
-                </div>
-
-                <h3>
-                    Módulo en desarrollo
-                </h3>
-
-                <p>
-                    La estructura de esta sección ya está preparada
-                    para incorporarla al sistema.
-                </p>
-
-            </div>
 
         </section>
 
 
 
-        <!-- =====================================================
-             PIE DE PÁGINA
-        ====================================================== -->
-
-        <footer class="dashboard-footer">
-
-            <div>
-                CRF La Granja de El Saler
-            </div>
-
-            <div>
-                Coordinación de recogidas
-            </div>
-
-            <div>
-                <span id="reloj">
-                    --:--:--
-                </span>
-            </div>
-
-        </footer>
-
     </main>
 
 
 
-    <!-- =========================================================
-         LIBRERÍAS
-    ========================================================== -->
+    <!-- ========================================================
+         FOOTER
+    ========================================================= -->
 
-    <script
-        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    ></script>
+    <footer class="footer">
+
+        <span>
+            CRF La Granja de El Saler
+        </span>
+
+        <span>
+            Sistema de coordinación de recogidas
+        </span>
+
+        <span>
+            <strong>
+                GPS operativo
+            </strong>
+        </span>
+
+    </footer>
+
+
+</div>
 
 
 
-    <!-- =========================================================
-         ARCHIVOS DE LA APLICACIÓN
-    ========================================================== -->
+<!-- ============================================================
+     LEAFLET
+============================================================= -->
 
-   <script src="js/config.js"></script>
+<script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+></script>
+
+
+
+<!-- ============================================================
+     JAVASCRIPT
+     
+     IMPORTANTE:
+     Los archivos están dentro de /js/
+============================================================= -->
+
+<script src="js/config.js"></script>
 <script src="js/mock-data.js"></script>
 <script src="js/api.js"></script>
 <script src="js/mapa.js"></script>
@@ -733,6 +1007,7 @@
 <script src="js/avisos.js"></script>
 <script src="js/rutas.js"></script>
 <script src="js/app.js"></script>
+
 
 </body>
 </html>
