@@ -276,4 +276,3 @@ function escaparHTML(valor) {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 }
-```
