@@ -1,2196 +1,319 @@
 <!DOCTYPE html>
-
 <html lang="es">
-
 <head>
-
-  <meta charset="UTF-8">
-
-<meta
-name="viewport"
-content="width=device-width, initial-scale=1.0"
-
->
-
-  <title>
-    Coordinación de Recogidas - CRF La Granja
-  </title>
-
-  <!-- ======================================================
-       LEAFLET
-  ======================================================= -->
-
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  />
-
-  <style>
-
-    /* =====================================================
-       CONFIGURACIÓN GENERAL
-    ===================================================== */
-
-    * {
-      box-sizing: border-box;
-    }
-
-
-    html,
-    body {
-
-      margin: 0;
-
-      padding: 0;
-
-      width: 100%;
-
-      height: 100%;
-
-      font-family:
-        Arial,
-        Helvetica,
-        sans-serif;
-
-      background: #f3f4f6;
-
-    }
-
-
-    body {
-
-      display: flex;
-
-      flex-direction: column;
-
-      overflow: hidden;
-
-    }
-
-
-
-    /* =====================================================
-       CABECERA
-    ===================================================== */
-
-    header {
-
-      height: 64px;
-
-      min-height: 64px;
-
-      background: #1f2937;
-
-      color: white;
-
-      display: flex;
-
-      align-items: center;
-
-      justify-content: space-between;
-
-      padding: 0 20px;
-
-      z-index: 1000;
-
-      box-shadow:
-        0 2px 8px
-        rgba(0, 0, 0, 0.25);
-
-    }
-
-
-    .titulo {
-
-      display: flex;
-
-      flex-direction: column;
-
-      gap: 3px;
-
-    }
-
-
-    .titulo-principal {
-
-      font-size: 20px;
-
-      font-weight: bold;
-
-    }
-
-
-    .titulo-secundario {
-
-      font-size: 12px;
-
-      opacity: 0.8;
-
-    }
-
-
-    .estado-servidor {
-
-      display: flex;
-
-      align-items: center;
-
-      gap: 8px;
-
-      font-size: 13px;
-
-    }
-
-
-    .indicador {
-
-      width: 10px;
-
-      height: 10px;
-
-      border-radius: 50%;
-
-      background: #9ca3af;
-
-    }
-
-
-    .indicador.ok {
-
-      background: #22c55e;
-
-    }
-
-
-    .indicador.error {
-
-      background: #ef4444;
-
-    }
-
-
-
-    /* =====================================================
-       CONTENEDOR PRINCIPAL
-    ===================================================== */
-
-    .contenedor {
-
-      flex: 1;
-
-      min-height: 0;
-
-      display: flex;
-
-      overflow: hidden;
-
-    }
-
-
-
-    /* =====================================================
-       PANEL LATERAL
-    ===================================================== */
-
-    aside {
-
-      width: 320px;
-
-      min-width: 320px;
-
-      background: white;
-
-      border-right:
-        1px solid #d1d5db;
-
-      overflow-y: auto;
-
-      padding: 16px;
-
-    }
-
-
-
-    /* =====================================================
-       SECCIONES DEL PANEL
-    ===================================================== */
-
-    .seccion {
-
-      margin-bottom: 20px;
-
-    }
-
-
-    .seccion-titulo {
-
-      font-size: 15px;
-
-      font-weight: bold;
-
-      color: #1f2937;
-
-      margin-bottom: 10px;
-
-      padding-bottom: 7px;
-
-      border-bottom:
-        1px solid #e5e7eb;
-
-    }
-
-
-
-    /* =====================================================
-       TARJETAS DE RESUMEN
-    ===================================================== */
-
-    .resumen {
-
-      display: grid;
-
-      grid-template-columns:
-        1fr 1fr;
-
-      gap: 8px;
-
-    }
-
-
-    .tarjeta {
-
-      background: #f9fafb;
-
-      border:
-        1px solid #e5e7eb;
-
-      border-radius: 8px;
-
-      padding: 10px;
-
-      text-align: center;
-
-    }
-
-
-    .tarjeta-numero {
-
-      font-size: 24px;
-
-      font-weight: bold;
-
-      color: #1f2937;
-
-    }
-
-
-    .tarjeta-texto {
-
-      font-size: 11px;
-
-      color: #6b7280;
-
-      margin-top: 3px;
-
-    }
-
-
-
-    /* =====================================================
-       VEHÍCULOS
-    ===================================================== */
-
-    .vehiculo {
-
-      border:
-        1px solid #e5e7eb;
-
-      border-radius: 8px;
-
-      padding: 10px;
-
-      margin-bottom: 8px;
-
-      background: #fafafa;
-
-    }
-
-
-    .vehiculo-cabecera {
-
-      display: flex;
-
-      justify-content: space-between;
-
-      align-items: center;
-
-    }
-
-
-    .vehiculo-nombre {
-
-      font-weight: bold;
-
-      color: #111827;
-
-    }
-
-
-    .estado-activo {
-
-      font-size: 11px;
-
-      background: #dcfce7;
-
-      color: #166534;
-
-      border-radius: 12px;
-
-      padding: 3px 7px;
-
-    }
-
-
-    .estado-inactivo {
-
-      font-size: 11px;
-
-      background: #fee2e2;
-
-      color: #991b1b;
-
-      border-radius: 12px;
-
-      padding: 3px 7px;
-
-    }
-
-
-    .vehiculo-detalles {
-
-      font-size: 12px;
-
-      color: #6b7280;
-
-      margin-top: 6px;
-
-      line-height: 1.5;
-
-    }
-
-
-
-    /* =====================================================
-       PUNTOS
-    ===================================================== */
-
-    .punto-resumen {
-
-      display: flex;
-
-      justify-content: space-between;
-
-      align-items: center;
-
-      background: #f9fafb;
-
-      border:
-        1px solid #e5e7eb;
-
-      border-radius: 7px;
-
-      padding: 8px;
-
-      margin-bottom: 5px;
-
-      font-size: 12px;
-
-    }
-
-
-    .punto-nombre {
-
-      font-weight: 600;
-
-      color: #374151;
-
-    }
-
-
-    .punto-municipio {
-
-      color: #6b7280;
-
-      font-size: 11px;
-
-    }
-
-
-    .boton-mapa {
-
-      border: none;
-
-      background: #2563eb;
-
-      color: white;
-
-      border-radius: 5px;
-
-      padding: 5px 8px;
-
-      cursor: pointer;
-
-      font-size: 11px;
-
-    }
-
-
-    .boton-mapa:hover {
-
-      background: #1d4ed8;
-
-    }
-
-
-
-    /* =====================================================
-       BOTONES
-    ===================================================== */
-
-    .boton {
-
-      width: 100%;
-
-      border: none;
-
-      border-radius: 7px;
-
-      padding: 10px;
-
-      cursor: pointer;
-
-      font-weight: bold;
-
-      margin-top: 6px;
-
-    }
-
-
-    .boton-recargar {
-
-      background: #2563eb;
-
-      color: white;
-
-    }
-
-
-    .boton-recargar:hover {
-
-      background: #1d4ed8;
-
-    }
-
-
-    .boton-gps {
-
-      background: #059669;
-
-      color: white;
-
-    }
-
-
-    .boton-gps:hover {
-
-      background: #047857;
-
-    }
-
-
-
-    /* =====================================================
-       MAPA
-    ===================================================== */
-
-    #map {
-
-      flex: 1;
-
-      min-width: 0;
-
-      height: 100%;
-
-    }
-
-
-
-    /* =====================================================
-       MENSAJES
-    ===================================================== */
-
-    .mensaje {
-
-      padding: 10px;
-
-      border-radius: 7px;
-
-      font-size: 12px;
-
-      margin-top: 8px;
-
-      display: none;
-
-    }
-
-
-    .mensaje.visible {
-
-      display: block;
-
-    }
-
-
-    .mensaje.error {
-
-      background: #fee2e2;
-
-      color: #991b1b;
-
-    }
-
-
-    .mensaje.exito {
-
-      background: #dcfce7;
-
-      color: #166534;
-
-    }
-
-
-
-    /* =====================================================
-       RESPONSIVE
-    ===================================================== */
-
-    @media (
-      max-width: 800px
-    ) {
-
-      aside {
-
-        width: 260px;
-
-        min-width: 260px;
-
-      }
-
-
-      .titulo-principal {
-
-        font-size: 16px;
-
-      }
-
-
-      .titulo-secundario {
-
-        display: none;
-
-      }
-
-    }
-
-
-    @media (
-      max-width: 600px
-    ) {
-
-      .contenedor {
-
-        flex-direction: column;
-
-      }
-
-
-      aside {
-
-        width: 100%;
-
-        min-width: 100%;
-
-        height: 270px;
-
-        min-height: 270px;
-
-        border-right: none;
-
-        border-bottom:
-          1px solid #d1d5db;
-
-      }
-
-
-      #map {
-
-        height: calc(
-          100% - 270px
-        );
-
-      }
-
-    }
-
-  </style>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Coordinación de Recogidas - CRF La Granja</title>
+
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIINfQ3jY6YQpJm5j6v5nJ5u5r5r5r5r5r5="
+        crossorigin=""
+    >
+
+    <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
 
-  <!-- ====================================================
-       CABECERA
-  ===================================================== -->
+<div class="app">
 
-  <header>
+    <!-- =========================================================
+         CABECERA
+    ========================================================== -->
 
-```
-<div class="titulo">
+    <header class="topbar">
 
-  <div class="titulo-principal">
+        <div class="brand">
+            <div class="brand-icon">CRF</div>
 
-    Coordinación de Recogidas de Fauna
-
-  </div>
-
-  <div class="titulo-secundario">
-
-    Centro de Recuperación de Fauna "La Granja de El Saler"
-
-  </div>
-
-</div>
-
-
-<div class="estado-servidor">
-
-  <span
-    id="indicadorServidor"
-    class="indicador"
-  ></span>
-
-  <span id="textoServidor">
-
-    Conectando...
-
-  </span>
-
-</div>
-```
-
-  </header>
-
-  <!-- ====================================================
-       CONTENEDOR
-  ===================================================== -->
-
-  <div class="contenedor">
-
-```
-<!-- ==================================================
-     PANEL LATERAL
-=================================================== -->
-
-<aside>
-
-
-  <!-- =================================================
-       RESUMEN
-  ================================================== -->
-
-  <div class="seccion">
-
-    <div class="seccion-titulo">
-
-      Resumen
-
-    </div>
-
-
-    <div class="resumen">
-
-
-      <div class="tarjeta">
-
-        <div
-          id="numeroVehiculos"
-          class="tarjeta-numero"
-        >
-          0
+            <div>
+                <h1>Coordinación de Recogidas</h1>
+                <p>Centro de Recuperación de Fauna "La Granja de El Saler"</p>
+            </div>
         </div>
 
-        <div class="tarjeta-texto">
+        <div class="top-status">
 
-          Vehículos activos
+            <div class="mode-badge">
+                <span class="status-dot mock"></span>
+                MODO DEMOSTRACIÓN
+            </div>
+
+            <div class="clock" id="reloj">
+                --:--
+            </div>
 
         </div>
 
-      </div>
+    </header>
 
 
-      <div class="tarjeta">
+    <!-- =========================================================
+         KPIs
+    ========================================================== -->
 
-        <div
-          id="numeroPuntos"
-          class="tarjeta-numero"
-        >
-          0
+    <section class="kpis">
+
+        <div class="kpi-card">
+            <div class="kpi-icon warning">!</div>
+
+            <div>
+                <span class="kpi-label">Avisos pendientes</span>
+                <strong id="kpiPendientes">0</strong>
+            </div>
         </div>
 
-        <div class="tarjeta-texto">
 
-          Puntos de recogida
+        <div class="kpi-card">
+            <div class="kpi-icon assigned">↗</div>
 
+            <div>
+                <span class="kpi-label">Asignados</span>
+                <strong id="kpiAsignados">0</strong>
+            </div>
         </div>
 
-      </div>
 
+        <div class="kpi-card">
+            <div class="kpi-icon collected">✓</div>
 
-    </div>
+            <div>
+                <span class="kpi-label">Recogidos hoy</span>
+                <strong id="kpiRecogidos">0</strong>
+            </div>
+        </div>
 
-  </div>
 
+        <div class="kpi-card">
+            <div class="kpi-icon vehicles">🚐</div>
 
+            <div>
+                <span class="kpi-label">Vehículos activos</span>
+                <strong id="kpiVehiculos">0</strong>
+            </div>
+        </div>
 
-  <!-- =================================================
-       VEHÍCULOS
-  ================================================== -->
+    </section>
 
-  <div class="seccion">
 
-    <div class="seccion-titulo">
+    <!-- =========================================================
+         CUERPO PRINCIPAL
+    ========================================================== -->
 
-      Vehículos
+    <main class="workspace">
 
-    </div>
 
+        <!-- =====================================================
+             PANEL IZQUIERDO
+        ====================================================== -->
 
-    <div id="listaVehiculos">
+        <aside class="left-panel">
 
-      Cargando vehículos...
+            <!-- VEHÍCULOS -->
 
-    </div>
+            <section class="panel-section">
 
-  </div>
+                <div class="section-title">
 
-
-
-  <!-- =================================================
-       PUNTOS
-  ================================================== -->
-
-  <div class="seccion">
-
-    <div class="seccion-titulo">
-
-      Puntos de recogida
-
-    </div>
-
-
-    <div id="listaPuntos">
-
-      Cargando puntos...
-
-    </div>
-
-  </div>
-
-
-
-  <!-- =================================================
-       CONTROLES
-  ================================================== -->
-
-  <div class="seccion">
-
-    <div class="seccion-titulo">
-
-      Controles
-
-    </div>
-
-
-    <button
-      class="boton boton-recargar"
-      onclick="cargarDatos()"
-    >
-
-      🔄 Recargar datos
-
-    </button>
-
-
-    <button
-      class="boton boton-gps"
-      onclick="enviarPosicionGPS()"
-    >
-
-      📍 Enviar posición GPS
-
-    </button>
-
-
-    <div
-      id="mensaje"
-      class="mensaje"
-    ></div>
-
-
-  </div>
-
-
-</aside>
-
-
-
-<!-- ==================================================
-     MAPA
-=================================================== -->
-
-<div id="map"></div>
-```
-
-  </div>
-
-  <!-- ====================================================
-       LEAFLET
-  ===================================================== -->
-
-  <script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-  ></script>
-
-  <script>
-
-    // ====================================================
-    // CONFIGURACIÓN
-    // ====================================================
-
-    /*
-     * IMPORTANTE:
-     *
-     * Sustituye esta URL por la URL de tu Web App
-     * de Google Apps Script.
-     *
-     * Debe ser la MISMA URL que ya utilizabas
-     * para enviar las posiciones GPS.
-     */
-
-    const URL_API =
-      'https://script.google.com/macros/s/AKfycbz9cowY8r7adCxP5eFFMCH9yaXTl1a5g5VpETQBXJuS_IFas--YpWgquuKBk4oiL9qw/exec';
-
-
-
-    // ====================================================
-    // IDENTIDAD DEL DISPOSITIVO
-    // ====================================================
-    //
-    // De momento mantenemos V1 / Tablet 1 porque esta
-    // versión sigue siendo la prueba del vehículo V1.
-    //
-    // Más adelante la aplicación determinará automáticamente
-    // el vehículo asociado a la tablet.
-    // ====================================================
-
-    const VEHICULO_ACTUAL =
-      'V1';
-
-
-    const TABLET_ACTUAL =
-      'Tablet 1';
-
-
-
-    // ====================================================
-    // VARIABLES GLOBALES
-    // ====================================================
-
-    let mapa;
-
-    let datosVehiculos = [];
-
-    let datosTablets = [];
-
-    let datosRutas = [];
-
-    let datosPuntos = [];
-
-    let marcadoresPuntos = [];
-
-
-
-    // ====================================================
-    // INICIALIZAR MAPA
-    // ====================================================
-
-    function inicializarMapa() {
-
-
-      /*
-       * Centro inicial aproximado en la provincia de Valencia.
-       */
-
-      mapa =
-        L.map(
-          'map'
-        ).setView(
-
-          [
-            39.4699,
-            -0.3763
-          ],
-
-          9
-
-        );
-
-
-
-      /*
-       * Capa OpenStreetMap
-       */
-
-      L.tileLayer(
-
-        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-
-        {
-
-          maxZoom: 19,
-
-          attribution:
-            '&copy; OpenStreetMap contributors'
-
-        }
-
-      ).addTo(
-
-        mapa
-
-      );
-
-    }
-
-
-
-    // ====================================================
-    // CARGAR TODOS LOS DATOS
-    // ====================================================
-
-    async function cargarDatos() {
-
-
-      mostrarMensaje(
-
-        'Cargando datos...',
-
-        'exito'
-
-      );
-
-
-      try {
-
-
-        /*
-         * Pedimos todo al Apps Script
-         */
-
-        const respuesta =
-          await fetch(
-
-            URL_API +
-            '?accion=todo'
-
-          );
-
-
-
-        if (
-          !respuesta.ok
-        ) {
-
-          throw new Error(
-
-            'Error HTTP: ' +
-            respuesta.status
-
-          );
-
-        }
-
-
-
-        const resultado =
-          await respuesta.json();
-
-
-
-        if (
-          !resultado.ok
-        ) {
-
-          throw new Error(
-
-            resultado.mensaje ||
-            'Error desconocido del servidor'
-
-          );
-
-        }
-
-
-
-        /*
-         * Guardar datos
-         */
-
-        datosVehiculos =
-          resultado.datos.vehiculos ||
-          [];
-
-
-        datosTablets =
-          resultado.datos.tablets ||
-          [];
-
-
-        datosRutas =
-          resultado.datos.rutas ||
-          [];
-
-
-        datosPuntos =
-          resultado.datos.puntos ||
-          [];
-
-
-
-        /*
-         * Actualizar interfaz
-         */
-
-        mostrarVehiculos();
-
-        mostrarPuntos();
-
-        actualizarResumen();
-
-        mostrarPuntosEnMapa();
-
-
-
-        /*
-         * Estado servidor OK
-         */
-
-        actualizarEstadoServidor(
-
-          true
-
-        );
-
-
-        mostrarMensaje(
-
-          'Datos cargados correctamente',
-
-          'exito'
-
-        );
-
-
-      } catch (
-        error
-      ) {
-
-
-        console.error(
-
-          'Error cargando datos:',
-
-          error
-
-        );
-
-
-        actualizarEstadoServidor(
-
-          false
-
-        );
-
-
-        mostrarMensaje(
-
-          'Error al cargar los datos: ' +
-          error.message,
-
-          'error'
-
-        );
-
-      }
-
-    }
-
-
-
-    // ====================================================
-    // MOSTRAR VEHÍCULOS
-    // ====================================================
-
-    function mostrarVehiculos() {
-
-
-      const contenedor =
-        document.getElementById(
-
-          'listaVehiculos'
-
-        );
-
-
-
-      if (
-        datosVehiculos.length === 0
-      ) {
-
-        contenedor.innerHTML =
-
-          '<div class="punto-municipio">' +
-
-          'No hay vehículos registrados.' +
-
-          '</div>';
-
-        return;
-
-      }
-
-
-
-      contenedor.innerHTML =
-
-        datosVehiculos
-          .map(
-
-            function(
-              vehiculo
-            ) {
-
-
-              const activo =
-                vehiculo.activo === true;
-
-
-
-              const estadoClase =
-                activo
-                  ? 'estado-activo'
-                  : 'estado-inactivo';
-
-
-
-              const estadoTexto =
-                activo
-                  ? 'Activo'
-                  : 'Inactivo';
-
-
-
-              return `
-
-                <div class="vehiculo">
-
-                  <div class="vehiculo-cabecera">
-
-                    <div class="vehiculo-nombre">
-
-                      🚐 ${vehiculo.id_vehiculo}
-
-                      -
-
-                      ${vehiculo.nombre || ''}
-
+                    <div>
+                        <h2>Vehículos</h2>
+                        <span>Estado en tiempo real</span>
                     </div>
 
-                    <span
-                      class="${estadoClase}"
-                    >
-
-                      ${estadoTexto}
-
+                    <span class="count-badge" id="contadorVehiculos">
+                        0
                     </span>
 
-                  </div>
+                </div>
+
+                <div id="listaVehiculos" class="vehicle-list"></div>
+
+            </section>
 
 
-                  <div class="vehiculo-detalles">
+            <!-- LEYENDA -->
 
-                    Tablet:
-                    ${vehiculo.tablet_id || '—'}
+            <section class="panel-section">
 
-                    <br>
+                <div class="section-title">
+                    <div>
+                        <h2>Rutas</h2>
+                        <span>Rutas geográficas</span>
+                    </div>
+                </div>
 
-                    Ruta habitual:
-                    ${vehiculo.ruta_id || '—'}
+                <div id="leyendaRutas" class="route-legend"></div>
 
-                  </div>
+            </section>
+
+
+            <!-- CAPAS -->
+
+            <section class="panel-section">
+
+                <div class="section-title">
+                    <div>
+                        <h2>Mapa</h2>
+                        <span>Capas visibles</span>
+                    </div>
+                </div>
+
+                <label class="layer-option">
+                    <input type="checkbox" id="capaRutas" checked>
+                    <span>Rutas planificadas</span>
+                </label>
+
+                <label class="layer-option">
+                    <input type="checkbox" id="capaPuntos" checked>
+                    <span>Puntos permanentes</span>
+                </label>
+
+                <label class="layer-option">
+                    <input type="checkbox" id="capaAvisos" checked>
+                    <span>Avisos</span>
+                </label>
+
+                <label class="layer-option">
+                    <input type="checkbox" id="capaVehiculos" checked>
+                    <span>Vehículos GPS</span>
+                </label>
+
+            </section>
+
+
+            <div class="mock-warning">
+                <strong>Modo demostración</strong>
+                <p>
+                    Los vehículos y avisos que aparecen en pantalla
+                    son datos simulados.
+                </p>
+            </div>
+
+        </aside>
+
+
+        <!-- =====================================================
+             MAPA
+        ====================================================== -->
+
+        <section class="map-container">
+
+            <div id="map"></div>
+
+            <div class="map-overlay">
+
+                <div class="map-title">
+                    <strong>Operativa provincial</strong>
+                    <span>Valencia</span>
+                </div>
+
+                <div class="gps-info">
+                    <span class="status-dot mock"></span>
+                    GPS simulado
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             PANEL DERECHO
+        ====================================================== -->
+
+        <aside class="right-panel">
+
+
+            <!-- AVISOS -->
+
+            <section class="panel-section alerts-section">
+
+                <div class="section-title">
+
+                    <div>
+                        <h2>Avisos</h2>
+                        <span>Incidencias y recogidas</span>
+                    </div>
+
+                    <span class="count-badge alert-count" id="contadorAvisos">
+                        0
+                    </span>
 
                 </div>
 
-              `;
+                <div id="listaAvisos" class="alert-list"></div>
 
-            }
-
-          )
-          .join('');
-
-    }
+            </section>
 
 
+            <!-- PLANIFICACIÓN -->
 
-    // ====================================================
-    // MOSTRAR PUNTOS
-    // ====================================================
+            <section class="panel-section planning-section">
 
-    function mostrarPuntos() {
+                <div class="section-title">
 
-
-      const contenedor =
-        document.getElementById(
-
-          'listaPuntos'
-
-        );
-
-
-
-      if (
-        datosPuntos.length === 0
-      ) {
-
-        contenedor.innerHTML =
-
-          '<div class="punto-municipio">' +
-
-          'No hay puntos registrados.' +
-
-          '</div>';
-
-        return;
-
-      }
-
-
-
-      /*
-       * Orden alfabético por municipio
-       */
-
-      const puntosOrdenados =
-
-        [...datosPuntos]
-
-          .sort(
-
-            function(
-              a,
-              b
-            ) {
-
-              return (
-
-                String(
-                  a.municipio || ''
-                )
-
-                  .localeCompare(
-
-                    String(
-                      b.municipio || ''
-                    ),
-
-                    'es'
-
-                  )
-
-              );
-
-            }
-
-          );
-
-
-
-      contenedor.innerHTML =
-
-        puntosOrdenados
-
-          .map(
-
-            function(
-              punto
-            ) {
-
-
-              return `
-
-                <div class="punto-resumen">
-
-                  <div>
-
-                    <div class="punto-nombre">
-
-                      ${punto.nombre || 'Sin nombre'}
-
+                    <div>
+                        <h2>Planificación de hoy</h2>
+                        <span>Ruta activa por vehículo</span>
                     </div>
-
-                    <div class="punto-municipio">
-
-                      ${punto.municipio || 'Sin municipio'}
-
-                    </div>
-
-                  </div>
-
-
-                  <button
-                    class="boton-mapa"
-                    onclick="
-                      centrarEnPunto(
-                        '${punto.id_punto}'
-                      )
-                    "
-                  >
-
-                    Ver
-
-                  </button>
 
                 </div>
 
-              `;
+                <div id="planificacion" class="planning-list"></div>
 
-            }
+            </section>
 
-          )
 
-          .join('');
+        </aside>
 
-    }
+    </main>
 
 
+    <!-- =========================================================
+         FOOTER
+    ========================================================== -->
 
-    // ====================================================
-    // MOSTRAR PUNTOS EN EL MAPA
-    // ====================================================
+    <footer class="footer">
 
-    function mostrarPuntosEnMapa() {
+        <div>
+            CRF La Granja de El Saler · Coordinación de Recogidas
+        </div>
 
+        <div id="ultimaActualizacion">
+            Última actualización: --
+        </div>
 
-      /*
-       * Eliminar marcadores anteriores
-       */
+    </footer>
 
-      marcadoresPuntos.forEach(
+</div>
 
-        function(
-          marcador
-        ) {
 
-          mapa.removeLayer(
+<!-- =============================================================
+     LEAFLET
+============================================================== -->
 
-            marcador
+<script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin="">
+</script>
 
-          );
 
-        }
+<!-- =============================================================
+     JAVASCRIPT DE LA APLICACIÓN
+============================================================== -->
 
-      );
-
-
-      marcadoresPuntos = [];
-
-
-
-      /*
-       * Crear nuevos marcadores
-       */
-
-      datosPuntos.forEach(
-
-        function(
-          punto
-        ) {
-
-
-          /*
-           * Solo puntos activos
-           */
-
-          if (
-            punto.activo !== true
-          ) {
-
-            return;
-
-          }
-
-
-
-          const lat =
-            Number(
-              punto.latitud
-            );
-
-
-          const lon =
-            Number(
-              punto.longitud
-            );
-
-
-
-          /*
-           * Comprobar coordenadas
-           */
-
-          if (
-            isNaN(lat) ||
-            isNaN(lon)
-          ) {
-
-            return;
-
-          }
-
-
-
-          /*
-           * Crear marcador
-           */
-
-          const marcador =
-
-            L.marker(
-
-              [
-                lat,
-                lon
-              ]
-
-            ).addTo(
-
-              mapa
-
-            );
-
-
-
-          /*
-           * Construir popup
-           */
-
-          let contenido =
-
-            '<div style="min-width:220px">';
-
-
-
-          contenido +=
-
-            '<strong>' +
-
-            (punto.nombre || 'Sin nombre') +
-
-            '</strong>';
-
-
-
-          contenido +=
-
-            '<hr style="margin:7px 0">';
-
-
-
-          contenido +=
-
-            '<b>ID:</b> ' +
-
-            (punto.id_punto || '—') +
-
-            '<br>';
-
-
-
-          contenido +=
-
-            '<b>Tipo:</b> ' +
-
-            (punto.tipo || '—') +
-
-            '<br>';
-
-
-
-          contenido +=
-
-            '<b>Municipio:</b> ' +
-
-            (punto.municipio || '—') +
-
-            '<br>';
-
-
-
-          if (
-            punto.direccion
-          ) {
-
-            contenido +=
-
-              '<b>Dirección:</b> ' +
-
-              punto.direccion +
-
-              '<br>';
-
-          }
-
-
-
-          if (
-            punto.telefono
-          ) {
-
-            contenido +=
-
-              '<b>Teléfono:</b> ' +
-
-              punto.telefono +
-
-              '<br>';
-
-          }
-
-
-
-          if (
-            punto.ruta_id
-          ) {
-
-            contenido +=
-
-              '<b>Ruta:</b> ' +
-
-              punto.ruta_id +
-
-              '<br>';
-
-          }
-
-
-
-          if (
-            punto.observaciones
-          ) {
-
-            contenido +=
-
-              '<br><b>Observaciones:</b><br>' +
-
-              punto.observaciones;
-
-          }
-
-
-
-          contenido +=
-
-            '</div>';
-
-
-
-          marcador.bindPopup(
-
-            contenido
-
-          );
-
-
-
-          /*
-           * Guardar referencia
-           */
-
-          marcador._idPunto =
-
-            punto.id_punto;
-
-
-
-          marcadoresPuntos.push(
-
-            marcador
-
-          );
-
-        }
-
-      );
-
-
-
-      /*
-       * Si hay puntos, ajustar mapa
-       */
-
-      if (
-        marcadoresPuntos.length > 0
-      ) {
-
-
-        const grupo =
-
-          L.featureGroup(
-
-            marcadoresPuntos
-
-          );
-
-
-        mapa.fitBounds(
-
-          grupo.getBounds(),
-
-          {
-
-            padding: [
-              30,
-              30
-            ]
-
-          }
-
-        );
-
-      }
-
-    }
-
-
-
-    // ====================================================
-    // CENTRAR MAPA EN UN PUNTO
-    // ====================================================
-
-    function centrarEnPunto(
-      idPunto
-    ) {
-
-
-      const marcador =
-
-        marcadoresPuntos.find(
-
-          function(
-            item
-          ) {
-
-            return (
-
-              item._idPunto ===
-
-              idPunto
-
-            );
-
-          }
-
-        );
-
-
-
-      if (
-        !marcador
-      ) {
-
-        return;
-
-      }
-
-
-
-      const posicion =
-
-        marcador.getLatLng();
-
-
-
-      mapa.setView(
-
-        posicion,
-
-        16
-
-      );
-
-
-
-      marcador.openPopup();
-
-    }
-
-
-
-    // ====================================================
-    // ACTUALIZAR RESUMEN
-    // ====================================================
-
-    function actualizarResumen() {
-
-
-      const vehiculosActivos =
-
-        datosVehiculos.filter(
-
-          function(
-            vehiculo
-          ) {
-
-            return (
-
-              vehiculo.activo === true
-
-            );
-
-          }
-
-        ).length;
-
-
-
-      const puntosActivos =
-
-        datosPuntos.filter(
-
-          function(
-            punto
-          ) {
-
-            return (
-
-              punto.activo === true
-
-            );
-
-          }
-
-        ).length;
-
-
-
-      document.getElementById(
-
-        'numeroVehiculos'
-
-      ).textContent =
-
-        vehiculosActivos;
-
-
-
-      document.getElementById(
-
-        'numeroPuntos'
-
-      ).textContent =
-
-        puntosActivos;
-
-    }
-
-
-
-    // ====================================================
-    // ESTADO DEL SERVIDOR
-    // ====================================================
-
-    function actualizarEstadoServidor(
-      correcto
-    ) {
-
-
-      const indicador =
-
-        document.getElementById(
-
-          'indicadorServidor'
-
-        );
-
-
-      const texto =
-
-        document.getElementById(
-
-          'textoServidor'
-
-        );
-
-
-
-      indicador.classList.remove(
-
-        'ok',
-
-        'error'
-
-      );
-
-
-
-      if (
-        correcto
-      ) {
-
-
-        indicador.classList.add(
-
-          'ok'
-
-        );
-
-
-        texto.textContent =
-
-          'Servidor conectado';
-
-
-      } else {
-
-
-        indicador.classList.add(
-
-          'error'
-
-        );
-
-
-        texto.textContent =
-
-          'Error de conexión';
-
-      }
-
-    }
-
-
-
-    // ====================================================
-    // MENSAJE
-    // ====================================================
-
-    function mostrarMensaje(
-      texto,
-      tipo
-    ) {
-
-
-      const elemento =
-
-        document.getElementById(
-
-          'mensaje'
-
-        );
-
-
-
-      elemento.textContent =
-
-        texto;
-
-
-
-      elemento.className =
-
-        'mensaje visible ' +
-
-        tipo;
-
-    }
-
-
-
-    // ====================================================
-    // ENVIAR POSICIÓN GPS
-    // ====================================================
-
-    function enviarPosicionGPS() {
-
-
-      /*
-       * Comprobar soporte GPS
-       */
-
-      if (
-        !navigator.geolocation
-      ) {
-
-        mostrarMensaje(
-
-          'Este dispositivo no permite obtener la posición GPS.',
-
-          'error'
-
-        );
-
-        return;
-
-      }
-
-
-
-      mostrarMensaje(
-
-        'Obteniendo posición GPS...',
-
-        'exito'
-
-      );
-
-
-
-      navigator.geolocation.getCurrentPosition(
-
-        async function(
-          posicion
-        ) {
-
-
-          const datos = {
-
-
-            accion:
-              'gps',
-
-
-            vehiculo:
-              VEHICULO_ACTUAL,
-
-
-            tablet:
-              TABLET_ACTUAL,
-
-
-            latitud:
-              posicion.coords.latitude,
-
-
-            longitud:
-              posicion.coords.longitude,
-
-
-            precision:
-              posicion.coords.accuracy
-
-          };
-
-
-
-          try {
-
-
-            /*
-             * Mantener el envío mediante POST.
-             */
-
-            await fetch(
-
-              URL_API,
-
-              {
-
-                method:
-                  'POST',
-
-                mode:
-                  'no-cors',
-
-                headers: {
-
-                  'Content-Type':
-                    'text/plain;charset=utf-8'
-
-                },
-
-                body:
-                  JSON.stringify(
-
-                    datos
-
-                  )
-
-              }
-
-            );
-
-
-
-            mostrarMensaje(
-
-              'Posición GPS enviada correctamente.',
-
-              'exito'
-
-            );
-
-
-          } catch (
-            error
-          ) {
-
-
-            console.error(
-
-              error
-
-            );
-
-
-            mostrarMensaje(
-
-              'Error al enviar la posición GPS.',
-
-              'error'
-
-            );
-
-          }
-
-        },
-
-
-        function(
-          error
-        ) {
-
-
-          let mensaje =
-
-            'No se pudo obtener la posición GPS.';
-
-
-
-          if (
-            error.code === 1
-          ) {
-
-            mensaje =
-
-              'Permiso de ubicación denegado.';
-
-          }
-
-
-          if (
-            error.code === 2
-          ) {
-
-            mensaje =
-
-              'No se pudo determinar la ubicación.';
-
-          }
-
-
-          if (
-            error.code === 3
-          ) {
-
-            mensaje =
-
-              'Tiempo de espera agotado al obtener la ubicación.';
-
-          }
-
-
-
-          mostrarMensaje(
-
-            mensaje,
-
-            'error'
-
-          );
-
-        },
-
-
-        {
-
-          enableHighAccuracy:
-            true,
-
-          timeout:
-            15000,
-
-          maximumAge:
-            0
-
-        }
-
-      );
-
-    }
-
-
-
-    // ====================================================
-    // INICIO DE LA APLICACIÓN
-    // ====================================================
-
-    document.addEventListener(
-
-      'DOMContentLoaded',
-
-      function() {
-
-
-        /*
-         * Crear mapa
-         */
-
-        inicializarMapa();
-
-
-
-        /*
-         * Cargar datos del servidor
-         */
-
-        cargarDatos();
-
-      }
-
-    );
-
-  </script>
+<script src="js/config.js"></script>
+<script src="js/mock-data.js"></script>
+<script src="js/api.js"></script>
+<script src="js/mapa.js"></script>
+<script src="js/vehiculos.js"></script>
+<script src="js/avisos.js"></script>
+<script src="js/rutas.js"></script>
+<script src="js/app.js"></script>
 
 </body>
-
 </html>
