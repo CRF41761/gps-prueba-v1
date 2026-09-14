@@ -1,175 +1,300 @@
-/* =========================================================
+```javascript
+/* ============================================================
    AVISOS
-========================================================= */
+============================================================ */
 
-function renderizarAvisos(avisos) {
+function normalizarEstado(estado) {
+
+    const valor = String(
+        estado || "PENDIENTE"
+    ).toUpperCase();
+
+    if (
+        valor.includes("RECOG") ||
+        valor.includes("COMPLET")
+    ) {
+        return "RECOGIDO";
+    }
+
+    if (
+        valor.includes("ASIGN")
+    ) {
+        return "ASIGNADO";
+    }
+
+    return "PENDIENTE";
+}
+
+
+/* ============================================================
+   RENDER AVISOS
+============================================================ */
+
+function renderizarAvisos() {
 
     const contenedor =
-        document.getElementById(
-            "listaAvisos"
-        );
+        document.getElementById("lista-avisos");
+
+    if (!contenedor) {
+        return;
+    }
+
+
+    const avisos =
+        Array.isArray(window.DATOS_MOCK?.AVISOS)
+            ? window.DATOS_MOCK.AVISOS
+            : [];
+
 
     contenedor.innerHTML = "";
 
 
-    avisos.forEach(aviso => {
+    avisos.forEach((aviso, indice) => {
 
-        const elemento =
-            document.createElement("div");
-
-
-        let claseEstado =
-            "pending";
-
-        let textoEstado =
-            "PENDIENTE";
+        const estado =
+            normalizarEstado(aviso.estado);
 
 
-        if (aviso.estado === "ASIGNADO") {
-
-            claseEstado =
-                "assigned";
-
-            textoEstado =
-                "ASIGNADO";
-        }
+        const id =
+            aviso.id_aviso ||
+            aviso.aviso_id ||
+            aviso.id ||
+            `AV-${String(indice + 1).padStart(3, "0")}`;
 
 
-        if (aviso.estado === "RECOGIDO") {
-
-            claseEstado =
-                "collected";
-
-            textoEstado =
-                "RECOGIDO";
-        }
+        const ubicacion =
+            aviso.punto ||
+            aviso.nombre_punto ||
+            aviso.municipio ||
+            "Ubicación no indicada";
 
 
-        elemento.className =
-            `alert-card ${claseEstado}`;
+        const especie =
+            aviso.especie ||
+            aviso.especie_reportada ||
+            "Especie no determinada";
 
 
-        elemento.innerHTML = `
+        const vehiculo =
+            aviso.vehiculo_id ||
+            aviso.id_vehiculo ||
+            aviso.vehiculo ||
+            "";
 
-            <div class="alert-header">
 
-                <div class="alert-point">
-                    ${aviso.punto}
-                </div>
+        const card =
+            document.createElement("article");
 
-                <span class="alert-status ${claseEstado}">
-                    ${textoEstado}
+
+        card.className =
+            "alert-card " +
+            (
+                estado === "ASIGNADO"
+                    ? "assigned"
+                    : estado === "RECOGIDO"
+                        ? "collected"
+                        : ""
+            );
+
+
+        card.innerHTML = `
+
+            <div class="alert-card-top">
+
+                <span class="alert-id">
+                    ${escapeHtml(id)}
+                </span>
+
+                <span class="alert-status ${
+                    estado === "PENDIENTE"
+                        ? "pending"
+                        : estado === "ASIGNADO"
+                            ? "assigned"
+                            : "collected"
+                }">
+                    ${escapeHtml(estado)}
                 </span>
 
             </div>
 
 
-            <div class="alert-info">
+            <div class="alert-location">
+                ${escapeHtml(ubicacion)}
+            </div>
 
-                <span>
-                    🐾 ${aviso.especie}
-                </span>
 
-                <span>
-                    ${aviso.cantidad} animal(es)
-                </span>
+            <div class="alert-details">
 
-                <span>
-                    ${aviso.ruta}
-                </span>
+                ${escapeHtml(especie)}
 
-                <span>
-                    ${aviso.vehiculo || "Sin asignar"}
-                </span>
+                ${
+                    vehiculo
+                        ? ` · ${escapeHtml(vehiculo)}`
+                        : ""
+                }
 
             </div>
 
         `;
 
 
-        elemento.addEventListener(
+        card.addEventListener(
             "click",
-            () => {
-
-                centrarAviso(
-                    aviso.id
-                );
-
-            }
+            () => seleccionarAviso(aviso)
         );
 
 
-        contenedor.appendChild(
-            elemento
-        );
-
+        contenedor.appendChild(card);
     });
 
 
-    document.getElementById(
-        "contadorAvisos"
-    ).textContent =
-        avisos.length;
+    actualizarKpisAvisos(avisos);
+
+    actualizarBadgeAvisos(avisos);
 }
 
 
-/* =========================================================
-   KPIs
-========================================================= */
+/* ============================================================
+   SELECCIONAR AVISO
+============================================================ */
 
-function actualizarKPIs(
-    avisos,
-    vehiculos
-) {
+function seleccionarAviso(aviso) {
+
+    const lat =
+        Number(
+            aviso.lat ??
+            aviso.latitud
+        );
+
+    const lng =
+        Number(
+            aviso.lng ??
+            aviso.longitud ??
+            aviso.lon
+        );
+
+
+    if (
+        Number.isFinite(lat) &&
+        Number.isFinite(lng) &&
+        typeof mapa !== "undefined" &&
+        mapa
+    ) {
+
+        mapa.setView(
+            [lat, lng],
+            Math.max(
+                mapa.getZoom(),
+                12
+            ),
+            {
+                animate: true
+            }
+        );
+
+    }
+}
+
+
+/* ============================================================
+   KPI
+============================================================ */
+
+function actualizarKpisAvisos(avisos) {
 
     const pendientes =
         avisos.filter(
-            aviso =>
-                aviso.estado === "PENDIENTE"
+            a =>
+                normalizarEstado(a.estado) ===
+                "PENDIENTE"
         ).length;
 
 
     const asignados =
         avisos.filter(
-            aviso =>
-                aviso.estado === "ASIGNADO"
+            a =>
+                normalizarEstado(a.estado) ===
+                "ASIGNADO"
         ).length;
 
 
     const recogidos =
         avisos.filter(
-            aviso =>
-                aviso.estado === "RECOGIDO"
+            a =>
+                normalizarEstado(a.estado) ===
+                "RECOGIDO"
         ).length;
 
 
-    const activos =
-        vehiculos.filter(
-            vehiculo =>
-                vehiculo.activo
-        ).length;
+    const kpiPendientes =
+        document.getElementById(
+            "kpi-pendientes"
+        );
 
 
-    document.getElementById(
-        "kpiPendientes"
-    ).textContent =
-        pendientes;
+    const kpiAsignados =
+        document.getElementById(
+            "kpi-asignados"
+        );
 
 
-    document.getElementById(
-        "kpiAsignados"
-    ).textContent =
-        asignados;
+    const kpiRecogidos =
+        document.getElementById(
+            "kpi-recogidos"
+        );
 
 
-    document.getElementById(
-        "kpiRecogidos"
-    ).textContent =
-        recogidos;
+    if (kpiPendientes) {
+        kpiPendientes.textContent =
+            pendientes;
+    }
 
+    if (kpiAsignados) {
+        kpiAsignados.textContent =
+            asignados;
+    }
 
-    document.getElementById(
-        "kpiVehiculos"
-    ).textContent =
-        activos;
+    if (kpiRecogidos) {
+        kpiRecogidos.textContent =
+            recogidos;
+    }
 }
+
+
+/* ============================================================
+   BADGE
+============================================================ */
+
+function actualizarBadgeAvisos(avisos) {
+
+    const pendientes =
+        avisos.filter(
+            a =>
+                normalizarEstado(a.estado) ===
+                "PENDIENTE"
+        ).length;
+
+
+    const badge =
+        document.getElementById(
+            "badge-avisos"
+        );
+
+
+    const contador =
+        document.getElementById(
+            "contador-avisos"
+        );
+
+
+    if (badge) {
+        badge.textContent =
+            pendientes;
+    }
+
+    if (contador) {
+        contador.textContent =
+            pendientes;
+    }
+}
+```
