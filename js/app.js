@@ -1,13 +1,8 @@
 ```javascript
 /* ============================================================
-   CRF COORDINACIÓN DE RECOGIDAS
-   APLICACIÓN PRINCIPAL · V2
+   CRF - APLICACIÓN PRINCIPAL
 ============================================================ */
 
-
-/* ============================================================
-   INICIO
-============================================================ */
 
 document.addEventListener(
     "DOMContentLoaded",
@@ -15,7 +10,7 @@ document.addEventListener(
 );
 
 
-async function iniciarAplicacion() {
+function iniciarAplicacion() {
 
     try {
 
@@ -41,18 +36,21 @@ async function iniciarAplicacion() {
 
 
         console.log(
-            "CRF · Dashboard V2 iniciado correctamente."
+            "CRF - Dashboard V2 iniciado correctamente."
         );
 
 
     } catch (error) {
 
         console.error(
-            "Error iniciando la aplicación:",
+            "Error iniciando el dashboard:",
             error
         );
 
-        mostrarErrorAplicacion(error);
+
+        mostrarErrorAplicacion(
+            error
+        );
     }
 }
 
@@ -63,62 +61,52 @@ async function iniciarAplicacion() {
 
 function configurarNavegacion() {
 
-    document
-        .querySelectorAll(".nav-item")
-        .forEach(item => {
+    var elementos =
+        document.querySelectorAll(
+            ".nav-item"
+        );
+
+
+    elementos.forEach(
+        function(item) {
 
             item.addEventListener(
                 "click",
-                () => {
+                function() {
 
-                    document
-                        .querySelectorAll(".nav-item")
-                        .forEach(
-                            elemento =>
-                                elemento.classList.remove(
-                                    "active"
-                                )
-                        );
+                    elementos.forEach(
+                        function(elemento) {
 
+                            elemento.classList.remove(
+                                "active"
+                            );
 
-                    item.classList.add("active");
+                        }
+                    );
 
 
-                    const seccion =
-                        item.dataset.section;
+                    item.classList.add(
+                        "active"
+                    );
 
 
                     manejarCambioSeccion(
-                        seccion
+                        item.dataset.section
                     );
+
                 }
             );
 
-        });
+        }
+    );
 }
 
 
-/* ============================================================
-   CAMBIO DE SECCIÓN
-============================================================ */
+function manejarCambioSeccion(
+    seccion
+) {
 
-function manejarCambioSeccion(seccion) {
-
-    console.log(
-        "Sección seleccionada:",
-        seccion
-    );
-
-
-    /*
-     * Por ahora las secciones son parte de la navegación
-     * de la maqueta.
-     *
-     * En la siguiente fase cada una tendrá su propia vista.
-     */
-
-
-    const mensajes = {
+    var mensajes = {
 
         inicio:
             "Vista general de la operación.",
@@ -161,27 +149,17 @@ function manejarCambioSeccion(seccion) {
    ESTADO MAPA
 ============================================================ */
 
-function actualizarEstadoMapa(texto) {
+function actualizarEstadoMapa(
+    texto
+) {
 
-    const elemento =
+    var elemento =
         document.getElementById(
             "map-status-text"
         );
 
 
-    if (!elemento) {
-        return;
-    }
-
-
-    /*
-     * No sustituimos permanentemente el mensaje GPS:
-     * mostramos brevemente el contexto y después volvemos
-     * al estado normal.
-     */
-
-    const anterior =
-        elemento.textContent;
+    if (!elemento) return;
 
 
     elemento.textContent =
@@ -195,7 +173,7 @@ function actualizarEstadoMapa(texto) {
 
     window._estadoMapaTimeout =
         window.setTimeout(
-            () => {
+            function() {
 
                 elemento.textContent =
                     "GPS operativo · posiciones simuladas";
@@ -214,7 +192,8 @@ function iniciarReloj() {
 
     actualizarReloj();
 
-    setInterval(
+
+    window.setInterval(
         actualizarReloj,
         1000
     );
@@ -223,18 +202,16 @@ function iniciarReloj() {
 
 function actualizarReloj() {
 
-    const reloj =
+    var reloj =
         document.getElementById(
             "reloj"
         );
 
 
-    if (!reloj) {
-        return;
-    }
+    if (!reloj) return;
 
 
-    const ahora =
+    var ahora =
         new Date();
 
 
@@ -256,15 +233,13 @@ function actualizarReloj() {
 
 function actualizarHoraActualizacion() {
 
-    const elemento =
+    var elemento =
         document.getElementById(
             "ultima-actualizacion"
         );
 
 
-    if (!elemento) {
-        return;
-    }
+    if (!elemento) return;
 
 
     elemento.textContent =
@@ -276,29 +251,13 @@ function actualizarHoraActualizacion() {
    SIMULACIÓN GPS
 ============================================================ */
 
-/*
- * IMPORTANTE:
- *
- * Esta simulación mueve únicamente los marcadores GPS.
- *
- * NO modifica:
- *
- * - R1
- * - R2
- * - R3
- * - puntos colaboradores
- * - avisos
- *
- * Esto reproduce deliberadamente la arquitectura
- * que utilizaremos después con POSICIONES.
- */
-
 function iniciarSimulacionGPS() {
 
     if (
         typeof actualizarPosicionVehiculo !==
         "function"
     ) {
+
         console.warn(
             "No se puede iniciar la simulación GPS."
         );
@@ -307,7 +266,7 @@ function iniciarSimulacionGPS() {
     }
 
 
-    const velocidades = {
+    var velocidades = {
 
         V1: {
             lat: 0.00020,
@@ -327,21 +286,19 @@ function iniciarSimulacionGPS() {
     };
 
 
-    /*
-     * Cada vehículo lleva una pequeña dirección.
-     */
-
-    let sentido = {
+    var sentido = {
 
         V1: 1,
+
         V2: 1,
+
         V3: 1
 
     };
 
 
-    setInterval(
-        () => {
+    window.setInterval(
+        function() {
 
             if (
                 typeof window.POSICIONES_VEHICULOS !==
@@ -353,95 +310,88 @@ function iniciarSimulacionGPS() {
 
             Object.keys(
                 window.POSICIONES_VEHICULOS
-            ).forEach(id => {
+            ).forEach(
+                function(id) {
 
-                const posicion =
-                    window.POSICIONES_VEHICULOS[id];
-
-
-                const velocidad =
-                    velocidades[id] ||
-                    {
-                        lat: 0.00012,
-                        lng: 0.00012
-                    };
+                    var posicion =
+                        window.POSICIONES_VEHICULOS[id];
 
 
-                if (!posicion) {
-                    return;
-                }
+                    if (!posicion) {
+                        return;
+                    }
 
 
-                /*
-                 * Movimiento pequeño.
-                 *
-                 * No pretende representar una ruta real.
-                 * Solo demuestra que el GPS es independiente
-                 * de la ruta planificada.
-                 */
-
-                posicion.lat +=
-                    velocidad.lat *
-                    sentido[id];
+                    var velocidad =
+                        velocidades[id] ||
+                        {
+                            lat: 0.00012,
+                            lng: 0.00012
+                        };
 
 
-                posicion.lng +=
-                    velocidad.lng *
-                    sentido[id];
+                    posicion.lat +=
+                        velocidad.lat *
+                        sentido[id];
 
 
-                /*
-                 * Cuando se aleja demasiado del área
-                 * de demostración, invertimos dirección.
-                 */
-
-                if (
-                    posicion.lat > 39.80 ||
-                    posicion.lat < 39.10
-                ) {
-
-                    sentido[id] *= -1;
-
-                }
+                    posicion.lng +=
+                        velocidad.lng *
+                        sentido[id];
 
 
-                if (
-                    posicion.lng > -0.15 ||
-                    posicion.lng < -0.75
-                ) {
+                    if (
+                        posicion.lat > 39.80 ||
+                        posicion.lat < 39.10
+                    ) {
 
-                    sentido[id] *= -1;
+                        sentido[id] *= -1;
+
+                    }
+
+
+                    if (
+                        posicion.lng > -0.15 ||
+                        posicion.lng < -0.75
+                    ) {
+
+                        sentido[id] *= -1;
+
+                    }
+
+
+                    actualizarPosicionVehiculo(
+                        id,
+                        posicion.lat,
+                        posicion.lng
+                    );
 
                 }
-
-
-                actualizarPosicionVehiculo(
-                    id,
-                    posicion.lat,
-                    posicion.lng
-                );
-
-            });
-
+            );
 
         },
-
         5000
     );
 }
 
 
 /* ============================================================
-   BOTONES DE ACCIONES
+   ACCIONES
 ============================================================ */
 
 function configurarBotonesAcciones() {
 
-    document
-        .getElementById("accion-confirmar")
-        ?.addEventListener(
+    var confirmar =
+        document.getElementById(
+            "accion-confirmar"
+        );
+
+
+    if (confirmar) {
+
+        confirmar.addEventListener(
             "click",
-            () => {
+            function() {
 
                 alert(
                     "La confirmación de rutas se implementará cuando conectemos la planificación real."
@@ -450,12 +400,20 @@ function configurarBotonesAcciones() {
             }
         );
 
+    }
 
-    document
-        .getElementById("accion-aviso")
-        ?.addEventListener(
+
+    var aviso =
+        document.getElementById(
+            "accion-aviso"
+        );
+
+
+    if (aviso) {
+
+        aviso.addEventListener(
             "click",
-            () => {
+            function() {
 
                 alert(
                     "El formulario de nuevo aviso se implementará en la siguiente fase."
@@ -464,19 +422,30 @@ function configurarBotonesAcciones() {
             }
         );
 
+    }
 
-    document
-        .getElementById("accion-recalcular")
-        ?.addEventListener(
+
+    var recalcular =
+        document.getElementById(
+            "accion-recalcular"
+        );
+
+
+    if (recalcular) {
+
+        recalcular.addEventListener(
             "click",
-            () => {
+            function() {
 
                 if (
                     typeof dibujarRutas ===
                     "function"
                 ) {
+
                     dibujarRutas();
+
                 }
+
 
                 actualizarEstadoMapa(
                     "Planificación recalculada · modo demostración"
@@ -485,24 +454,40 @@ function configurarBotonesAcciones() {
             }
         );
 
+    }
 
-    document
-        .getElementById("accion-exportar")
-        ?.addEventListener(
+
+    var exportar =
+        document.getElementById(
+            "accion-exportar"
+        );
+
+
+    if (exportar) {
+
+        exportar.addEventListener(
             "click",
-            () => {
+            function() {
 
                 window.print();
 
             }
         );
 
+    }
 
-    document
-        .getElementById("btn-refresh")
-        ?.addEventListener(
+
+    var refresh =
+        document.getElementById(
+            "btn-refresh"
+        );
+
+
+    if (refresh) {
+
+        refresh.addEventListener(
             "click",
-            () => {
+            function() {
 
                 refrescarVehiculos();
 
@@ -514,6 +499,8 @@ function configurarBotonesAcciones() {
 
             }
         );
+
+    }
 }
 
 
@@ -521,10 +508,20 @@ function configurarBotonesAcciones() {
    ERROR
 ============================================================ */
 
-function mostrarErrorAplicacion(error) {
+function mostrarErrorAplicacion(
+    error
+) {
 
-    const mensaje =
-        document.createElement("div");
+    console.error(
+        "Detalle del error:",
+        error
+    );
+
+
+    var mensaje =
+        document.createElement(
+            "div"
+        );
 
 
     mensaje.style.position =
@@ -558,13 +555,13 @@ function mostrarErrorAplicacion(error) {
         "system-ui";
 
 
-    mensaje.innerHTML = `
-        <strong>Error iniciando el dashboard.</strong>
-        <br>
-        <small>
-            Revisa la consola del navegador (F12).
-        </small>
-    `;
+    mensaje.innerHTML =
+        "<strong>" +
+        "Error iniciando el dashboard." +
+        "</strong><br>" +
+        "<small>" +
+        "Revisa la consola del navegador (F12)." +
+        "</small>";
 
 
     document.body.appendChild(
