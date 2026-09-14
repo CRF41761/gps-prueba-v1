@@ -567,4 +567,4 @@ function mostrarErrorAplicacion(
         mensaje
     );
 }
-```
+
