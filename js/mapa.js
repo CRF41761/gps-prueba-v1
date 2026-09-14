@@ -909,4 +909,3 @@ function normalizarEstadoAviso(
 
     return "PENDIENTE";
 }
-```
