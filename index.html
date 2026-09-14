@@ -1,305 +1,383 @@
+```html
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Coordinación de Recogidas - CRF La Granja</title>
+    <title>CRF La Granja · Coordinación de Recogidas</title>
 
-   <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
->
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    >
 
     <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
 
-<div class="app">
+<div id="app">
 
     <!-- =========================================================
          CABECERA
     ========================================================== -->
-
     <header class="topbar">
 
         <div class="brand">
-            <div class="brand-icon">CRF</div>
+            <div class="brand-mark">CRF</div>
 
-            <div>
-                <h1>Coordinación de Recogidas</h1>
-                <p>Centro de Recuperación de Fauna "La Granja de El Saler"</p>
+            <div class="brand-text">
+                <strong>LA GRANJA DE EL SALER</strong>
+                <span>Coordinación de recogidas</span>
             </div>
         </div>
 
-        <div class="top-status">
-
-            <div class="mode-badge">
-                <span class="status-dot mock"></span>
-                MODO DEMOSTRACIÓN
+        <div class="system-status">
+            <span class="status-dot"></span>
+            <div>
+                <strong>Sistema operativo</strong>
+                <small id="ultima-actualizacion">Actualizando...</small>
             </div>
+        </div>
 
-            <div class="clock" id="reloj">
-                --:--
-            </div>
-
+        <div class="top-clock" id="reloj">
+            --:--
         </div>
 
     </header>
 
 
     <!-- =========================================================
-         KPIs
+         NAVEGACIÓN PRINCIPAL
     ========================================================== -->
+    <nav class="main-nav">
 
-    <section class="kpis">
+        <button class="nav-item active" data-section="inicio">
+            <span>⌂</span>
+            <strong>Inicio</strong>
+        </button>
 
-        <div class="kpi-card">
-            <div class="kpi-icon warning">!</div>
+        <button class="nav-item" data-section="planificacion">
+            <span>▣</span>
+            <strong>Planificación</strong>
+        </button>
 
-            <div>
-                <span class="kpi-label">Avisos pendientes</span>
-                <strong id="kpiPendientes">0</strong>
-            </div>
-        </div>
+        <button class="nav-item" data-section="avisos">
+            <span>!</span>
+            <strong>Avisos</strong>
+            <b class="nav-badge" id="badge-avisos">0</b>
+        </button>
 
+        <button class="nav-item" data-section="vehiculos">
+            <span>🚐</span>
+            <strong>Vehículos</strong>
+        </button>
 
-        <div class="kpi-card">
-            <div class="kpi-icon assigned">↗</div>
+        <button class="nav-item" data-section="puntos">
+            <span>●</span>
+            <strong>Puntos colaboradores</strong>
+        </button>
 
-            <div>
-                <span class="kpi-label">Asignados</span>
-                <strong id="kpiAsignados">0</strong>
-            </div>
-        </div>
+        <button class="nav-item" data-section="rutas">
+            <span>↝</span>
+            <strong>Rutas y zonas</strong>
+        </button>
 
+        <button class="nav-item" data-section="historial">
+            <span>◷</span>
+            <strong>Historial</strong>
+        </button>
 
-        <div class="kpi-card">
-            <div class="kpi-icon collected">✓</div>
+        <button class="nav-item" data-section="estadisticas">
+            <span>▥</span>
+            <strong>Estadísticas</strong>
+        </button>
 
-            <div>
-                <span class="kpi-label">Recogidos hoy</span>
-                <strong id="kpiRecogidos">0</strong>
-            </div>
-        </div>
+        <button class="nav-item" data-section="ajustes">
+            <span>⚙</span>
+            <strong>Ajustes</strong>
+        </button>
 
-
-        <div class="kpi-card">
-            <div class="kpi-icon vehicles">🚐</div>
-
-            <div>
-                <span class="kpi-label">Vehículos activos</span>
-                <strong id="kpiVehiculos">0</strong>
-            </div>
-        </div>
-
-    </section>
+    </nav>
 
 
     <!-- =========================================================
-         CUERPO PRINCIPAL
+         CONTENIDO
     ========================================================== -->
+    <main class="dashboard">
 
-    <main class="workspace">
+        <!-- KPI -->
+        <section class="kpi-row">
+
+            <article class="kpi-card danger">
+                <div class="kpi-icon">!</div>
+                <div>
+                    <span>Avisos pendientes</span>
+                    <strong id="kpi-pendientes">0</strong>
+                </div>
+            </article>
+
+            <article class="kpi-card warning">
+                <div class="kpi-icon">→</div>
+                <div>
+                    <span>Avisos asignados</span>
+                    <strong id="kpi-asignados">0</strong>
+                </div>
+            </article>
+
+            <article class="kpi-card success">
+                <div class="kpi-icon">✓</div>
+                <div>
+                    <span>Recogidos</span>
+                    <strong id="kpi-recogidos">0</strong>
+                </div>
+            </article>
+
+            <article class="kpi-card primary">
+                <div class="kpi-icon">🚐</div>
+                <div>
+                    <span>Vehículos activos</span>
+                    <strong id="kpi-vehiculos">0</strong>
+                </div>
+            </article>
+
+        </section>
 
 
-        <!-- =====================================================
-             PANEL IZQUIERDO
-        ====================================================== -->
+        <!-- ÁREA PRINCIPAL -->
+        <section class="workspace">
 
-        <aside class="left-panel">
+            <!-- =================================================
+                 PANEL IZQUIERDO
+            ================================================== -->
+            <aside class="left-panel">
 
-            <!-- VEHÍCULOS -->
-
-            <section class="panel-section">
-
-                <div class="section-title">
-
+                <div class="panel-header">
                     <div>
+                        <span class="eyebrow">OPERATIVA</span>
                         <h2>Vehículos</h2>
-                        <span>Estado en tiempo real</span>
                     </div>
 
-                    <span class="count-badge" id="contadorVehiculos">
+                    <button class="icon-button" title="Actualizar vehículos" id="btn-refresh">
+                        ↻
+                    </button>
+                </div>
+
+                <div id="lista-vehiculos" class="vehicle-list"></div>
+
+
+                <div class="panel-divider"></div>
+
+
+                <div class="panel-header compact">
+                    <div>
+                        <span class="eyebrow">MAPA</span>
+                        <h2>Capas</h2>
+                    </div>
+                </div>
+
+                <div class="layer-list">
+
+                    <label class="layer-option">
+                        <input type="checkbox" id="layer-vehiculos" checked>
+                        <span class="layer-symbol vehicle-symbol">🚐</span>
+                        <span>Vehículos</span>
+                    </label>
+
+                    <label class="layer-option">
+                        <input type="checkbox" id="layer-rutas" checked>
+                        <span class="layer-symbol route-symbol">━</span>
+                        <span>Rutas planificadas</span>
+                    </label>
+
+                    <label class="layer-option">
+                        <input type="checkbox" id="layer-puntos" checked>
+                        <span class="layer-symbol point-symbol">●</span>
+                        <span>Puntos colaboradores</span>
+                    </label>
+
+                    <label class="layer-option">
+                        <input type="checkbox" id="layer-avisos" checked>
+                        <span class="layer-symbol alert-symbol">!</span>
+                        <span>Avisos</span>
+                    </label>
+
+                </div>
+
+
+                <div class="panel-divider"></div>
+
+
+                <div class="panel-header compact">
+                    <div>
+                        <span class="eyebrow">RUTAS</span>
+                        <h2>Rutas de trabajo</h2>
+                    </div>
+                </div>
+
+                <div id="leyenda-rutas" class="route-legend"></div>
+
+            </aside>
+
+
+            <!-- =================================================
+                 MAPA
+            ================================================== -->
+            <section class="map-panel">
+
+                <div class="map-toolbar">
+
+                    <div class="map-title">
+                        <strong>Mapa operativo</strong>
+                        <span>Provincia de Valencia</span>
+                    </div>
+
+                    <div class="map-tools">
+
+                        <button id="btn-centrar-todos" class="map-tool">
+                            ⊙ Todos los vehículos
+                        </button>
+
+                        <button id="btn-zoom-valencia" class="map-tool">
+                            Valencia
+                        </button>
+
+                    </div>
+
+                </div>
+
+                <div id="map"></div>
+
+                <div class="map-status">
+                    <span class="status-dot green"></span>
+                    <span id="map-status-text">GPS operativo · posiciones simuladas</span>
+                </div>
+
+            </section>
+
+
+            <!-- =================================================
+                 PANEL DERECHO
+            ================================================== -->
+            <aside class="right-panel">
+
+                <div class="panel-header">
+
+                    <div>
+                        <span class="eyebrow">CENTRAL</span>
+                        <h2>Avisos</h2>
+                    </div>
+
+                    <span class="counter-badge" id="contador-avisos">
                         0
                     </span>
 
                 </div>
 
-                <div id="listaVehiculos" class="vehicle-list"></div>
-
-            </section>
+                <div id="lista-avisos" class="alert-list"></div>
 
 
-            <!-- LEYENDA -->
+                <div class="panel-divider"></div>
 
-            <section class="panel-section">
 
-                <div class="section-title">
+                <div class="panel-header compact">
+
                     <div>
-                        <h2>Rutas</h2>
-                        <span>Rutas geográficas</span>
+                        <span class="eyebrow">HOY</span>
+                        <h2>Planificación</h2>
                     </div>
+
                 </div>
 
-                <div id="leyendaRutas" class="route-legend"></div>
+                <div id="planificacion-dia" class="planning-list"></div>
 
-            </section>
+            </aside>
+
+        </section>
 
 
-            <!-- CAPAS -->
+        <!-- =========================================================
+             ACCIONES
+        ========================================================== -->
+        <section class="actions-panel">
 
-            <section class="panel-section">
+            <div class="actions-heading">
 
-                <div class="section-title">
-                    <div>
-                        <h2>Mapa</h2>
-                        <span>Capas visibles</span>
-                    </div>
+                <div>
+                    <span class="eyebrow">OPERATIVA DE OFICINA</span>
+                    <h2>Acciones</h2>
                 </div>
 
-                <label class="layer-option">
-                    <input type="checkbox" id="capaRutas" checked>
-                    <span>Rutas planificadas</span>
-                </label>
+                <span class="actions-info">
+                    Planificación del servicio
+                </span>
 
-                <label class="layer-option">
-                    <input type="checkbox" id="capaPuntos" checked>
-                    <span>Puntos permanentes</span>
-                </label>
-
-                <label class="layer-option">
-                    <input type="checkbox" id="capaAvisos" checked>
-                    <span>Avisos</span>
-                </label>
-
-                <label class="layer-option">
-                    <input type="checkbox" id="capaVehiculos" checked>
-                    <span>Vehículos GPS</span>
-                </label>
-
-            </section>
-
-
-            <div class="mock-warning">
-                <strong>Modo demostración</strong>
-                <p>
-                    Los vehículos y avisos que aparecen en pantalla
-                    son datos simulados.
-                </p>
             </div>
 
-        </aside>
+            <div class="actions-grid">
 
+                <button class="action-button primary-action" id="accion-confirmar">
+                    <span class="action-icon">✓</span>
+                    <div>
+                        <strong>Confirmar rutas</strong>
+                        <small>Validar la planificación diaria</small>
+                    </div>
+                </button>
 
-        <!-- =====================================================
-             MAPA
-        ====================================================== -->
+                <button class="action-button" id="accion-aviso">
+                    <span class="action-icon">＋</span>
+                    <div>
+                        <strong>Añadir aviso</strong>
+                        <small>Registrar una nueva recogida</small>
+                    </div>
+                </button>
 
-        <section class="map-container">
+                <button class="action-button" id="accion-recalcular">
+                    <span class="action-icon">↻</span>
+                    <div>
+                        <strong>Recalcular</strong>
+                        <small>Actualizar la planificación</small>
+                    </div>
+                </button>
 
-            <div id="map"></div>
-
-            <div class="map-overlay">
-
-                <div class="map-title">
-                    <strong>Operativa provincial</strong>
-                    <span>Valencia</span>
-                </div>
-
-                <div class="gps-info">
-                    <span class="status-dot mock"></span>
-                    GPS simulado
-                </div>
+                <button class="action-button" id="accion-exportar">
+                    <span class="action-icon">▣</span>
+                    <div>
+                        <strong>Exportar / imprimir</strong>
+                        <small>Generar la información del servicio</small>
+                    </div>
+                </button>
 
             </div>
 
         </section>
 
-
-        <!-- =====================================================
-             PANEL DERECHO
-        ====================================================== -->
-
-        <aside class="right-panel">
-
-
-            <!-- AVISOS -->
-
-            <section class="panel-section alerts-section">
-
-                <div class="section-title">
-
-                    <div>
-                        <h2>Avisos</h2>
-                        <span>Incidencias y recogidas</span>
-                    </div>
-
-                    <span class="count-badge alert-count" id="contadorAvisos">
-                        0
-                    </span>
-
-                </div>
-
-                <div id="listaAvisos" class="alert-list"></div>
-
-            </section>
-
-
-            <!-- PLANIFICACIÓN -->
-
-            <section class="panel-section planning-section">
-
-                <div class="section-title">
-
-                    <div>
-                        <h2>Planificación de hoy</h2>
-                        <span>Ruta activa por vehículo</span>
-                    </div>
-
-                </div>
-
-                <div id="planificacion" class="planning-list"></div>
-
-            </section>
-
-
-        </aside>
-
     </main>
 
 
     <!-- =========================================================
-         FOOTER
+         PIE
     ========================================================== -->
-
     <footer class="footer">
 
-        <div>
-            CRF La Granja de El Saler · Coordinación de Recogidas
-        </div>
+        <span>
+            CRF La Granja de El Saler · Coordinación de recogidas
+        </span>
 
-        <div id="ultimaActualizacion">
-            Última actualización: --
-        </div>
+        <span>
+            <strong>Modo demostración</strong> · Datos simulados
+        </span>
 
     </footer>
 
 </div>
 
 
-<!-- =============================================================
-     LEAFLET
-============================================================== -->
-
+<!-- LEAFLET -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-
-<!-- =============================================================
-     JAVASCRIPT DE LA APLICACIÓN
-============================================================== -->
-
+<!-- APLICACIÓN -->
 <script src="js/config.js"></script>
 <script src="js/mock-data.js"></script>
 <script src="js/api.js"></script>
@@ -311,3 +389,4 @@
 
 </body>
 </html>
+```
