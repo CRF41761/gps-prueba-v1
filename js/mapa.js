@@ -1,4 +1,3 @@
-```javascript
 /* ============================================================
    CRF - MAPA OPERATIVO
    Version limpia y sin template literals
