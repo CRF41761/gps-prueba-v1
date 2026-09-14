@@ -1,176 +1,210 @@
 ```javascript
 /* ============================================================
-   AVISOS
+   CRF - AVISOS
 ============================================================ */
 
-function normalizarEstado(estado) {
+function normalizarEstado(
+    estado
+) {
 
-    const valor = String(
-        estado || "PENDIENTE"
-    ).toUpperCase();
+    var valor =
+        String(
+            estado || "PENDIENTE"
+        ).toUpperCase();
+
 
     if (
-        valor.includes("RECOG") ||
-        valor.includes("COMPLET")
+        valor.indexOf("RECOG") >= 0 ||
+        valor.indexOf("COMPLET") >= 0
     ) {
         return "RECOGIDO";
     }
 
+
     if (
-        valor.includes("ASIGN")
+        valor.indexOf("ASIGN") >= 0
     ) {
         return "ASIGNADO";
     }
+
 
     return "PENDIENTE";
 }
 
 
-/* ============================================================
-   RENDER AVISOS
-============================================================ */
-
 function renderizarAvisos() {
 
-    const contenedor =
-        document.getElementById("lista-avisos");
+    var contenedor =
+        document.getElementById(
+            "lista-avisos"
+        );
 
-    if (!contenedor) {
-        return;
+
+    if (!contenedor) return;
+
+
+    var avisos = [];
+
+    if (
+        window.DATOS_MOCK &&
+        Array.isArray(
+            window.DATOS_MOCK.AVISOS
+        )
+    ) {
+        avisos =
+            window.DATOS_MOCK.AVISOS;
     }
-
-
-    const avisos =
-        Array.isArray(window.DATOS_MOCK?.AVISOS)
-            ? window.DATOS_MOCK.AVISOS
-            : [];
 
 
     contenedor.innerHTML = "";
 
 
-    avisos.forEach((aviso, indice) => {
+    avisos.forEach(
+        function(aviso, indice) {
 
-        const estado =
-            normalizarEstado(aviso.estado);
-
-
-        const id =
-            aviso.id_aviso ||
-            aviso.aviso_id ||
-            aviso.id ||
-            `AV-${String(indice + 1).padStart(3, "0")}`;
+            var estado =
+                normalizarEstado(
+                    aviso.estado
+                );
 
 
-        const ubicacion =
-            aviso.punto ||
-            aviso.nombre_punto ||
-            aviso.municipio ||
-            "Ubicación no indicada";
+            var id =
+                aviso.id_aviso ||
+                aviso.aviso_id ||
+                aviso.id ||
+                "AV-" +
+                String(indice + 1)
+                    .padStart(3, "0");
 
 
-        const especie =
-            aviso.especie ||
-            aviso.especie_reportada ||
-            "Especie no determinada";
+            var ubicacion =
+                aviso.punto ||
+                aviso.nombre_punto ||
+                aviso.municipio ||
+                "Ubicación no indicada";
 
 
-        const vehiculo =
-            aviso.vehiculo_id ||
-            aviso.id_vehiculo ||
-            aviso.vehiculo ||
-            "";
+            var especie =
+                aviso.especie ||
+                aviso.especie_reportada ||
+                "Especie no determinada";
 
 
-        const card =
-            document.createElement("article");
+            var vehiculo =
+                aviso.vehiculo_id ||
+                aviso.id_vehiculo ||
+                aviso.vehiculo ||
+                "";
 
 
-        card.className =
-            "alert-card " +
-            (
+            var card =
+                document.createElement(
+                    "article"
+                );
+
+
+            var clase =
                 estado === "ASIGNADO"
                     ? "assigned"
                     : estado === "RECOGIDO"
                         ? "collected"
+                        : "";
+
+
+            var claseEstado =
+                estado === "PENDIENTE"
+                    ? "pending"
+                    : estado === "ASIGNADO"
+                        ? "assigned"
+                        : "collected";
+
+
+            card.className =
+                "alert-card " +
+                clase;
+
+
+            card.innerHTML =
+                '<div class="alert-card-top">' +
+
+                    '<span class="alert-id">' +
+                    escaparHTML(id) +
+                    '</span>' +
+
+                    '<span class="alert-status ' +
+                    claseEstado +
+                    '">' +
+                    escaparHTML(estado) +
+                    '</span>' +
+
+                '</div>' +
+
+                '<div class="alert-location">' +
+                escaparHTML(ubicacion) +
+                '</div>' +
+
+                '<div class="alert-details">' +
+                escaparHTML(especie) +
+
+                (
+                    vehiculo
+                        ? " · " +
+                          escaparHTML(vehiculo)
                         : ""
+                ) +
+
+                '</div>';
+
+
+            card.addEventListener(
+                "click",
+                function() {
+
+                    seleccionarAviso(
+                        aviso
+                    );
+
+                }
             );
 
 
-        card.innerHTML = `
-
-            <div class="alert-card-top">
-
-                <span class="alert-id">
-                    ${escapeHtml(id)}
-                </span>
-
-                <span class="alert-status ${
-                    estado === "PENDIENTE"
-                        ? "pending"
-                        : estado === "ASIGNADO"
-                            ? "assigned"
-                            : "collected"
-                }">
-                    ${escapeHtml(estado)}
-                </span>
-
-            </div>
+            contenedor.appendChild(
+                card
+            );
+        }
+    );
 
 
-            <div class="alert-location">
-                ${escapeHtml(ubicacion)}
-            </div>
+    actualizarKpisAvisos(
+        avisos
+    );
 
 
-            <div class="alert-details">
-
-                ${escapeHtml(especie)}
-
-                ${
-                    vehiculo
-                        ? ` · ${escapeHtml(vehiculo)}`
-                        : ""
-                }
-
-            </div>
-
-        `;
-
-
-        card.addEventListener(
-            "click",
-            () => seleccionarAviso(aviso)
-        );
-
-
-        contenedor.appendChild(card);
-    });
-
-
-    actualizarKpisAvisos(avisos);
-
-    actualizarBadgeAvisos(avisos);
+    actualizarBadgeAvisos(
+        avisos
+    );
 }
 
 
-/* ============================================================
-   SELECCIONAR AVISO
-============================================================ */
+function seleccionarAviso(
+    aviso
+) {
 
-function seleccionarAviso(aviso) {
-
-    const lat =
+    var lat =
         Number(
-            aviso.lat ??
-            aviso.latitud
+            aviso.lat !== undefined
+                ? aviso.lat
+                : aviso.latitud
         );
 
-    const lng =
+
+    var lng =
         Number(
-            aviso.lng ??
-            aviso.longitud ??
-            aviso.lon
+            aviso.lng !== undefined
+                ? aviso.lng
+                : aviso.longitud !== undefined
+                    ? aviso.longitud
+                    : aviso.lon
         );
 
 
@@ -196,92 +230,106 @@ function seleccionarAviso(aviso) {
 }
 
 
-/* ============================================================
-   KPI
-============================================================ */
+function actualizarKpisAvisos(
+    avisos
+) {
 
-function actualizarKpisAvisos(avisos) {
-
-    const pendientes =
+    var pendientes =
         avisos.filter(
-            a =>
-                normalizarEstado(a.estado) ===
-                "PENDIENTE"
+            function(aviso) {
+
+                return normalizarEstado(
+                    aviso.estado
+                ) === "PENDIENTE";
+
+            }
         ).length;
 
 
-    const asignados =
+    var asignados =
         avisos.filter(
-            a =>
-                normalizarEstado(a.estado) ===
-                "ASIGNADO"
+            function(aviso) {
+
+                return normalizarEstado(
+                    aviso.estado
+                ) === "ASIGNADO";
+
+            }
         ).length;
 
 
-    const recogidos =
+    var recogidos =
         avisos.filter(
-            a =>
-                normalizarEstado(a.estado) ===
-                "RECOGIDO"
+            function(aviso) {
+
+                return normalizarEstado(
+                    aviso.estado
+                ) === "RECOGIDO";
+
+            }
         ).length;
 
 
-    const kpiPendientes =
+    var elementoPendientes =
         document.getElementById(
             "kpi-pendientes"
         );
 
 
-    const kpiAsignados =
+    var elementoAsignados =
         document.getElementById(
             "kpi-asignados"
         );
 
 
-    const kpiRecogidos =
+    var elementoRecogidos =
         document.getElementById(
             "kpi-recogidos"
         );
 
 
-    if (kpiPendientes) {
-        kpiPendientes.textContent =
+    if (elementoPendientes) {
+        elementoPendientes.textContent =
             pendientes;
     }
 
-    if (kpiAsignados) {
-        kpiAsignados.textContent =
+
+    if (elementoAsignados) {
+        elementoAsignados.textContent =
             asignados;
     }
 
-    if (kpiRecogidos) {
-        kpiRecogidos.textContent =
+
+    if (elementoRecogidos) {
+        elementoRecogidos.textContent =
             recogidos;
     }
 }
 
 
-/* ============================================================
-   BADGE
-============================================================ */
+function actualizarBadgeAvisos(
+    avisos
+) {
 
-function actualizarBadgeAvisos(avisos) {
-
-    const pendientes =
+    var pendientes =
         avisos.filter(
-            a =>
-                normalizarEstado(a.estado) ===
-                "PENDIENTE"
+            function(aviso) {
+
+                return normalizarEstado(
+                    aviso.estado
+                ) === "PENDIENTE";
+
+            }
         ).length;
 
 
-    const badge =
+    var badge =
         document.getElementById(
             "badge-avisos"
         );
 
 
-    const contador =
+    var contador =
         document.getElementById(
             "contador-avisos"
         );
@@ -292,9 +340,26 @@ function actualizarBadgeAvisos(avisos) {
             pendientes;
     }
 
+
     if (contador) {
         contador.textContent =
             pendientes;
     }
+}
+
+
+function escaparHTML(valor) {
+
+    return String(
+        valor === undefined ||
+        valor === null
+            ? ""
+            : valor
+    )
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 ```
