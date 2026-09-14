@@ -1,175 +1,227 @@
-/* =========================================================
+```javascript
+/* ============================================================
    RUTAS Y PLANIFICACIÓN
-========================================================= */
+============================================================ */
 
-function renderizarLeyendaRutas(rutas) {
+
+/* ============================================================
+   LEYENDA
+============================================================ */
+
+function renderizarLeyendaRutas() {
 
     const contenedor =
         document.getElementById(
-            "leyendaRutas"
+            "leyenda-rutas"
         );
+
+
+    if (!contenedor) {
+        return;
+    }
+
+
+    const rutas =
+        Array.isArray(window.DATOS_MOCK?.RUTAS)
+            ? window.DATOS_MOCK.RUTAS
+            : [
+
+                {
+                    ruta_id: "R1",
+                    nombre: "R1 · Norte"
+                },
+
+                {
+                    ruta_id: "R2",
+                    nombre: "R2 · Interior"
+                },
+
+                {
+                    ruta_id: "R3",
+                    nombre: "R3 · Sur"
+                }
+
+            ];
+
 
     contenedor.innerHTML = "";
 
 
     rutas.forEach(ruta => {
 
-        const elemento =
+        const id =
+            String(
+                ruta.ruta_id ||
+                ruta.id ||
+                ""
+            ).toUpperCase();
+
+
+        const nombre =
+            ruta.nombre ||
+            ruta.nombre_ruta ||
+            id;
+
+
+        let color =
+            "#467886";
+
+
+        if (id === "R1") {
+            color = "#1976D2";
+        }
+
+        if (id === "R2") {
+            color = "#388E3C";
+        }
+
+        if (id === "R3") {
+            color = "#F57C00";
+        }
+
+
+        const item =
             document.createElement("div");
 
 
-        elemento.className =
+        item.className =
             "route-legend-item";
 
 
-        const clase =
-            ruta.id.toLowerCase();
+        item.innerHTML = `
 
+            <span
+                class="route-line"
+                style="background:${color}"
+            ></span>
 
-        elemento.innerHTML = `
-
-            <span class="route-line ${clase}">
-            </span>
-
-            <span>
-                <strong>${ruta.id}</strong>
-                · ${ruta.nombre}
+            <span class="route-name">
+                ${escapeHtml(nombre)}
             </span>
 
         `;
 
 
-        contenedor.appendChild(
-            elemento
-        );
-
+        contenedor.appendChild(item);
     });
 }
 
 
-/* =========================================================
-   PLANIFICACIÓN
-========================================================= */
+/* ============================================================
+   PLANIFICACIÓN DIARIA
+============================================================ */
 
-function renderizarPlanificacion(
-    planificacion
-) {
+function renderizarPlanificacion() {
 
     const contenedor =
         document.getElementById(
-            "planificacion"
+            "planificacion-dia"
         );
+
+
+    if (!contenedor) {
+        return;
+    }
+
+
+    let plan =
+        Array.isArray(window.DATOS_MOCK?.PLANIFICACION)
+            ? window.DATOS_MOCK.PLANIFICACION
+            : [];
+
+
+    /*
+     * Si el mock todavía no tiene planificación,
+     * generamos una vista coherente a partir de VEHICULOS.
+     */
+
+    if (!plan.length) {
+
+        const vehiculos =
+            Array.isArray(window.DATOS_MOCK?.VEHICULOS)
+                ? window.DATOS_MOCK.VEHICULOS
+                : [];
+
+
+        plan =
+            vehiculos.map(
+                (vehiculo, indice) => ({
+
+                    vehiculo_id:
+                        vehiculo.id_vehiculo ||
+                        vehiculo.id ||
+                        `V${indice + 1}`,
+
+                    ruta_id:
+                        vehiculo.ruta_id ||
+                        vehiculo.ruta ||
+                        `R${indice + 1}`,
+
+                    descripcion:
+                        "Ruta planificada para la jornada"
+
+                })
+            );
+    }
+
 
     contenedor.innerHTML = "";
 
 
-    planificacion.forEach(plan => {
+    plan.forEach((item, indice) => {
 
-        const claseRuta =
-            plan.rutaActiva.toLowerCase();
+        const vehiculo =
+            item.vehiculo_id ||
+            item.id_vehiculo ||
+            item.vehiculo ||
+            `V${indice + 1}`;
 
 
-        const elemento =
+        const ruta =
+            String(
+                item.ruta_id ||
+                item.ruta ||
+                `R${indice + 1}`
+            ).toUpperCase();
+
+
+        const descripcion =
+            item.descripcion ||
+            item.observaciones ||
+            item.detalle ||
+            "Sin observaciones";
+
+
+        const element =
             document.createElement("div");
 
 
-        elemento.className =
-            "plan-card";
+        element.className =
+            "planning-item";
 
 
-        let paradasHTML = "";
+        element.innerHTML = `
 
+            <div class="planning-head">
 
-        plan.paradas.forEach(parada => {
+                <span class="planning-vehicle">
+                    🚐 ${escapeHtml(vehiculo)}
+                </span>
 
-            let iconoEstado = "○";
-
-
-            if (parada.estado === "RECOGIDO") {
-                iconoEstado = "✓";
-            }
-
-            if (parada.estado === "PENDIENTE") {
-                iconoEstado = "!";
-            }
-
-
-            paradasHTML += `
-
-                <div class="plan-stop">
-
-                    <div class="stop-number">
-                        ${parada.orden}
-                    </div>
-
-                    <div class="stop-content">
-
-                        <strong>
-                            ${parada.hora}
-                            ·
-                            ${parada.nombre}
-                        </strong>
-
-                        <span>
-                            ${parada.tipo}
-                            ·
-                            ${parada.estado}
-                            ${iconoEstado}
-                        </span>
-
-                    </div>
-
-                </div>
-
-            `;
-
-        });
-
-
-        elemento.innerHTML = `
-
-            <div class="plan-header">
-
-                <strong>
-                    ${plan.vehiculo}
-                </strong>
-
-                <span>
-                    ${plan.horaSalida}
-                    →
-                    ${plan.horaEstimadaRegreso}
+                <span class="planning-route ${ruta.toLowerCase()}">
+                    ${escapeHtml(ruta)}
                 </span>
 
             </div>
 
-
-            <div class="plan-route">
-
-                <span class="route-chip route-${claseRuta}">
-                    ${plan.rutaActiva}
-                    ·
-                    ${plan.rutaNombre}
-                </span>
-
-                <span>
-                    Ruta activa de hoy
-                </span>
-
-            </div>
-
-
-            <div class="plan-stops">
-
-                ${paradasHTML}
-
+            <div class="planning-description">
+                ${escapeHtml(descripcion)}
             </div>
 
         `;
 
 
-        contenedor.appendChild(
-            elemento
-        );
-
+        contenedor.appendChild(element);
     });
 }
+```
