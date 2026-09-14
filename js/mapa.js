@@ -1,22 +1,88 @@
 ```javascript
 /* ============================================================
-   MAPA OPERATIVO
-   Rutas, vehículos, puntos y avisos son capas independientes.
+   CRF - MAPA OPERATIVO
+   Version limpia y sin template literals
 ============================================================ */
 
-let mapa = null;
+var mapa = null;
 
-let capas = {
+var capas = {
     rutas: null,
     puntos: null,
     avisos: null,
     vehiculos: null
 };
 
-let marcadoresVehiculos = {};
-let posicionesVehiculos = {};
+var marcadoresVehiculos = {};
+var posicionesVehiculos = {};
 
-const VALENCIA_CENTER = [39.4699, -0.3763];
+var CENTRO_VALENCIA = [39.4699, -0.3763];
+
+
+/* ============================================================
+   UTILIDADES
+============================================================ */
+
+function obtenerLat(obj) {
+    if (!obj) return NaN;
+
+    return Number(
+        obj.lat !== undefined ? obj.lat :
+        obj.latitud !== undefined ? obj.latitud :
+        obj.latitude !== undefined ? obj.latitude :
+        obj.y
+    );
+}
+
+
+function obtenerLng(obj) {
+    if (!obj) return NaN;
+
+    return Number(
+        obj.lng !== undefined ? obj.lng :
+        obj.longitud !== undefined ? obj.longitud :
+        obj.longitude !== undefined ? obj.longitude :
+        obj.lon !== undefined ? obj.lon :
+        obj.x
+    );
+}
+
+
+function coordenadasValidas(lat, lng) {
+    return Number.isFinite(lat) &&
+           Number.isFinite(lng) &&
+           lat >= -90 &&
+           lat <= 90 &&
+           lng >= -180 &&
+           lng <= 180;
+}
+
+
+function escaparHTML(valor) {
+    return String(valor === undefined || valor === null ? "" : valor)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+
+function obtenerIdVehiculo(vehiculo, indice) {
+    if (vehiculo.id_vehiculo !== undefined) {
+        return String(vehiculo.id_vehiculo);
+    }
+
+    if (vehiculo.vehiculo_id !== undefined) {
+        return String(vehiculo.vehiculo_id);
+    }
+
+    if (vehiculo.id !== undefined) {
+        return String(vehiculo.id);
+    }
+
+    return "V" + (indice + 1);
+}
 
 
 /* ============================================================
@@ -28,13 +94,14 @@ function inicializarMapa() {
     mapa = L.map("map", {
         zoomControl: true,
         preferCanvas: true
-    }).setView(VALENCIA_CENTER, 9);
+    }).setView(CENTRO_VALENCIA, 9);
+
 
     L.tileLayer(
         "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
         {
             maxZoom: 19,
-            attribution: '&copy; OpenStreetMap contributors'
+            attribution: "&copy; OpenStreetMap contributors"
         }
     ).addTo(mapa);
 
@@ -50,66 +117,17 @@ function inicializarMapa() {
     dibujarAvisos();
     dibujarVehiculos();
 
-
     configurarCapasMapa();
 }
 
 
 /* ============================================================
-   UTILIDADES
+   RUTAS
 ============================================================ */
 
-function obtenerLat(obj) {
+function obtenerColorRuta(id) {
 
-    return Number(
-        obj?.lat ??
-        obj?.latitud ??
-        obj?.latitude ??
-        obj?.y
-    );
-}
-
-
-function obtenerLng(obj) {
-
-    return Number(
-        obj?.lng ??
-        obj?.longitud ??
-        obj?.longitude ??
-        obj?.lon ??
-        obj?.x
-    );
-}
-
-
-function coordenadasValidas(lat, lng) {
-
-    return Number.isFinite(lat) &&
-           Number.isFinite(lng) &&
-           lat >= -90 &&
-           lat <= 90 &&
-           lng >= -180 &&
-           lng <= 180;
-}
-
-
-function obtenerNombreRuta(ruta) {
-
-    return ruta?.nombre ||
-           ruta?.ruta_nombre ||
-           ruta?.ruta_id ||
-           ruta?.id ||
-           "Ruta";
-}
-
-
-function obtenerColorRuta(ruta) {
-
-    const id = String(
-        ruta?.ruta_id ||
-        ruta?.id ||
-        ""
-    ).toUpperCase();
+    id = String(id || "").toUpperCase();
 
     if (id === "R1") return "#1976D2";
     if (id === "R2") return "#388E3C";
@@ -119,58 +137,40 @@ function obtenerColorRuta(ruta) {
 }
 
 
-/* ============================================================
-   RUTAS
-============================================================ */
-
 function dibujarRutas() {
+
+    if (!capas.rutas) return;
 
     capas.rutas.clearLayers();
 
-    const rutas = Array.isArray(window.DATOS_MOCK?.RUTAS)
-        ? window.DATOS_MOCK.RUTAS
-        : [];
+    var rutas = obtenerRutasGeometricasMock();
 
-    const rutasMock = obtenerRutasGeometricasMock();
+    rutas.forEach(function(ruta) {
 
-    rutasMock.forEach(ruta => {
-
-        const coordenadas = ruta.coordenadas;
-
-        if (!coordenadas || coordenadas.length < 2) {
-            return;
-        }
-
-        const color = obtenerColorRuta(ruta);
-
-        const linea = L.polyline(
-            coordenadas,
+        var linea = L.polyline(
+            ruta.coordenadas,
             {
-                color: color,
+                color: obtenerColorRuta(ruta.ruta_id),
                 weight: 5,
                 opacity: 0.78,
                 lineJoin: "round"
             }
         );
 
-        linea.bindPopup(`
-            <strong>${escapeHtml(obtenerNombreRuta(ruta))}</strong>
-            <br>
-            Ruta planificada
-            <br>
-            <small>La posición GPS del vehículo se muestra por separado.</small>
-        `);
+
+        linea.bindPopup(
+            "<strong>" +
+            escaparHTML(ruta.nombre) +
+            "</strong><br>" +
+            "Ruta planificada<br>" +
+            "<small>La posición GPS del vehículo se muestra por separado.</small>"
+        );
+
 
         linea.addTo(capas.rutas);
     });
 }
 
-
-/* ============================================================
-   GEOMETRÍA MOCK
-   Solo demostración.
-   Posteriormente llegará desde RUTAS / planificación.
-============================================================ */
 
 function obtenerRutasGeometricasMock() {
 
@@ -219,55 +219,75 @@ function obtenerRutasGeometricasMock() {
 
 
 /* ============================================================
-   PUNTOS COLABORADORES
+   PUNTOS
 ============================================================ */
 
 function dibujarPuntos() {
 
+    if (!capas.puntos) return;
+
     capas.puntos.clearLayers();
 
-    const puntos = Array.isArray(window.DATOS_MOCK?.PUNTOS_RECOGIDA)
-        ? window.DATOS_MOCK.PUNTOS_RECOGIDA
-        : [];
+    var puntos = [];
 
-    puntos.forEach(punto => {
+    if (
+        window.DATOS_MOCK &&
+        Array.isArray(window.DATOS_MOCK.PUNTOS_RECOGIDA)
+    ) {
+        puntos = window.DATOS_MOCK.PUNTOS_RECOGIDA;
+    }
 
-        const lat = obtenerLat(punto);
-        const lng = obtenerLng(punto);
+
+    puntos.forEach(function(punto) {
+
+        var lat = obtenerLat(punto);
+        var lng = obtenerLng(punto);
 
         if (!coordenadasValidas(lat, lng)) {
             return;
         }
 
-        const icono = L.divIcon({
+
+        var icono = L.divIcon({
             className: "point-map-marker-wrapper",
-            html: `<div class="point-map-marker"></div>`,
+            html: '<div class="point-map-marker"></div>',
             iconSize: [14, 14],
             iconAnchor: [7, 7]
         });
 
-        const marker = L.marker(
+
+        var marker = L.marker(
             [lat, lng],
             { icon: icono }
         );
 
-        marker.bindPopup(`
-            <strong>${escapeHtml(
-                punto.nombre ||
-                punto.nombre_punto ||
-                "Punto colaborador"
-            )}</strong>
-            <br>
-            ${escapeHtml(
-                punto.tipo ||
-                "Colaborador"
-            )}
-            <br>
-            <small>${escapeHtml(
-                punto.municipio ||
-                ""
-            )}</small>
-        `);
+
+        var nombre =
+            punto.nombre ||
+            punto.nombre_punto ||
+            "Punto colaborador";
+
+
+        var tipo =
+            punto.tipo ||
+            "Colaborador";
+
+
+        var municipio =
+            punto.municipio ||
+            "";
+
+
+        marker.bindPopup(
+            "<strong>" +
+            escaparHTML(nombre) +
+            "</strong><br>" +
+            escaparHTML(tipo) +
+            "<br><small>" +
+            escaparHTML(municipio) +
+            "</small>"
+        );
+
 
         marker.addTo(capas.puntos);
     });
@@ -280,24 +300,39 @@ function dibujarPuntos() {
 
 function dibujarAvisos() {
 
+    if (!capas.avisos) return;
+
     capas.avisos.clearLayers();
 
-    const avisos = Array.isArray(window.DATOS_MOCK?.AVISOS)
-        ? window.DATOS_MOCK.AVISOS
-        : [];
+    var avisos = [];
 
-    avisos.forEach(aviso => {
+    if (
+        window.DATOS_MOCK &&
+        Array.isArray(window.DATOS_MOCK.AVISOS)
+    ) {
+        avisos = window.DATOS_MOCK.AVISOS;
+    }
 
-        const lat = obtenerLat(aviso);
-        const lng = obtenerLng(aviso);
+
+    avisos.forEach(function(aviso) {
+
+        var lat = obtenerLat(aviso);
+        var lng = obtenerLng(aviso);
 
         if (!coordenadasValidas(lat, lng)) {
             return;
         }
 
-        const estado = normalizarEstadoAviso(aviso.estado);
 
-        let clase = "alert-pending";
+        var estado =
+            normalizarEstadoAviso(
+                aviso.estado
+            );
+
+
+        var clase =
+            "alert-pending";
+
 
         if (estado === "ASIGNADO") {
             clase = "alert-assigned";
@@ -307,46 +342,68 @@ function dibujarAvisos() {
             clase = "alert-collected";
         }
 
-        const icono = L.divIcon({
-            className: "alert-map-marker-wrapper",
-            html: `<div class="alert-map-marker ${clase}">!</div>`,
+
+        var icono = L.divIcon({
+
+            className:
+                "alert-map-marker-wrapper",
+
+            html:
+                '<div class="alert-map-marker ' +
+                clase +
+                '">!</div>',
+
             iconSize: [25, 25],
             iconAnchor: [12, 12]
+
         });
 
-        const marker = L.marker(
+
+        var marker = L.marker(
             [lat, lng],
             { icon: icono }
         );
 
-        marker.bindPopup(`
-            <strong>${escapeHtml(
-                aviso.id_aviso ||
-                aviso.aviso_id ||
-                aviso.id ||
-                "Aviso"
-            )}</strong>
-            <br>
-            <b>${escapeHtml(
-                aviso.especie ||
-                aviso.especie_reportada ||
-                "Especie no determinada"
-            )}</b>
-            <br>
-            Estado: ${escapeHtml(estado)}
-            <br>
-            ${escapeHtml(
-                aviso.observaciones ||
-                ""
-            )}
-        `);
 
-        marker.on("click", () => {
+        var id =
+            aviso.id_aviso ||
+            aviso.aviso_id ||
+            aviso.id ||
+            "Aviso";
 
-            if (typeof seleccionarAviso === "function") {
-                seleccionarAviso(aviso);
+
+        var especie =
+            aviso.especie ||
+            aviso.especie_reportada ||
+            "Especie no determinada";
+
+
+        marker.bindPopup(
+            "<strong>" +
+            escaparHTML(id) +
+            "</strong><br>" +
+            "<b>" +
+            escaparHTML(especie) +
+            "</b><br>" +
+            "Estado: " +
+            escaparHTML(estado)
+        );
+
+
+        marker.on(
+            "click",
+            function() {
+
+                if (
+                    typeof seleccionarAviso ===
+                    "function"
+                ) {
+                    seleccionarAviso(aviso);
+                }
+
             }
-        });
+        );
+
 
         marker.addTo(capas.avisos);
     });
@@ -359,175 +416,261 @@ function dibujarAvisos() {
 
 function dibujarVehiculos() {
 
+    if (!capas.vehiculos) return;
+
     capas.vehiculos.clearLayers();
 
     marcadoresVehiculos = {};
-
-    const vehiculos = Array.isArray(window.DATOS_MOCK?.VEHICULOS)
-        ? window.DATOS_MOCK.VEHICULOS
-        : [];
-
-    const posiciones = Array.isArray(window.DATOS_MOCK?.POSICIONES)
-        ? window.DATOS_MOCK.POSICIONES
-        : [];
+    posicionesVehiculos = {};
 
 
-    vehiculos.forEach((vehiculo, indice) => {
+    var vehiculos = [];
 
-        const id = String(
-            vehiculo.id_vehiculo ||
-            vehiculo.vehiculo_id ||
-            vehiculo.id ||
-            `V${indice + 1}`
-        );
-
-
-        let posicion = posiciones.find(pos =>
-            String(
-                pos.id_vehiculo ||
-                pos.vehiculo_id ||
-                pos.id ||
-                ""
-            ) === id
-        );
+    if (
+        window.DATOS_MOCK &&
+        Array.isArray(window.DATOS_MOCK.VEHICULOS)
+    ) {
+        vehiculos =
+            window.DATOS_MOCK.VEHICULOS;
+    }
 
 
-        /*
-         * Si POSICIONES no tiene una posición válida,
-         * utilizamos una posición inicial de demostración.
-         */
-        let lat = obtenerLat(posicion);
-        let lng = obtenerLng(posicion);
+    var posiciones = [];
+
+    if (
+        window.DATOS_MOCK &&
+        Array.isArray(window.DATOS_MOCK.POSICIONES)
+    ) {
+        posiciones =
+            window.DATOS_MOCK.POSICIONES;
+    }
 
 
-        if (!coordenadasValidas(lat, lng)) {
+    var posicionesIniciales = [
 
-            const posicionesIniciales = [
-                [39.485, -0.410],
-                [39.440, -0.475],
-                [39.400, -0.355]
-            ];
+        [39.485, -0.410],
 
-            const inicial =
-                posicionesIniciales[indice] ||
-                VALENCIA_CENTER;
+        [39.440, -0.475],
 
-            lat = inicial[0];
-            lng = inicial[1];
+        [39.400, -0.355]
+
+    ];
+
+
+    vehiculos.forEach(
+        function(vehiculo, indice) {
+
+            var id =
+                obtenerIdVehiculo(
+                    vehiculo,
+                    indice
+                );
+
+
+            var posicionEncontrada =
+                null;
+
+
+            posiciones.some(
+                function(posicion) {
+
+                    var idPos =
+                        posicion.id_vehiculo !== undefined
+                            ? String(posicion.id_vehiculo)
+                            : posicion.vehiculo_id !== undefined
+                                ? String(posicion.vehiculo_id)
+                                : posicion.id !== undefined
+                                    ? String(posicion.id)
+                                    : "";
+
+
+                    if (idPos === id) {
+
+                        posicionEncontrada =
+                            posicion;
+
+                        return true;
+                    }
+
+                    return false;
+                }
+            );
+
+
+            var lat =
+                obtenerLat(
+                    posicionEncontrada
+                );
+
+
+            var lng =
+                obtenerLng(
+                    posicionEncontrada
+                );
+
+
+            if (
+                !coordenadasValidas(
+                    lat,
+                    lng
+                )
+            ) {
+
+                var inicial =
+                    posicionesIniciales[
+                        indice
+                    ] ||
+                    CENTRO_VALENCIA;
+
+
+                lat = inicial[0];
+                lng = inicial[1];
+            }
+
+
+            posicionesVehiculos[id] = {
+                lat: lat,
+                lng: lng
+            };
+
+
+            var rutaId =
+                String(
+                    vehiculo.ruta_id ||
+                    vehiculo.ruta_habitual ||
+                    vehiculo.ruta ||
+                    "R" + (indice + 1)
+                ).toUpperCase();
+
+
+            var color =
+                obtenerColorRuta(
+                    rutaId
+                );
+
+
+            var icono =
+                L.divIcon({
+
+                    className:
+                        "vehicle-map-marker",
+
+                    html:
+                        '<div class="vehicle-marker" ' +
+                        'style="border-color:' +
+                        color +
+                        '">🚐</div>' +
+
+                        '<div class="vehicle-marker-label">' +
+                        escaparHTML(id) +
+                        "</div>",
+
+                    iconSize: [38, 38],
+                    iconAnchor: [19, 19],
+                    popupAnchor: [0, -20]
+
+                });
+
+
+            var marker =
+                L.marker(
+                    [lat, lng],
+                    {
+                        icon: icono,
+                        zIndexOffset: 1000
+                    }
+                );
+
+
+            marker.bindPopup(
+                "<strong>" +
+                escaparHTML(
+                    vehiculo.nombre ||
+                    "Vehículo " + id
+                ) +
+                "</strong><br>" +
+                "Vehículo: " +
+                escaparHTML(id) +
+                "<br>" +
+                "Ruta habitual: " +
+                escaparHTML(rutaId) +
+                "<br><small>" +
+                "GPS independiente de la ruta planificada." +
+                "</small>"
+            );
+
+
+            marker.on(
+                "click",
+                function() {
+
+                    if (
+                        typeof seleccionarVehiculo ===
+                        "function"
+                    ) {
+                        seleccionarVehiculo(id);
+                    }
+
+                }
+            );
+
+
+            marker.addTo(
+                capas.vehiculos
+            );
+
+
+            marcadoresVehiculos[id] =
+                marker;
+
         }
+    );
 
 
-        posicionesVehiculos[id] = {
-            lat,
-            lng
-        };
-
-
-        const rutaId = String(
-            vehiculo.ruta_id ||
-            vehiculo.ruta_habitual ||
-            vehiculo.ruta ||
-            `R${indice + 1}`
-        ).toUpperCase();
-
-
-        const color =
-            rutaId === "R1"
-                ? "#1976D2"
-                : rutaId === "R2"
-                    ? "#388E3C"
-                    : "#F57C00";
-
-
-        const icono = L.divIcon({
-
-            className: "vehicle-map-marker",
-
-            html: `
-                <div
-                    class="vehicle-marker"
-                    style="border-color:${color}"
-                >
-                    🚐
-                </div>
-
-                <div class="vehicle-marker-label">
-                    ${escapeHtml(id)}
-                </div>
-            `,
-
-            iconSize: [38, 38],
-            iconAnchor: [19, 19],
-            popupAnchor: [0, -20]
-        });
-
-
-        const marker = L.marker(
-            [lat, lng],
-            {
-                icon: icono,
-                zIndexOffset: 1000
-            }
-        );
-
-
-        marker.bindPopup(`
-            <strong>${escapeHtml(
-                vehiculo.nombre ||
-                vehiculo.matricula ||
-                id
-            )}</strong>
-            <br>
-            Vehículo: ${escapeHtml(id)}
-            <br>
-            Ruta habitual: ${escapeHtml(rutaId)}
-            <br>
-            <small>Posición GPS independiente de la ruta planificada.</small>
-        `);
-
-
-        marker.on("click", () => {
-
-            if (typeof seleccionarVehiculo === "function") {
-                seleccionarVehiculo(id);
-            }
-
-        });
-
-
-        marker.addTo(capas.vehiculos);
-
-        marcadoresVehiculos[id] = marker;
-    });
-
-
-    /*
-     * Si hay vehículos, guardamos una posición inicial
-     * también en window para la simulación GPS.
-     */
-    window.POSICIONES_VEHICULOS = posicionesVehiculos;
+    window.POSICIONES_VEHICULOS =
+        posicionesVehiculos;
 }
 
 
 /* ============================================================
-   ACTUALIZAR POSICIÓN DE VEHÍCULO
+   ACTUALIZAR VEHÍCULO
 ============================================================ */
 
-function actualizarPosicionVehiculo(idVehiculo, lat, lng) {
+function actualizarPosicionVehiculo(
+    idVehiculo,
+    lat,
+    lng
+) {
 
-    if (!coordenadasValidas(lat, lng)) {
+    if (
+        !coordenadasValidas(
+            lat,
+            lng
+        )
+    ) {
         return;
     }
 
-    if (!marcadoresVehiculos[idVehiculo]) {
+
+    if (
+        !marcadoresVehiculos[idVehiculo]
+    ) {
         return;
     }
 
-    marcadoresVehiculos[idVehiculo].setLatLng([lat, lng]);
 
-    posicionesVehiculos[idVehiculo] = {
-        lat,
-        lng
+    marcadoresVehiculos[
+        idVehiculo
+    ].setLatLng(
+        [lat, lng]
+    );
+
+
+    posicionesVehiculos[
+        idVehiculo
+    ] = {
+        lat: lat,
+        lng: lng
     };
 }
 
@@ -538,21 +681,33 @@ function actualizarPosicionVehiculo(idVehiculo, lat, lng) {
 
 function centrarVehiculo(idVehiculo) {
 
-    const marker = marcadoresVehiculos[idVehiculo];
-
-    if (!marker) {
+    if (
+        !mapa ||
+        !marcadoresVehiculos[idVehiculo]
+    ) {
         return;
     }
 
+
     mapa.setView(
-        marker.getLatLng(),
-        Math.max(mapa.getZoom(), 11),
+        marcadoresVehiculos[
+            idVehiculo
+        ].getLatLng(),
+
+        Math.max(
+            mapa.getZoom(),
+            11
+        ),
+
         {
             animate: true
         }
     );
 
-    marker.openPopup();
+
+    marcadoresVehiculos[
+        idVehiculo
+    ].openPopup();
 }
 
 
@@ -562,14 +717,30 @@ function centrarVehiculo(idVehiculo) {
 
 function centrarTodosLosVehiculos() {
 
-    const markers = Object.values(marcadoresVehiculos);
+    if (!mapa) return;
+
+    var markers =
+        Object.values(
+            marcadoresVehiculos
+        );
+
 
     if (!markers.length) {
-        mapa.setView(VALENCIA_CENTER, 9);
+
+        mapa.setView(
+            CENTRO_VALENCIA,
+            9
+        );
+
         return;
     }
 
-    const grupo = L.featureGroup(markers);
+
+    var grupo =
+        L.featureGroup(
+            markers
+        );
+
 
     mapa.fitBounds(
         grupo.getBounds().pad(0.25),
@@ -582,13 +753,15 @@ function centrarTodosLosVehiculos() {
 
 
 /* ============================================================
-   CENTRAR VALENCIA
+   VALENCIA
 ============================================================ */
 
 function centrarValencia() {
 
+    if (!mapa) return;
+
     mapa.setView(
-        VALENCIA_CENTER,
+        CENTRO_VALENCIA,
         9,
         {
             animate: true
@@ -603,117 +776,138 @@ function centrarValencia() {
 
 function configurarCapasMapa() {
 
-    document
-        .getElementById("layer-vehiculos")
-        ?.addEventListener("change", event => {
+    var elementos = [
 
-            cambiarVisibilidadCapa(
-                "vehiculos",
-                event.target.checked
+        ["layer-vehiculos", "vehiculos"],
+
+        ["layer-rutas", "rutas"],
+
+        ["layer-puntos", "puntos"],
+
+        ["layer-avisos", "avisos"]
+
+    ];
+
+
+    elementos.forEach(
+        function(item) {
+
+            var elemento =
+                document.getElementById(
+                    item[0]
+                );
+
+
+            if (!elemento) return;
+
+
+            elemento.addEventListener(
+                "change",
+                function() {
+
+                    cambiarVisibilidadCapa(
+                        item[1],
+                        elemento.checked
+                    );
+
+                }
             );
 
-        });
+        }
+    );
 
 
-    document
-        .getElementById("layer-rutas")
-        ?.addEventListener("change", event => {
-
-            cambiarVisibilidadCapa(
-                "rutas",
-                event.target.checked
-            );
-
-        });
+    var btnTodos =
+        document.getElementById(
+            "btn-centrar-todos"
+        );
 
 
-    document
-        .getElementById("layer-puntos")
-        ?.addEventListener("change", event => {
+    if (btnTodos) {
 
-            cambiarVisibilidadCapa(
-                "puntos",
-                event.target.checked
-            );
+        btnTodos.addEventListener(
+            "click",
+            centrarTodosLosVehiculos
+        );
 
-        });
+    }
 
 
-    document
-        .getElementById("layer-avisos")
-        ?.addEventListener("change", event => {
-
-            cambiarVisibilidadCapa(
-                "avisos",
-                event.target.checked
-            );
-
-        });
+    var btnValencia =
+        document.getElementById(
+            "btn-zoom-valencia"
+        );
 
 
-    document
-        .getElementById("btn-centrar-todos")
-        ?.addEventListener("click", centrarTodosLosVehiculos);
+    if (btnValencia) {
 
+        btnValencia.addEventListener(
+            "click",
+            centrarValencia
+        );
 
-    document
-        .getElementById("btn-zoom-valencia")
-        ?.addEventListener("click", centrarValencia);
+    }
 }
 
 
-function cambiarVisibilidadCapa(nombre, visible) {
+function cambiarVisibilidadCapa(
+    nombre,
+    visible
+) {
 
-    if (!mapa || !capas[nombre]) {
+    if (
+        !mapa ||
+        !capas[nombre]
+    ) {
         return;
     }
 
+
     if (visible) {
-        capas[nombre].addTo(mapa);
+
+        capas[nombre].addTo(
+            mapa
+        );
+
     } else {
-        mapa.removeLayer(capas[nombre]);
+
+        mapa.removeLayer(
+            capas[nombre]
+        );
+
     }
 }
 
 
 /* ============================================================
-   ESTADO DE AVISO
+   ESTADO AVISO
 ============================================================ */
 
-function normalizarEstadoAviso(estado) {
+function normalizarEstadoAviso(
+    estado
+) {
 
-    const valor = String(
-        estado || "PENDIENTE"
-    ).trim().toUpperCase();
+    var valor =
+        String(
+            estado || "PENDIENTE"
+        ).toUpperCase();
+
 
     if (
-        valor.includes("RECOG") ||
-        valor.includes("COMPLET")
+        valor.indexOf("RECOG") >= 0 ||
+        valor.indexOf("COMPLET") >= 0
     ) {
         return "RECOGIDO";
     }
 
+
     if (
-        valor.includes("ASIGN")
+        valor.indexOf("ASIGN") >= 0
     ) {
         return "ASIGNADO";
     }
 
+
     return "PENDIENTE";
-}
-
-
-/* ============================================================
-   ESCAPE HTML
-============================================================ */
-
-function escapeHtml(valor) {
-
-    return String(valor ?? "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
 }
 ```
