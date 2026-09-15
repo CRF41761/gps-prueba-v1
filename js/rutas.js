@@ -1404,19 +1404,26 @@ function crearTarjetaVehiculo(plan) {
 
                 <div class="identificacion-vehiculo">
 
-                    <div class="icono-vehiculo">
-                        🚐
-                    </div>
+    <div class="icono-vehiculo">
+        🚐
+    </div>
 
-                    <div>
+    <div>
 
-                        <strong>
-                            ${escaparHTML(
-                                plan.vehiculoNombre
-                            )}
-                        </strong>
+        <strong>
+            ${escaparHTML(
+                plan.vehiculoNombre
+            )}
+        </strong>
 
-                        <div class="ruta-habitual">
+        <span class="tablet-vehiculo">
+            · 📱 ${escaparHTML(
+                plan.tablet ||
+                "Sin tablet"
+            )}
+        </span>
+
+        <div class="ruta-habitual">
 
                             <span
                                 class="punto-ruta"
@@ -1535,24 +1542,14 @@ function crearTarjetaVehiculo(plan) {
 
             <div class="resumen-plan-vehiculo">
 
-                <span>
-                    📱 Tablet:
-                    <strong>
-                        ${escaparHTML(
-                            plan.tablet ||
-                            "—"
-                        )}
-                    </strong>
-                </span>
+    <span>
+        📍 Paradas:
+        <strong>
+            ${plan.paradas.length}
+        </strong>
+    </span>
 
-                <span>
-                    📍 Paradas:
-                    <strong>
-                        ${plan.paradas.length}
-                    </strong>
-                </span>
-
-            </div>
+</div>
 
 
             <!-- PARADAS -->
