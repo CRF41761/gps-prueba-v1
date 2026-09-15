@@ -1446,10 +1446,7 @@ min-height: 560px;
 .datos-configuracion-plan {
     display: grid;
 
-    grid-template-columns:
-        minmax(0, 1fr)
-        125px
-        125px;
+    grid-template-columns: 1fr 1fr;
 
     gap: 8px;
 
@@ -1461,6 +1458,10 @@ min-height: 560px;
 
     border: 1px solid var(--border);
     border-radius: 7px;
+}
+
+.datos-configuracion-plan .campo-plan:first-child {
+    grid-column: 1 / -1;
 }
 
 .campo-plan {
@@ -1483,8 +1484,7 @@ min-height: 560px;
 }
 
 .campo-plan select,
-.campo-plan input,
-.selector-anadir-parada select {
+.campo-plan input {
     width: 100%;
     min-height: 31px;
 
@@ -1498,18 +1498,22 @@ min-height: 560px;
 
     font-family: inherit;
     font-size: 10px;
+
+    text-align: center;
+}
+
+.campo-plan select {
+    text-align: left;
 }
 
 .campo-plan select:focus,
-.campo-plan input:focus,
-.selector-anadir-parada select:focus {
+.campo-plan input:focus {
     outline: none;
 
     border-color: var(--primary);
 
     box-shadow: 0 0 0 2px rgba(70, 120, 134, 0.10);
 }
-
 
 /* ============================================================
    RUTA PLANIFICADA
