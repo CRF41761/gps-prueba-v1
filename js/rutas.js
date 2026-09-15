@@ -201,7 +201,8 @@ function crearTarjetaAvisoPendiente(aviso) {
 
 function crearOpcionesVehiculosAsignacion(aviso) {
     const vehiculos = window.DATOS_MOCK?.VEHICULOS || [];
-    const recomendado = obtenerVehiculoRecomendado(aviso);
+
+    const recomendacion = obtenerVehiculoRecomendado(aviso);
 
     let html = `
         <option value="">
@@ -212,15 +213,20 @@ function crearOpcionesVehiculosAsignacion(aviso) {
     vehiculos
         .filter(vehiculo => vehiculo.activo !== false)
         .forEach(vehiculo => {
+
             const seleccionado =
-                vehiculo.id === recomendado ? "selected" : "";
+                String(vehiculo.id) === String(recomendacion)
+                    ? " selected"
+                    : "";
 
             html += `
                 <option
                     value="${escaparHTMLPlan(vehiculo.id)}"
                     ${seleccionado}
                 >
-                    ${escaparHTMLPlan(vehiculo.nombre || vehiculo.id)}
+                    ${escaparHTMLPlan(
+                        vehiculo.nombre || vehiculo.id
+                    )}
                 </option>
             `;
         });
@@ -232,9 +238,16 @@ function crearOpcionesVehiculosAsignacion(aviso) {
 function obtenerVehiculoRecomendado(aviso) {
     const vehiculos = window.DATOS_MOCK?.VEHICULOS || [];
 
-    if (!vehiculos.length) {
+    if (!vehiculos.length || !aviso) {
         return null;
     }
+
+    const rutaAviso = String(aviso.ruta || "")
+        .trim()
+        .toUpperCase();
+
+    const latAviso = obtenerLatPlan(aviso);
+    const lngAviso = obtenerLngPlan(aviso);
 
     let mejorVehiculo = null;
     let mejorPuntuacion = -Infinity;
@@ -243,50 +256,70 @@ function obtenerVehiculoRecomendado(aviso) {
         .filter(vehiculo => vehiculo.activo !== false)
         .forEach(vehiculo => {
 
-            let puntuacion = 0;
-
             const plan = planificacionDia[vehiculo.id];
 
-            const rutaAviso = String(aviso.ruta || "")
+            const rutaPlan = String(
+                plan?.rutaActiva || ""
+            )
                 .trim()
                 .toUpperCase();
 
-            const rutaPlan = String(plan?.rutaActiva || "")
+            const rutaHabitual = String(
+                vehiculo.rutaHabitual || ""
+            )
                 .trim()
                 .toUpperCase();
 
-            const rutaHabitual = String(vehiculo.rutaHabitual || "")
-                .trim()
-                .toUpperCase();
+            let puntuacion = 0;
 
-            if (rutaAviso && rutaAviso === rutaPlan) {
-                puntuacion += 100;
+            /*
+             * 1. RUTA PLANIFICADA DEL DÍA
+             * Es el criterio principal.
+             */
+            if (
+                rutaAviso &&
+                rutaPlan &&
+                rutaAviso === rutaPlan
+            ) {
+                puntuacion += 1000;
             }
 
-            if (rutaAviso && rutaAviso === rutaHabitual) {
-                puntuacion += 50;
+            /*
+             * 2. RUTA HABITUAL
+             */
+            if (
+                rutaAviso &&
+                rutaHabitual &&
+                rutaAviso === rutaHabitual
+            ) {
+                puntuacion += 300;
             }
 
-            const yaExiste = plan?.paradas?.some(parada =>
-                String(parada.avisoId || "").toUpperCase() ===
-                String(aviso.id || "").toUpperCase()
+            /*
+             * 3. EVITAR DUPLICADOS
+             */
+            const yaTieneAviso = plan?.paradas?.some(parada =>
+                String(parada.avisoId || "") ===
+                String(aviso.id || "")
             );
 
-            if (yaExiste) {
-                puntuacion -= 1000;
+            if (yaTieneAviso) {
+                puntuacion -= 5000;
             }
 
-            const latAviso = obtenerLatPlan(aviso);
-            const lngAviso = obtenerLngPlan(aviso);
-
+            /*
+             * 4. PROXIMIDAD A LAS PARADAS
+             */
             if (
                 latAviso !== null &&
                 lngAviso !== null &&
-                plan?.paradas?.length
+                Array.isArray(plan?.paradas) &&
+                plan.paradas.length
             ) {
                 let distanciaMinima = Infinity;
 
                 plan.paradas.forEach(parada => {
+
                     const latParada = obtenerLatPlan(parada);
                     const lngParada = obtenerLngPlan(parada);
 
@@ -304,21 +337,33 @@ function obtenerVehiculoRecomendado(aviso) {
                         lngParada
                     );
 
-                    distanciaMinima = Math.min(
-                        distanciaMinima,
-                        distancia
-                    );
+                    if (distancia < distanciaMinima) {
+                        distanciaMinima = distancia;
+                    }
                 });
 
                 if (distanciaMinima < 5) {
-                    puntuacion += 20;
+                    puntuacion += 100;
                 } else if (distanciaMinima < 15) {
-                    puntuacion += 10;
+                    puntuacion += 50;
                 } else if (distanciaMinima < 30) {
-                    puntuacion += 5;
+                    puntuacion += 20;
                 }
             }
 
+            /*
+             * 5. SI NO HAY RUTA PLANIFICADA,
+             * LA RUTA HABITUAL SIGUE TENIENDO PESO.
+             */
+
+            if (!rutaPlan && rutaAviso === rutaHabitual) {
+                puntuacion += 200;
+            }
+
+            /*
+             * En caso de empate se mantiene el primer
+             * vehículo encontrado.
+             */
             if (puntuacion > mejorPuntuacion) {
                 mejorPuntuacion = puntuacion;
                 mejorVehiculo = vehiculo.id;
@@ -327,7 +372,6 @@ function obtenerVehiculoRecomendado(aviso) {
 
     return mejorVehiculo;
 }
-
 
 function asignarAvisoAVehiculo(avisoId) {
     const avisos = window.DATOS_MOCK?.AVISOS || [];
