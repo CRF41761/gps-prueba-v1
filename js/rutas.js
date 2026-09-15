@@ -11,11 +11,9 @@ let planificacionDia = {};
 // ============================================================
 
 function inicializarPlanificacion() {
-
     cargarPlanificacionDesdeDatos();
-
     renderizarLeyendaRutas();
-
+    renderizarAvisosPendientes();
     renderizarPlanificacion();
 }
 
