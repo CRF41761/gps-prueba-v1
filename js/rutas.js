@@ -941,11 +941,7 @@ function crearParadaHTML(
             </div>
 
 
-            <div class="estado-parada">
-                ${obtenerTextoEstadoParada(estado)}
-            </div>
-
-
+            
             <div class="acciones-parada">
 
                 <button
