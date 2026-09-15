@@ -1,5 +1,6 @@
 let planificacionDia = {};
 
+
 /* ============================================================
    INICIALIZACIÓN
 ============================================================ */
@@ -17,7 +18,10 @@ function inicializarPlanificacion() {
 ============================================================ */
 
 function obtenerAvisosPendientes() {
-    if (!window.DATOS_MOCK || !Array.isArray(window.DATOS_MOCK.AVISOS)) {
+    if (
+        !window.DATOS_MOCK ||
+        !Array.isArray(window.DATOS_MOCK.AVISOS)
+    ) {
         return [];
     }
 
@@ -28,13 +32,11 @@ function obtenerAvisosPendientes() {
 
 
 function renderizarAvisosPendientes() {
-    const contenedor = document.getElementById(
-        "avisos-pendientes-planificacion"
-    );
+    const contenedor =
+        document.getElementById("avisos-pendientes-planificacion");
 
-    const contador = document.getElementById(
-        "contador-avisos-pendientes"
-    );
+    const contador =
+        document.getElementById("contador-avisos-pendientes");
 
     if (!contenedor) {
         return;
@@ -50,12 +52,17 @@ function renderizarAvisosPendientes() {
         contenedor.innerHTML = `
             <div class="sin-avisos-pendientes">
                 <div class="icono-sin-avisos">✓</div>
+
                 <div>
                     <strong>No hay avisos pendientes</strong>
-                    <div>Todos los avisos están asignados o recogidos.</div>
+
+                    <div>
+                        Todos los avisos están asignados o recogidos.
+                    </div>
                 </div>
             </div>
         `;
+
         return;
     }
 
@@ -66,6 +73,7 @@ function renderizarAvisosPendientes() {
 
 
 function crearTarjetaAvisoPendiente(aviso) {
+
     const vehiculoRecomendado =
         obtenerVehiculoRecomendado(aviso);
 
@@ -86,6 +94,8 @@ function crearTarjetaAvisoPendiente(aviso) {
     return `
         <div class="tarjeta-aviso-pendiente">
 
+            <!-- CABECERA -->
+
             <div class="cabecera-aviso-pendiente">
 
                 <div class="icono-aviso-pendiente">
@@ -102,7 +112,9 @@ function crearTarjetaAvisoPendiente(aviso) {
                     </div>
 
                     <div class="identificador-aviso-pendiente">
-                        ${escaparHTML(aviso.id || "")}
+                        ${escaparHTML(
+                            aviso.id || ""
+                        )}
                     </div>
 
                 </div>
@@ -111,18 +123,25 @@ function crearTarjetaAvisoPendiente(aviso) {
                     class="ruta-aviso-pendiente"
                     style="color:${escaparHTML(rutaColor)}"
                 >
+                    <span
+                        class="punto-ruta"
+                        style="background:${escaparHTML(rutaColor)}"
+                    ></span>
+
                     ${escaparHTML(rutaNombre)}
                 </div>
 
             </div>
 
 
+            <!-- DATOS PRINCIPALES -->
+
             <div class="contenido-aviso-pendiente">
 
                 <div class="dato-aviso">
 
                     <span class="etiqueta-dato">
-                        Especie
+                        🐾 Especie
                     </span>
 
                     <strong>
@@ -138,12 +157,14 @@ function crearTarjetaAvisoPendiente(aviso) {
                 <div class="dato-aviso">
 
                     <span class="etiqueta-dato">
-                        Cantidad
+                        🔢 Cantidad
                     </span>
 
                     <strong>
                         ${escaparHTML(
-                            String(aviso.cantidad || 1)
+                            String(
+                                aviso.cantidad || 1
+                            )
                         )}
                     </strong>
 
@@ -153,7 +174,7 @@ function crearTarjetaAvisoPendiente(aviso) {
                 <div class="dato-aviso">
 
                     <span class="etiqueta-dato">
-                        Teléfono
+                        ☎ Teléfono
                     </span>
 
                     <strong>
@@ -168,23 +189,36 @@ function crearTarjetaAvisoPendiente(aviso) {
             </div>
 
 
+            <!-- OBSERVACIONES -->
+
             ${
                 aviso.observaciones
                     ? `
                         <div class="observaciones-aviso-pendiente">
+
+                            <span
+                                class="icono-observaciones"
+                                aria-hidden="true"
+                            >
+                                📝
+                            </span>
+
                             ${escaparHTML(
                                 aviso.observaciones
                             )}
+
                         </div>
                     `
                     : ""
             }
 
 
+            <!-- PIE -->
+
             <div class="pie-aviso-pendiente">
 
                 <div class="coordenadas-aviso-pendiente">
-                    ${formatearCoordenadasAviso(aviso)}
+                    📍 ${formatearCoordenadasAviso(aviso)}
                 </div>
 
                 <div class="estado-aviso-pendiente">
@@ -194,68 +228,46 @@ function crearTarjetaAvisoPendiente(aviso) {
             </div>
 
 
+            <!-- RECOMENDACIÓN -->
+
             ${
                 vehiculoRecomendado
                     ? `
-                        <div
-                            class="recomendacion-vehiculo"
-                            style="
-                                margin-top:8px;
-                                padding:7px 8px;
-                                border-radius:6px;
-                                background:var(--surface-soft);
-                                border:1px solid var(--border);
-                                font-size:9px;
-                            "
-                        >
-                            <strong>
-                                ★ Vehículo recomendado:
+                        <div class="recomendacion-vehiculo">
+
+                            <div>
+                                <span aria-hidden="true">★</span>
+
+                                <strong>
+                                    Vehículo recomendado
+                                </strong>
+                            </div>
+
+                            <div class="nombre-vehiculo-recomendado">
                                 ${escaparHTML(
                                     vehiculoRecomendado.nombre
                                 )}
-                            </strong>
+                            </div>
 
-                            <span
-                                style="
-                                    display:block;
-                                    margin-top:2px;
-                                    color:var(--muted);
-                                "
-                            >
+                            <div class="motivo-vehiculo-recomendado">
                                 ${escaparHTML(
                                     vehiculoRecomendado.motivo
                                 )}
-                            </span>
+                            </div>
+
                         </div>
                     `
                     : ""
             }
 
 
-            <div
-                class="asignacion-aviso"
-                style="
-                    display:grid;
-                    grid-template-columns:minmax(0,1fr) auto;
-                    gap:7px;
-                    margin-top:8px;
-                "
-            >
+            <!-- ASIGNACIÓN -->
+
+            <div class="asignacion-aviso">
 
                 <select
                     id="vehiculo-${escaparHTML(aviso.id)}"
                     class="selector-vehiculo-aviso"
-                    style="
-                        min-width:0;
-                        width:100%;
-                        min-height:31px;
-                        padding:5px 7px;
-                        border:1px solid var(--border);
-                        border-radius:5px;
-                        background:white;
-                        color:var(--text);
-                        font-size:10px;
-                    "
                 >
                     ${opcionesVehiculos}
                 </select>
@@ -265,7 +277,7 @@ function crearTarjetaAvisoPendiente(aviso) {
                     class="boton-secundario"
                     onclick="asignarAvisoAVehiculo('${escaparHTML(aviso.id)}')"
                 >
-                    Asignar
+                    ✓ Asignar
                 </button>
 
             </div>
@@ -280,6 +292,7 @@ function crearTarjetaAvisoPendiente(aviso) {
 ============================================================ */
 
 function obtenerVehiculoRecomendado(aviso) {
+
     const vehiculos =
         obtenerVehiculosDisponibles();
 
@@ -287,17 +300,18 @@ function obtenerVehiculoRecomendado(aviso) {
         return null;
     }
 
-    const candidatos = vehiculos
-        .map(vehiculo =>
-            evaluarVehiculoParaAviso(
-                vehiculo,
-                aviso
+    const candidatos =
+        vehiculos
+            .map(vehiculo =>
+                evaluarVehiculoParaAviso(
+                    vehiculo,
+                    aviso
+                )
             )
-        )
-        .sort(
-            (a, b) =>
-                b.puntuacion - a.puntuacion
-        );
+            .sort(
+                (a, b) =>
+                    b.puntuacion - a.puntuacion
+            );
 
     return candidatos.length
         ? candidatos[0]
@@ -309,10 +323,12 @@ function evaluarVehiculoParaAviso(
     vehiculo,
     aviso
 ) {
+
     const plan =
         planificacionDia[vehiculo.id];
 
     let puntuacion = 0;
+
     const motivos = [];
 
     const rutaAviso =
@@ -340,6 +356,7 @@ function evaluarVehiculoParaAviso(
         rutaAviso === rutaPlanificada
     ) {
         puntuacion += 100;
+
         motivos.push(
             "misma ruta planificada"
         );
@@ -367,7 +384,7 @@ function evaluarVehiculoParaAviso(
     }
 
 
-    /* Cercanía a paradas */
+    /* Cercanía a otras paradas */
 
     const distanciaParada =
         obtenerDistanciaAvisoAParadasPlanificadas(
@@ -378,18 +395,23 @@ function evaluarVehiculoParaAviso(
     if (distanciaParada !== null) {
 
         if (distanciaParada <= 5) {
+
             puntuacion += 40;
+
             motivos.push(
                 "muy cerca de otra parada"
             );
 
         } else if (distanciaParada <= 15) {
+
             puntuacion += 25;
+
             motivos.push(
                 "cerca de otra parada"
             );
 
         } else if (distanciaParada <= 30) {
+
             puntuacion += 10;
         }
     }
@@ -406,12 +428,15 @@ function evaluarVehiculoParaAviso(
     if (distanciaGPS !== null) {
 
         if (distanciaGPS <= 5) {
+
             puntuacion += 20;
+
             motivos.push(
                 "vehículo próximo"
             );
 
         } else if (distanciaGPS <= 15) {
+
             puntuacion += 10;
         }
     }
@@ -422,7 +447,9 @@ function evaluarVehiculoParaAviso(
 
     if (motivos.length) {
         motivo =
-            motivos.slice(0, 2).join(" + ");
+            motivos
+                .slice(0, 2)
+                .join(" + ");
     }
 
     return {
@@ -443,6 +470,7 @@ function obtenerDistanciaAvisoAParadasPlanificadas(
     aviso,
     plan
 ) {
+
     if (
         !plan ||
         !Array.isArray(plan.paradas) ||
@@ -509,6 +537,7 @@ function obtenerDistanciaAvisoAVehiculo(
     aviso,
     vehiculoId
 ) {
+
     if (
         !window.DATOS_MOCK ||
         !window.DATOS_MOCK.POSICIONES
@@ -577,6 +606,7 @@ function calcularDistanciaKm(
     lat2,
     lng2
 ) {
+
     const radioTierra = 6371;
 
     const dLat =
@@ -623,6 +653,7 @@ function gradosARadianes(grados) {
 ============================================================ */
 
 function obtenerVehiculosDisponibles() {
+
     if (
         !window.DATOS_MOCK ||
         !Array.isArray(
@@ -643,6 +674,7 @@ function crearOpcionesVehiculosAsignacion(
     aviso,
     vehiculoRecomendadoId
 ) {
+
     const vehiculos =
         obtenerVehiculosDisponibles();
 
@@ -741,8 +773,6 @@ function asignarAvisoAVehiculo(avisoId) {
     }
 
 
-    /* Ya está en el mismo plan */
-
     const yaExiste =
         plan.paradas.some(parada =>
             parada.tipo === "AVISO" &&
@@ -761,8 +791,6 @@ function asignarAvisoAVehiculo(avisoId) {
     }
 
 
-    /* Si está en otro vehículo */
-
     const otroVehiculo =
         encontrarVehiculoConAviso(
             avisoId
@@ -772,6 +800,7 @@ function asignarAvisoAVehiculo(avisoId) {
         otroVehiculo &&
         otroVehiculo !== vehiculoId
     ) {
+
         const confirmar =
             confirm(
                 `El aviso ${avisoId} ya está asignado a ${obtenerNombreVehiculo(otroVehiculo)}.\n\n¿Quieres moverlo al vehículo seleccionado?`
@@ -830,9 +859,11 @@ function asignarAvisoAVehiculo(avisoId) {
         nuevaParada
     );
 
+    aviso.estado =
+        "ASIGNADO";
 
-    aviso.estado = "ASIGNADO";
-    aviso.vehiculo = vehiculoId;
+    aviso.vehiculo =
+        vehiculoId;
 
     actualizarOrdenes(plan);
 
@@ -850,6 +881,7 @@ function asignarAvisoAVehiculo(avisoId) {
 function encontrarVehiculoConAviso(
     avisoId
 ) {
+
     for (
         const vehiculoId of
         Object.keys(planificacionDia)
@@ -893,6 +925,7 @@ function quitarAvisoDePlanSinPerderAviso(
     avisoId,
     vehiculoId
 ) {
+
     const plan =
         planificacionDia[
             vehiculoId
@@ -931,6 +964,7 @@ function quitarAvisoDePlanSinPerderAviso(
 function formatearCoordenadasAviso(
     aviso
 ) {
+
     const lat =
         obtenerLat(aviso);
 
@@ -954,6 +988,7 @@ function formatearCoordenadasAviso(
 
 
 function obtenerLat(objeto) {
+
     if (!objeto) {
         return null;
     }
@@ -984,6 +1019,7 @@ function obtenerLat(objeto) {
 
 
 function obtenerLng(objeto) {
+
     if (!objeto) {
         return null;
     }
@@ -1018,6 +1054,7 @@ function coordenadasValidas(
     lat,
     lng
 ) {
+
     return (
         Number.isFinite(Number(lat)) &&
         Number.isFinite(Number(lng)) &&
@@ -1030,6 +1067,7 @@ function coordenadasValidas(
 
 
 function obtenerIdVehiculo(objeto) {
+
     if (!objeto) {
         return null;
     }
@@ -1048,6 +1086,7 @@ function obtenerIdVehiculo(objeto) {
 ============================================================ */
 
 function cargarPlanificacionDesdeDatos() {
+
     planificacionDia = {};
 
     const vehiculos =
@@ -1205,6 +1244,7 @@ function cargarPlanificacionDesdeDatos() {
 ============================================================ */
 
 function obtenerRutasDisponibles() {
+
     return (
         window.DATOS_MOCK?.RUTAS ||
         []
@@ -1213,6 +1253,7 @@ function obtenerRutasDisponibles() {
 
 
 function obtenerNombreRuta(rutaId) {
+
     if (!rutaId) {
         return "Sin ruta";
     }
@@ -1245,6 +1286,7 @@ function obtenerNombreRuta(rutaId) {
 
 
 function obtenerColorRuta(rutaId) {
+
     const rutas =
         obtenerRutasDisponibles();
 
@@ -1276,6 +1318,7 @@ function obtenerColorRuta(rutaId) {
 
 
 function renderizarLeyendaRutas() {
+
     const contenedor =
         document.getElementById(
             "leyenda-rutas"
@@ -1316,6 +1359,7 @@ function renderizarLeyendaRutas() {
 ============================================================ */
 
 function renderizarPlanificacion() {
+
     const contenedor =
         document.getElementById(
             "planificacion-dia"
@@ -1365,6 +1409,8 @@ function crearTarjetaVehiculo(plan) {
             )}"
         >
 
+            <!-- CABECERA VEHÍCULO -->
+
             <div class="cabecera-plan">
 
                 <div class="identificacion-vehiculo">
@@ -1409,11 +1455,9 @@ function crearTarjetaVehiculo(plan) {
                 <button
                     type="button"
                     class="boton-centro-vehiculo"
-                    onclick="centrarVehiculoDesdePlan(
-                        '${escaparHTML(
-                            plan.vehiculoId
-                        )}'
-                    )"
+                    onclick="centrarVehiculoDesdePlan('${escaparHTML(
+                        plan.vehiculoId
+                    )}')"
                     title="Ver vehículo en el mapa"
                 >
                     ⌖
@@ -1422,12 +1466,14 @@ function crearTarjetaVehiculo(plan) {
             </div>
 
 
+            <!-- CONFIGURACIÓN -->
+
             <div class="datos-configuracion-plan">
 
                 <div class="campo-plan">
 
                     <label>
-                        Ruta del día
+                        🛣 Ruta del día
                     </label>
 
                     <select
@@ -1438,11 +1484,9 @@ function crearTarjetaVehiculo(plan) {
                             this.value
                         )"
                     >
-
                         ${crearOpcionesRutas(
                             plan.rutaActiva
                         )}
-
                     </select>
 
                 </div>
@@ -1451,7 +1495,7 @@ function crearTarjetaVehiculo(plan) {
                 <div class="campo-plan">
 
                     <label>
-                        Salida
+                        🕐 Salida
                     </label>
 
                     <input
@@ -1475,7 +1519,7 @@ function crearTarjetaVehiculo(plan) {
                 <div class="campo-plan">
 
                     <label>
-                        Regreso estimado
+                        🏁 Regreso estimado
                     </label>
 
                     <input
@@ -1498,10 +1542,12 @@ function crearTarjetaVehiculo(plan) {
             </div>
 
 
+            <!-- RESUMEN -->
+
             <div class="resumen-plan-vehiculo">
 
                 <span>
-                    Tablet:
+                    📱 Tablet:
                     <strong>
                         ${escaparHTML(
                             plan.tablet ||
@@ -1511,7 +1557,7 @@ function crearTarjetaVehiculo(plan) {
                 </span>
 
                 <span>
-                    Paradas:
+                    📍 Paradas:
                     <strong>
                         ${plan.paradas.length}
                     </strong>
@@ -1519,6 +1565,8 @@ function crearTarjetaVehiculo(plan) {
 
             </div>
 
+
+            <!-- PARADAS -->
 
             <div class="titulo-paradas">
                 PARADAS DEL DÍA
@@ -1552,6 +1600,8 @@ function crearTarjetaVehiculo(plan) {
             </div>
 
 
+            <!-- AÑADIR PARADA -->
+
             <div class="selector-anadir-parada">
 
                 <select
@@ -1580,18 +1630,18 @@ function crearTarjetaVehiculo(plan) {
             </div>
 
 
+            <!-- ACCIONES -->
+
             <div class="acciones-plan">
 
                 <button
                     type="button"
                     class="boton-secundario"
-                    onclick="reordenarParadas(
-                        '${escaparHTML(
-                            plan.vehiculoId
-                        )}'
-                    )"
+                    onclick="reordenarParadas('${escaparHTML(
+                        plan.vehiculoId
+                    )}')"
                 >
-                    Optimizar orden
+                    ↕ Optimizar orden
                 </button>
 
             </div>
@@ -1604,6 +1654,7 @@ function crearTarjetaVehiculo(plan) {
 function crearOpcionesRutas(
     rutaSeleccionada
 ) {
+
     const rutas =
         obtenerRutasDisponibles();
 
@@ -1738,6 +1789,7 @@ function cambiarRutaPlanificada(
     vehiculoId,
     nuevaRuta
 ) {
+
     const plan =
         planificacionDia[
             vehiculoId
@@ -1766,6 +1818,7 @@ function cambiarHoraPlanificacion(
     tipo,
     valor
 ) {
+
     const plan =
         planificacionDia[
             vehiculoId
@@ -1797,6 +1850,7 @@ function anadirParadaSeleccionada(
     vehiculoId,
     valor
 ) {
+
     if (!valor) {
         return;
     }
@@ -1820,6 +1874,8 @@ function anadirParadaSeleccionada(
         partes.slice(1).join(":");
 
 
+    /* AVISO */
+
     if (tipo === "AVISO") {
 
         const avisos =
@@ -1836,7 +1892,9 @@ function anadirParadaSeleccionada(
             alert(
                 "No se ha encontrado el aviso."
             );
+
             renderizarPlanificacion();
+
             return;
         }
 
@@ -1850,15 +1908,18 @@ function anadirParadaSeleccionada(
             vehiculoActual !==
                 vehiculoId
         ) {
+
             alert(
                 `Este aviso ya está asignado a ${obtenerNombreVehiculo(vehiculoActual)}.`
             );
 
             renderizarPlanificacion();
+
             return;
         }
 
         const nuevaParada = {
+
             orden:
                 plan.paradas.length + 1,
 
@@ -1914,6 +1975,8 @@ function anadirParadaSeleccionada(
     }
 
 
+    /* PUNTO */
+
     if (tipo === "PUNTO") {
 
         const puntos =
@@ -1927,15 +1990,18 @@ function anadirParadaSeleccionada(
             );
 
         if (!punto) {
+
             alert(
                 "No se ha encontrado el punto."
             );
 
             renderizarPlanificacion();
+
             return;
         }
 
         const nuevaParada = {
+
             orden:
                 plan.paradas.length + 1,
 
@@ -1992,6 +2058,7 @@ function crearParadaHTML(
     parada,
     index
 ) {
+
     const esAviso =
         String(
             parada.tipo || ""
@@ -2012,7 +2079,7 @@ function crearParadaHTML(
         parada.especie
             ? `
                 <span class="especie-parada">
-                    ${escaparHTML(
+                    🐾 ${escaparHTML(
                         parada.especie
                     )}
                 </span>
@@ -2021,9 +2088,11 @@ function crearParadaHTML(
 
     const hora =
         parada.hora
-            ? ` · ${escaparHTML(
-                parada.hora
-            )}`
+            ? `
+                · ${escaparHTML(
+                    parada.hora
+                )}
+            `
             : "";
 
     return `
@@ -2058,11 +2127,13 @@ function crearParadaHTML(
 
                 <div class="detalles-parada">
 
-                    ${escaparHTML(
-                        esAviso
-                            ? "Aviso"
-                            : "Punto habitual"
-                    )}
+                    <span>
+                        ${
+                            esAviso
+                                ? "⚠ Aviso"
+                                : "● Punto habitual"
+                        }
+                    </span>
 
                     ${hora}
 
@@ -2143,6 +2214,7 @@ function seleccionarParadaEnMapa(
     vehiculoId,
     indice
 ) {
+
     const plan =
         planificacionDia[
             vehiculoId
@@ -2162,12 +2234,40 @@ function seleccionarParadaEnMapa(
         typeof centrarParadaEnMapa ===
         "function"
     ) {
+
         centrarParadaEnMapa(
             parada
         );
-    } else {
-        console.warn(
-            "centrarParadaEnMapa() todavía no está disponible en mapa.js."
+
+        return;
+    }
+
+    /* Fallback si mapa.js todavía no tiene la función */
+
+    const lat =
+        obtenerLat(parada);
+
+    const lng =
+        obtenerLng(parada);
+
+    if (
+        coordenadasValidas(
+            lat,
+            lng
+        ) &&
+        typeof mapa !== "undefined" &&
+        mapa
+    ) {
+
+        mapa.setView(
+            [lat, lng],
+            Math.max(
+                mapa.getZoom(),
+                13
+            ),
+            {
+                animate: true
+            }
         );
     }
 }
@@ -2181,6 +2281,7 @@ function eliminarParada(
     vehiculoId,
     indice
 ) {
+
     const plan =
         planificacionDia[
             vehiculoId
@@ -2206,7 +2307,7 @@ function eliminarParada(
     }
 
 
-    /* Si es aviso, devolverlo a pendiente */
+    /* Si es AVISO, devolver a PENDIENTE */
 
     if (
         String(
@@ -2241,6 +2342,7 @@ function eliminarParada(
                 estadoActual !==
                 "RECOGIDO"
             ) {
+
                 aviso.estado =
                     "PENDIENTE";
 
@@ -2273,6 +2375,7 @@ function subirParada(
     vehiculoId,
     indice
 ) {
+
     const plan =
         planificacionDia[
             vehiculoId
@@ -2312,6 +2415,7 @@ function bajarParada(
     vehiculoId,
     indice
 ) {
+
     const plan =
         planificacionDia[
             vehiculoId
@@ -2348,6 +2452,7 @@ function bajarParada(
 
 
 function actualizarOrdenes(plan) {
+
     if (
         !plan ||
         !Array.isArray(
@@ -2359,6 +2464,7 @@ function actualizarOrdenes(plan) {
 
     plan.paradas.forEach(
         (parada, index) => {
+
             parada.orden =
                 index + 1;
         }
@@ -2369,6 +2475,7 @@ function actualizarOrdenes(plan) {
 function reordenarParadas(
     vehiculoId
 ) {
+
     alert(
         "La optimización automática de la ruta se implementará cuando conectemos la planificación con el cálculo de ruta por carretera."
     );
@@ -2382,13 +2489,16 @@ function reordenarParadas(
 function centrarVehiculoDesdePlan(
     vehiculoId
 ) {
+
     if (
         typeof centrarVehiculo ===
         "function"
     ) {
+
         centrarVehiculo(
             vehiculoId
         );
+
         return;
     }
 
@@ -2396,6 +2506,7 @@ function centrarVehiculoDesdePlan(
         typeof centrarTodosLosVehiculos ===
         "function"
     ) {
+
         centrarTodosLosVehiculos();
     }
 }
@@ -2408,6 +2519,7 @@ function centrarVehiculoDesdePlan(
 function obtenerNombreVehiculo(
     vehiculoId
 ) {
+
     const vehiculos =
         window.DATOS_MOCK?.VEHICULOS ||
         [];
@@ -2428,6 +2540,7 @@ function obtenerNombreVehiculo(
 function normalizarEstadoParada(
     estado
 ) {
+
     const valor =
         String(
             estado || ""
@@ -2459,11 +2572,13 @@ function normalizarEstadoParada(
 function obtenerTextoEstadoParada(
     estado
 ) {
+
     switch (
         normalizarEstadoParada(
             estado
         )
     ) {
+
         case "RECOGIDO":
             return "Recogido";
 
@@ -2483,6 +2598,7 @@ function obtenerTextoEstadoParada(
 
 
 function marcarPlanificacionModificada() {
+
     window.planificacionModificada =
         true;
 
@@ -2492,6 +2608,7 @@ function marcarPlanificacionModificada() {
         );
 
     if (indicador) {
+
         indicador.style.display =
             "block";
 
@@ -2502,6 +2619,7 @@ function marcarPlanificacionModificada() {
 
 
 function escaparHTML(valor) {
+
     if (
         valor === null ||
         valor === undefined
