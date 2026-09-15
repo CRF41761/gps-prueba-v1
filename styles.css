@@ -1531,12 +1531,6 @@ min-height: 560px;
     font-weight: 700;
 }
 
-.ruta-planificada::before {
-    content: "Ruta del día:";
-
-    color: var(--muted);
-    font-weight: 600;
-}
 
 
 /* ============================================================
