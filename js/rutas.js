@@ -17,6 +17,191 @@ function inicializarPlanificacion() {
     renderizarPlanificacion();
 }
 
+// ============================================================
+// AVISOS PENDIENTES DE ASIGNACIÓN
+// ============================================================
+
+function obtenerAvisosPendientes() {
+    const datos = window.DATOS_MOCK || {};
+    const avisos = Array.isArray(datos.AVISOS) ? datos.AVISOS : [];
+
+    return avisos.filter(aviso => {
+        const estado = String(aviso.estado || "").toUpperCase();
+        return estado === "PENDIENTE";
+    });
+}
+
+
+function renderizarAvisosPendientes() {
+    const contenedor = document.getElementById("avisos-pendientes-planificacion");
+    const contador = document.getElementById("contador-avisos-pendientes");
+
+    if (!contenedor) return;
+
+    const avisos = obtenerAvisosPendientes();
+
+    if (contador) {
+        contador.textContent =
+            `${avisos.length} ${avisos.length === 1 ? "pendiente" : "pendientes"}`;
+    }
+
+    if (!avisos.length) {
+        contenedor.innerHTML = `
+            <div class="sin-avisos-pendientes">
+                <span class="icono-sin-avisos">✓</span>
+                <div>
+                    <strong>No hay avisos pendientes</strong>
+                    <div>Todos los avisos están asignados o recogidos.</div>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    contenedor.innerHTML = avisos
+        .map(aviso => crearTarjetaAvisoPendiente(aviso))
+        .join("");
+}
+
+
+function crearTarjetaAvisoPendiente(aviso) {
+    const idAviso = aviso.id || aviso.aviso_id || "";
+
+    const nombrePunto =
+        aviso.punto ||
+        aviso.nombre ||
+        aviso.punto_nombre ||
+        "Punto de recogida";
+
+    const especie =
+        aviso.especie ||
+        aviso.especie_reportada ||
+        "Especie no indicada";
+
+    const cantidad = aviso.cantidad || 1;
+
+    const telefono =
+        aviso.telefono ||
+        aviso.telefono_info ||
+        "";
+
+    const observaciones =
+        aviso.observaciones ||
+        "";
+
+    const ruta =
+        aviso.ruta ||
+        aviso.ruta_id ||
+        "";
+
+    const nombreRuta =
+        CONFIG.nombresRutas?.[ruta] ||
+        ruta ||
+        "Sin ruta";
+
+    const colorRuta =
+        CONFIG.coloresRutas?.[ruta] ||
+        "#666";
+
+    return `
+        <article class="tarjeta-aviso-pendiente"
+                 data-aviso="${escaparHTML(idAviso)}">
+
+            <div class="cabecera-aviso-pendiente">
+
+                <div class="icono-aviso-pendiente">
+                    🔔
+                </div>
+
+                <div class="datos-aviso-pendiente">
+
+                    <div class="titulo-aviso-pendiente">
+                        ${escaparHTML(nombrePunto)}
+                    </div>
+
+                    <div class="identificador-aviso-pendiente">
+                        ${escaparHTML(idAviso)}
+                    </div>
+
+                </div>
+
+                <div class="ruta-aviso-pendiente">
+                    <span
+                        class="punto-ruta"
+                        style="background:${colorRuta};">
+                    </span>
+                    ${escaparHTML(nombreRuta)}
+                </div>
+
+            </div>
+
+            <div class="contenido-aviso-pendiente">
+
+                <div class="dato-aviso">
+                    <span class="etiqueta-dato">Especie</span>
+                    <strong>${escaparHTML(especie)}</strong>
+                </div>
+
+                <div class="dato-aviso">
+                    <span class="etiqueta-dato">Cantidad</span>
+                    <strong>${escaparHTML(String(cantidad))}</strong>
+                </div>
+
+                ${
+                    telefono
+                        ? `
+                            <div class="dato-aviso">
+                                <span class="etiqueta-dato">Teléfono</span>
+                                <strong>${escaparHTML(telefono)}</strong>
+                            </div>
+                        `
+                        : ""
+                }
+
+            </div>
+
+            ${
+                observaciones
+                    ? `
+                        <div class="observaciones-aviso-pendiente">
+                            ${escaparHTML(observaciones)}
+                        </div>
+                    `
+                    : ""
+            }
+
+            <div class="pie-aviso-pendiente">
+                <span class="estado-aviso-pendiente">
+                    PENDIENTE DE ASIGNACIÓN
+                </span>
+
+                <span class="coordenadas-aviso-pendiente">
+                    ${formatearCoordenadasAviso(aviso)}
+                </span>
+            </div>
+
+        </article>
+    `;
+}
+
+
+function formatearCoordenadasAviso(aviso) {
+    const latitud =
+        aviso.latitud ??
+        aviso.lat ??
+        "";
+
+    const longitud =
+        aviso.longitud ??
+        aviso.lng ??
+        "";
+
+    if (latitud === "" || longitud === "") {
+        return "Coordenadas no disponibles";
+    }
+
+    return `${Number(latitud).toFixed(4)}, ${Number(longitud).toFixed(4)}`;
+}
 
 // ============================================================
 // CARGAR PLANIFICACIÓN
