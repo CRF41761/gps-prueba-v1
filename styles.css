@@ -352,13 +352,22 @@ button {
 
 .workspace {
     display: grid;
-    grid-template-columns: 255px minmax(500px, 1fr) 310px;
-    height: calc(100vh - 280px);
-    min-height: 500px;
+
+    grid-template-columns:
+        255px
+        minmax(500px, 1fr)
+        310px;
+
+    height: 600px;
+    min-height: 600px;
+
     background: var(--surface);
+
     border: 1px solid var(--border);
     border-radius: var(--radius);
+
     overflow: hidden;
+
     box-shadow: var(--shadow);
 }
 
