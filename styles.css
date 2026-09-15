@@ -1925,6 +1925,17 @@ min-height: 560px;
     padding: 10px 12px;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
+.tarjeta-aviso-pendiente[data-ruta="R1"] {
+    border-left: 4px solid #1976D2;
+}
+
+.tarjeta-aviso-pendiente[data-ruta="R2"] {
+    border-left: 4px solid #388E3C;
+}
+
+.tarjeta-aviso-pendiente[data-ruta="R3"] {
+    border-left: 4px solid #F57C00;
+}
 
 .tarjeta-aviso-pendiente:hover {
     border-color: #b8c2cc;
