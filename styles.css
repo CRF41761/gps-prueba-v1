@@ -376,12 +376,13 @@ button {
    PANELS
 ============================================================ */
 
-.left-panel,
-.right-panel {
-    background: var(--surface);
-    padding: 15px;
-
+.left-panel, 
+.right-panel { 
+    background: var(--surface); 
+    padding: 15px; 
+ 
     overflow-y: auto;
+    min-height: 0;
 }
 
 .left-panel {
