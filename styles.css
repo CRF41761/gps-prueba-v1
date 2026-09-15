@@ -1331,27 +1331,28 @@ min-height: 560px;
         outline 0.15s ease;
 }
 
-/* Diferenciación por vehículo */
+/* V1 · Ruta Norte */
 .tarjeta-plan-vehiculo[data-vehiculo="V1"] {
     background: #eef5fc;
-    border-color: #d2e1ef;
+    border-color: #1976D2;
 }
 
+/* V2 · Ruta Interior */
 .tarjeta-plan-vehiculo[data-vehiculo="V2"] {
     background: #eef7f1;
-    border-color: #d3e4d9;
+    border-color: #388E3C;
 }
 
+/* V3 · Ruta Sur */
 .tarjeta-plan-vehiculo[data-vehiculo="V3"] {
     background: #fcf4ea;
-    border-color: #eadbc8;
+    border-color: #F57C00;
 }
 
 .tarjeta-plan-vehiculo:hover {
     border-color: #c7d3d7;
     box-shadow: var(--shadow);
 }
-
 
 /* ============================================================
    CABECERA VEHÍCULO
