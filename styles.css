@@ -1318,7 +1318,7 @@ min-height: 560px;
 ============================================================ */
 
 .tarjeta-plan-vehiculo {
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
     border-radius: 9px;
 
     background: #f1f6fb;
