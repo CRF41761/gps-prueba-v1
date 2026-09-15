@@ -1,14 +1,8 @@
-// ============================================================
-// RUTAS.JS
-// Gestión de rutas y planificación del día
-// ============================================================
-
 let planificacionDia = {};
 
-
-// ============================================================
-// INICIALIZACIÓN
-// ============================================================
+/* ============================================================
+   INICIALIZACIÓN
+   ============================================================ */
 
 function inicializarPlanificacion() {
     cargarPlanificacionDesdeDatos();
@@ -18,342 +12,148 @@ function inicializarPlanificacion() {
 }
 
 
-// ============================================================
-// AVISOS PENDIENTES DE ASIGNACIÓN
-// ============================================================
+/* ============================================================
+   AVISOS PENDIENTES
+   ============================================================ */
 
 function obtenerAvisosPendientes() {
+    if (!window.DATOS_MOCK || !Array.isArray(window.DATOS_MOCK.AVISOS)) {
+        return [];
+    }
 
-    const datos = window.DATOS_MOCK || {};
-
-    const avisos =
-        Array.isArray(datos.AVISOS)
-            ? datos.AVISOS
-            : [];
-
-    return avisos.filter(aviso => {
-
-        const estado =
-            String(aviso.estado || "")
-                .trim()
-                .toUpperCase();
-
-        return estado === "PENDIENTE";
-    });
+    return window.DATOS_MOCK.AVISOS.filter(aviso =>
+        String(aviso.estado || "").toUpperCase() === "PENDIENTE"
+    );
 }
 
 
 function renderizarAvisosPendientes() {
-
-    const contenedor =
-        document.getElementById(
-            "avisos-pendientes-planificacion"
-        );
-
-    const contador =
-        document.getElementById(
-            "contador-avisos-pendientes"
-        );
+    const contenedor = document.getElementById("avisos-pendientes-planificacion");
+    const contador = document.getElementById("contador-avisos-pendientes");
 
     if (!contenedor) {
         return;
     }
 
-    const avisos =
-        obtenerAvisosPendientes();
+    const avisos = obtenerAvisosPendientes();
 
     if (contador) {
-
-        contador.textContent =
-            `${avisos.length} ${
-                avisos.length === 1
-                    ? "pendiente"
-                    : "pendientes"
-            }`;
+        contador.textContent = avisos.length;
     }
 
-    if (!avisos.length) {
-
+    if (avisos.length === 0) {
         contenedor.innerHTML = `
             <div class="sin-avisos-pendientes">
-
-                <span class="icono-sin-avisos">
-                    ✓
-                </span>
-
-                <div>
-
-                    <strong>
-                        No hay avisos pendientes
-                    </strong>
-
-                    <div>
-                        Todos los avisos están asignados o recogidos.
-                    </div>
-
-                </div>
-
+                No hay avisos pendientes de asignar.
             </div>
         `;
-
         return;
     }
 
-    contenedor.innerHTML =
-        avisos
-            .map(aviso =>
-                crearTarjetaAvisoPendiente(aviso)
-            )
-            .join("");
+    contenedor.innerHTML = avisos
+        .map(aviso => crearTarjetaAvisoPendiente(aviso))
+        .join("");
 }
 
-
-// ============================================================
-// VEHÍCULOS DISPONIBLES PARA ASIGNACIÓN
-// ============================================================
-
-function obtenerVehiculosDisponibles() {
-
-    const datos =
-        window.DATOS_MOCK || {};
-
-    const vehiculos =
-        Array.isArray(datos.VEHICULOS)
-            ? datos.VEHICULOS
-            : [];
-
-    return vehiculos.filter(vehiculo => {
-
-        return vehiculo.activo !== false;
-    });
-}
-
-
-function crearOpcionesVehiculosAsignacion() {
-
-    const vehiculos =
-        obtenerVehiculosDisponibles();
-
-    if (!vehiculos.length) {
-
-        return `
-            <option value="">
-                No hay vehículos disponibles
-            </option>
-        `;
-    }
-
-    return `
-        <option value="">
-            Seleccionar vehículo...
-        </option>
-
-        ${
-            vehiculos
-                .map((vehiculo, index) => {
-
-                    const id =
-                        vehiculo.id_vehiculo ||
-                        vehiculo.vehiculo_id ||
-                        vehiculo.id ||
-                        `V${index + 1}`;
-
-                    const nombre =
-                        vehiculo.nombre ||
-                        `Vehículo ${index + 1}`;
-
-                    return `
-                        <option
-                            value="${escaparHTML(id)}"
-                        >
-                            ${escaparHTML(nombre)}
-                        </option>
-                    `;
-                })
-                .join("")
-        }
-    `;
-}
-
-
-// ============================================================
-// TARJETA DE AVISO PENDIENTE
-// ============================================================
 
 function crearTarjetaAvisoPendiente(aviso) {
+    const vehiculoRecomendado = obtenerVehiculoRecomendado(aviso);
+    const opcionesVehiculos = crearOpcionesVehiculosAsignacion(
+        aviso,
+        vehiculoRecomendado ? vehiculoRecomendado.id : null
+    );
 
-    const idAviso =
-        aviso.id ||
-        aviso.id_aviso ||
-        "";
-
-    const nombrePunto =
-        aviso.punto ||
-        aviso.nombre ||
-        aviso.punto_nombre ||
-        "Punto de recogida";
-
-    const especie =
-        aviso.especie ||
-        aviso.especie_reportada ||
-        "Especie no indicada";
-
-    const cantidad =
-        aviso.cantidad ||
-        1;
-
-    const telefono =
-        aviso.telefono ||
-        aviso.telefono_info ||
-        "";
-
-    const observaciones =
-        aviso.observaciones ||
-        "";
-
-    const ruta =
-        aviso.ruta ||
-        aviso.ruta_id ||
-        "";
-
-    const nombreRuta =
-        CONFIG.nombresRutas?.[ruta] ||
-        ruta ||
-        "Sin ruta";
-
-    const colorRuta =
-        CONFIG.coloresRutas?.[ruta] ||
-        "#666";
+    const rutaNombre = obtenerNombreRuta(aviso.ruta);
 
     return `
-        <article
-            class="tarjeta-aviso-pendiente"
-            data-aviso="${escaparHTML(idAviso)}"
-        >
+        <div class="aviso-pendiente-card">
 
-            <div class="cabecera-aviso-pendiente">
-
-                <div class="icono-aviso-pendiente">
-                    🔔
+            <div class="aviso-pendiente-cabecera">
+                <div>
+                    <strong>${escaparHTML(aviso.punto || "Punto sin nombre")}</strong>
+                    <span class="aviso-id">${escaparHTML(aviso.id || "")}</span>
                 </div>
 
-                <div class="datos-aviso-pendiente">
+                <span class="estado-aviso estado-pendiente">
+                    PENDIENTE
+                </span>
+            </div>
 
-                    <div class="titulo-aviso-pendiente">
-                        ${escaparHTML(nombrePunto)}
-                    </div>
+            <div class="aviso-pendiente-datos">
 
-                    <div class="identificador-aviso-pendiente">
-                        ${escaparHTML(idAviso)}
-                    </div>
-
+                <div>
+                    <span class="dato-label">Ruta geográfica</span>
+                    <strong>${escaparHTML(rutaNombre)}</strong>
                 </div>
 
-                <div class="ruta-aviso-pendiente">
+                <div>
+                    <span class="dato-label">Especie</span>
+                    <strong>${escaparHTML(aviso.especie || "No indicada")}</strong>
+                </div>
 
-                    <span
-                        class="punto-ruta"
-                        style="background:${colorRuta};"
-                    ></span>
+                <div>
+                    <span class="dato-label">Cantidad</span>
+                    <strong>${escaparHTML(String(aviso.cantidad || 1))}</strong>
+                </div>
 
-                    ${escaparHTML(nombreRuta)}
-
+                <div>
+                    <span class="dato-label">Teléfono</span>
+                    <strong>${escaparHTML(aviso.telefono || "No indicado")}</strong>
                 </div>
 
             </div>
-
-
-            <div class="contenido-aviso-pendiente">
-
-                <div class="dato-aviso">
-
-                    <span class="etiqueta-dato">
-                        Especie
-                    </span>
-
-                    <strong>
-                        ${escaparHTML(especie)}
-                    </strong>
-
-                </div>
-
-
-                <div class="dato-aviso">
-
-                    <span class="etiqueta-dato">
-                        Cantidad
-                    </span>
-
-                    <strong>
-                        ${escaparHTML(String(cantidad))}
-                    </strong>
-
-                </div>
-
-
-                ${
-                    telefono
-                        ? `
-                            <div class="dato-aviso">
-
-                                <span class="etiqueta-dato">
-                                    Teléfono
-                                </span>
-
-                                <strong>
-                                    ${escaparHTML(telefono)}
-                                </strong>
-
-                            </div>
-                        `
-                        : ""
-                }
-
-            </div>
-
 
             ${
-                observaciones
+                aviso.observaciones
                     ? `
-                        <div class="observaciones-aviso-pendiente">
-                            ${escaparHTML(observaciones)}
+                        <div class="aviso-observaciones">
+                            <span class="dato-label">Observaciones</span>
+                            <div>${escaparHTML(aviso.observaciones)}</div>
                         </div>
                     `
                     : ""
             }
 
-
-            <div class="pie-aviso-pendiente">
-
-                <span class="estado-aviso-pendiente">
-                    PENDIENTE DE ASIGNACIÓN
-                </span>
-
-                <span class="coordenadas-aviso-pendiente">
-                    ${formatearCoordenadasAviso(aviso)}
-                </span>
-
+            <div class="aviso-coordenadas">
+                ${formatearCoordenadasAviso(aviso)}
             </div>
 
+            ${
+                vehiculoRecomendado
+                    ? `
+                        <div class="recomendacion-vehiculo">
+                            <span class="recomendacion-icono">★</span>
+                            <div>
+                                <strong>Vehículo recomendado</strong>
+                                <span>
+                                    ${escaparHTML(vehiculoRecomendado.nombre)}
+                                    · ${escaparHTML(vehiculoRecomendado.motivo)}
+                                </span>
+                            </div>
+                        </div>
+                    `
+                    : ""
+            }
 
-            <div class="asignacion-aviso-pendiente">
+            <div class="asignacion-aviso">
 
-                <label>
-                    Asignar a vehículo
+                <label for="vehiculo-${escaparHTML(aviso.id)}">
+                    Vehículo
                 </label>
 
-                <div class="control-asignacion-aviso">
+                <div class="asignacion-aviso-controles">
 
                     <select
-                        id="asignar-aviso-${escaparHTML(idAviso)}"
+                        id="vehiculo-${escaparHTML(aviso.id)}"
+                        class="selector-vehiculo-aviso"
                     >
-                        ${crearOpcionesVehiculosAsignacion()}
+                        ${opcionesVehiculos}
                     </select>
 
                     <button
                         type="button"
-                        class="boton-secundario boton-asignar-aviso"
-                        onclick="asignarAvisoAVehiculo('${escaparHTML(idAviso)}')"
+                        class="btn-asignar-aviso"
+                        onclick="asignarAvisoAVehiculo('${escaparHTML(aviso.id)}')"
                     >
                         Asignar
                     </button>
@@ -362,626 +162,762 @@ function crearTarjetaAvisoPendiente(aviso) {
 
             </div>
 
-        </article>
+        </div>
     `;
 }
 
 
-// ============================================================
-// ASIGNAR AVISO A VEHÍCULO
-// ============================================================
+/* ============================================================
+   ASIGNACIÓN INTELIGENTE DE VEHÍCULOS
+   ============================================================ */
 
-function asignarAvisoAVehiculo(
-    avisoId
-) {
+/*
+ * Calcula el vehículo más coherente para un aviso.
+ *
+ * Prioridad:
+ * 1. Vehículo activo.
+ * 2. Coincidencia con la ruta planificada del día.
+ * 3. Coincidencia con la ruta habitual.
+ * 4. Proximidad a las paradas que ya tiene planificadas.
+ * 5. Proximidad a la posición GPS actual.
+ *
+ * IMPORTANTE:
+ * La "ruta" del aviso sigue siendo independiente del vehículo.
+ * Que un aviso sea R1 no significa que obligatoriamente tenga
+ * que realizarlo V1.
+ */
 
-    const selector =
-        document.getElementById(
-            `asignar-aviso-${avisoId}`
-        );
+function obtenerVehiculoRecomendado(aviso) {
+    const vehiculos = obtenerVehiculosDisponibles();
 
-    if (!selector) {
-
-        console.warn(
-            "No se encuentra el selector del aviso:",
-            avisoId
-        );
-
-        return;
+    if (!vehiculos.length) {
+        return null;
     }
 
-    const vehiculoId =
-        selector.value;
+    const candidatos = vehiculos
+        .map(vehiculo => evaluarVehiculoParaAviso(vehiculo, aviso))
+        .sort((a, b) => b.puntuacion - a.puntuacion);
 
-    if (!vehiculoId) {
-
-        alert(
-            "Selecciona primero el vehículo al que quieres asignar el aviso."
-        );
-
-        return;
-    }
-
-    const datos =
-        window.DATOS_MOCK || {};
-
-    const avisos =
-        Array.isArray(datos.AVISOS)
-            ? datos.AVISOS
-            : [];
-
-    const aviso =
-        avisos.find(item => {
-
-            const id =
-                item.id_aviso ||
-                item.id;
-
-            return id === avisoId;
-        });
-
-    if (!aviso) {
-
-        console.warn(
-            "No se encuentra el aviso:",
-            avisoId
-        );
-
-        return;
-    }
+    return candidatos.length ? candidatos[0] : null;
+}
 
 
-    const plan =
-        planificacionDia[vehiculoId];
+function evaluarVehiculoParaAviso(vehiculo, aviso) {
+    const plan = planificacionDia[vehiculo.id];
 
-    if (!plan) {
+    let puntuacion = 0;
+    const motivos = [];
 
-        alert(
-            "No se ha encontrado la planificación del vehículo seleccionado."
-        );
+    const rutaAviso = String(aviso.ruta || "").toUpperCase();
 
-        return;
+    const rutaPlanificada = plan
+        ? String(plan.rutaActiva || "").toUpperCase()
+        : "";
+
+    const rutaHabitual = String(
+        vehiculo.rutaHabitual || ""
+    ).toUpperCase();
+
+
+    /* --------------------------------------------------------
+       Coincidencia con ruta planificada
+       -------------------------------------------------------- */
+
+    if (rutaAviso && rutaPlanificada && rutaAviso === rutaPlanificada) {
+        puntuacion += 100;
+        motivos.push("misma ruta planificada");
     }
 
 
-    // --------------------------------------------------------
-    // Comprobar si ya está asignado
-    // --------------------------------------------------------
+    /* --------------------------------------------------------
+       Coincidencia con ruta habitual
+       -------------------------------------------------------- */
 
-    const yaExiste =
-        plan.paradas.some(parada => {
+    if (rutaAviso && rutaHabitual && rutaAviso === rutaHabitual) {
+        puntuacion += 50;
 
-            return (
-                parada.tipo === "AVISO" &&
-                parada.aviso_id === avisoId
-            );
-        });
-
-    if (yaExiste) {
-
-        alert(
-            "Este aviso ya está incluido en la planificación del vehículo."
-        );
-
-        return;
+        if (!motivos.includes("misma ruta planificada")) {
+            motivos.push("ruta habitual");
+        }
     }
 
 
-    // --------------------------------------------------------
-    // Crear la parada
-    // --------------------------------------------------------
+    /* --------------------------------------------------------
+       Proximidad a las paradas ya planificadas
+       -------------------------------------------------------- */
 
-    const nuevaParada = {
-
-        orden:
-            plan.paradas.length + 1,
-
-        tipo:
-            "AVISO",
-
-        aviso_id:
-            aviso.id_aviso ||
-            aviso.id,
-
-        punto_id:
-            aviso.puntoId ||
-            aviso.punto_id ||
-            "",
-
-        nombre:
-            aviso.punto ||
-            aviso.nombre ||
-            "Aviso",
-
-        especie:
-            aviso.especie ||
-            aviso.especie_reportada ||
-            "",
-
-        cantidad:
-            aviso.cantidad ||
-            1,
-
-        latitud:
-            Number(
-                aviso.latitud ??
-                aviso.lat ??
-                0
-            ),
-
-        longitud:
-            Number(
-                aviso.longitud ??
-                aviso.lng ??
-                0
-            ),
-
-        estado:
-            "ASIGNADO",
-
-        hora:
-            "--:--"
-    };
-
-
-    plan.paradas.push(
-        nuevaParada
-    );
-
-
-    // --------------------------------------------------------
-    // Actualizar el propio aviso
-    // --------------------------------------------------------
-
-    aviso.estado =
-        "ASIGNADO";
-
-    aviso.vehiculo =
-        vehiculoId;
-
-
-    // --------------------------------------------------------
-    // Actualizar órdenes
-    // --------------------------------------------------------
-
-    actualizarOrdenes(
+    const distanciaParada = obtenerDistanciaAvisoAParadasPlanificadas(
+        aviso,
         plan
     );
 
+    if (distanciaParada !== null) {
+        if (distanciaParada <= 5) {
+            puntuacion += 40;
+            motivos.push("muy cerca de otra parada");
+        } else if (distanciaParada <= 15) {
+            puntuacion += 25;
+            motivos.push("cerca de otra parada");
+        } else if (distanciaParada <= 30) {
+            puntuacion += 10;
+        }
+    }
 
-    // --------------------------------------------------------
-    // Volver a pintar
-    // --------------------------------------------------------
 
-    renderizarAvisosPendientes();
+    /* --------------------------------------------------------
+       Proximidad a posición GPS del vehículo
+       -------------------------------------------------------- */
 
-    renderizarPlanificacion();
-
-    marcarPlanificacionModificada(
-        vehiculoId
+    const distanciaGPS = obtenerDistanciaAvisoAVehiculo(
+        aviso,
+        vehiculo.id
     );
 
+    if (distanciaGPS !== null) {
+        if (distanciaGPS <= 5) {
+            puntuacion += 20;
+            motivos.push("vehículo próximo");
+        } else if (distanciaGPS <= 15) {
+            puntuacion += 10;
+        }
+    }
 
-    console.log(
-        `Aviso ${avisoId} asignado a ${vehiculoId}`
+
+    /* --------------------------------------------------------
+       Motivo final
+       -------------------------------------------------------- */
+
+    let motivo = "mejor combinación disponible";
+
+    if (motivos.length) {
+        motivo = motivos.slice(0, 2).join(" + ");
+    }
+
+    return {
+        ...vehiculo,
+        puntuacion,
+        motivo,
+        distanciaParada,
+        distanciaGPS
+    };
+}
+
+
+function obtenerDistanciaAvisoAParadasPlanificadas(aviso, plan) {
+    if (
+        !plan ||
+        !Array.isArray(plan.paradas) ||
+        !plan.paradas.length
+    ) {
+        return null;
+    }
+
+    const latAviso = obtenerLat(aviso);
+    const lngAviso = obtenerLng(aviso);
+
+    if (!coordenadasValidas(latAviso, lngAviso)) {
+        return null;
+    }
+
+    let distanciaMinima = null;
+
+    plan.paradas.forEach(parada => {
+        const lat = obtenerLat(parada);
+        const lng = obtenerLng(parada);
+
+        if (!coordenadasValidas(lat, lng)) {
+            return;
+        }
+
+        const distancia = calcularDistanciaKm(
+            latAviso,
+            lngAviso,
+            lat,
+            lng
+        );
+
+        if (
+            distanciaMinima === null ||
+            distancia < distanciaMinima
+        ) {
+            distanciaMinima = distancia;
+        }
+    });
+
+    return distanciaMinima;
+}
+
+
+function obtenerDistanciaAvisoAVehiculo(aviso, vehiculoId) {
+    if (
+        !window.DATOS_MOCK ||
+        !window.DATOS_MOCK.POSICIONES
+    ) {
+        return null;
+    }
+
+    let posicion = window.DATOS_MOCK.POSICIONES;
+
+    if (Array.isArray(posicion)) {
+        posicion = posicion.find(p =>
+            obtenerIdVehiculo(p) === vehiculoId
+        );
+    } else {
+        posicion = posicion[vehiculoId];
+    }
+
+    if (!posicion) {
+        return null;
+    }
+
+    const latAviso = obtenerLat(aviso);
+    const lngAviso = obtenerLng(aviso);
+    const latVehiculo = obtenerLat(posicion);
+    const lngVehiculo = obtenerLng(posicion);
+
+    if (
+        !coordenadasValidas(latAviso, lngAviso) ||
+        !coordenadasValidas(latVehiculo, lngVehiculo)
+    ) {
+        return null;
+    }
+
+    return calcularDistanciaKm(
+        latAviso,
+        lngAviso,
+        latVehiculo,
+        lngVehiculo
     );
 }
 
 
-// ============================================================
-// COORDENADAS DEL AVISO
-// ============================================================
+function calcularDistanciaKm(lat1, lng1, lat2, lng2) {
+    const radioTierra = 6371;
+
+    const dLat = gradosARadianes(lat2 - lat1);
+    const dLng = gradosARadianes(lng2 - lng1);
+
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(gradosARadianes(lat1)) *
+        Math.cos(gradosARadianes(lat2)) *
+        Math.sin(dLng / 2) *
+        Math.sin(dLng / 2);
+
+    const c = 2 * Math.atan2(
+        Math.sqrt(a),
+        Math.sqrt(1 - a)
+    );
+
+    return radioTierra * c;
+}
+
+
+function gradosARadianes(grados) {
+    return grados * Math.PI / 180;
+}
+
+
+/* ============================================================
+   VEHÍCULOS DISPONIBLES
+   ============================================================ */
+
+function obtenerVehiculosDisponibles() {
+    if (
+        !window.DATOS_MOCK ||
+        !Array.isArray(window.DATOS_MOCK.VEHICULOS)
+    ) {
+        return [];
+    }
+
+    return window.DATOS_MOCK.VEHICULOS.filter(
+        vehiculo => vehiculo.activo !== false
+    );
+}
+
+
+function crearOpcionesVehiculosAsignacion(aviso, vehiculoRecomendadoId) {
+    const vehiculos = obtenerVehiculosDisponibles();
+
+    let html = `
+        <option value="">
+            Seleccionar vehículo...
+        </option>
+    `;
+
+    vehiculos.forEach(vehiculo => {
+        const esRecomendado =
+            vehiculo.id === vehiculoRecomendadoId;
+
+        html += `
+            <option
+                value="${escaparHTML(vehiculo.id)}"
+                ${esRecomendado ? "selected" : ""}
+            >
+                ${esRecomendado ? "★ " : ""}
+                ${escaparHTML(vehiculo.nombre)}
+                ${vehiculo.rutaHabitual
+                    ? ` · ${escaparHTML(obtenerNombreRuta(vehiculo.rutaHabitual))}`
+                    : ""}
+            </option>
+        `;
+    });
+
+    return html;
+}
+
+
+/* ============================================================
+   ASIGNAR AVISO A VEHÍCULO
+   ============================================================ */
+
+function asignarAvisoAVehiculo(avisoId) {
+    const selector = document.getElementById(
+        `vehiculo-${avisoId}`
+    );
+
+    if (!selector) {
+        console.error(
+            "No se encontró el selector del aviso:",
+            avisoId
+        );
+        return;
+    }
+
+    const vehiculoId = selector.value;
+
+    if (!vehiculoId) {
+        alert("Selecciona un vehículo para asignar el aviso.");
+        return;
+    }
+
+    const avisos = window.DATOS_MOCK?.AVISOS || [];
+
+    const aviso = avisos.find(
+        item => String(item.id) === String(avisoId)
+    );
+
+    if (!aviso) {
+        alert("No se ha encontrado el aviso.");
+        return;
+    }
+
+    const plan = planificacionDia[vehiculoId];
+
+    if (!plan) {
+        alert(
+            "El vehículo seleccionado no tiene una planificación creada."
+        );
+        return;
+    }
+
+
+    /* --------------------------------------------------------
+       Comprobar si ya está en ese plan
+       -------------------------------------------------------- */
+
+    const yaExiste = plan.paradas.some(parada =>
+        parada.tipo === "AVISO" &&
+        String(parada.avisoId || parada.id) === String(avisoId)
+    );
+
+    if (yaExiste) {
+        alert(
+            "Este aviso ya está incluido en las paradas del vehículo."
+        );
+        return;
+    }
+
+
+    /* --------------------------------------------------------
+       Comprobar si está en otro vehículo
+       -------------------------------------------------------- */
+
+    const otroVehiculo = encontrarVehiculoConAviso(avisoId);
+
+    if (otroVehiculo && otroVehiculo !== vehiculoId) {
+        const confirmar = confirm(
+            `El aviso ${avisoId} ya está asignado a ${obtenerNombreVehiculo(otroVehiculo)}.\n\n¿Quieres moverlo al vehículo seleccionado?`
+        );
+
+        if (!confirmar) {
+            return;
+        }
+
+        quitarAvisoDePlanSinPerderAviso(avisoId, otroVehiculo);
+    }
+
+
+    /* --------------------------------------------------------
+       Crear parada
+       -------------------------------------------------------- */
+
+    const nuevaParada = {
+        orden: plan.paradas.length + 1,
+        hora: "",
+        nombre: aviso.punto || "Punto de recogida",
+        tipo: "AVISO",
+        estado: "ASIGNADO",
+        avisoId: aviso.id,
+        puntoId: aviso.puntoId || null,
+        especie: aviso.especie || "",
+        cantidad: aviso.cantidad || 1,
+        telefono: aviso.telefono || "",
+        observaciones: aviso.observaciones || "",
+        latitud: obtenerLat(aviso),
+        longitud: obtenerLng(aviso)
+    };
+
+    plan.paradas.push(nuevaParada);
+
+
+    /* --------------------------------------------------------
+       Actualizar aviso
+       -------------------------------------------------------- */
+
+    aviso.estado = "ASIGNADO";
+    aviso.vehiculo = vehiculoId;
+
+
+    actualizarOrdenes(plan);
+    marcarPlanificacionModificada();
+
+    renderizarAvisosPendientes();
+    renderizarPlanificacion();
+}
+
+
+/* ============================================================
+   BUSCAR AVISO EN PLANES
+   ============================================================ */
+
+function encontrarVehiculoConAviso(avisoId) {
+    for (const vehiculoId of Object.keys(planificacionDia)) {
+        const plan = planificacionDia[vehiculoId];
+
+        if (!plan || !Array.isArray(plan.paradas)) {
+            continue;
+        }
+
+        const encontrado = plan.paradas.some(parada =>
+            parada.tipo === "AVISO" &&
+            String(parada.avisoId || parada.id) === String(avisoId)
+        );
+
+        if (encontrado) {
+            return vehiculoId;
+        }
+    }
+
+    return null;
+}
+
+
+function quitarAvisoDePlanSinPerderAviso(avisoId, vehiculoId) {
+    const plan = planificacionDia[vehiculoId];
+
+    if (!plan || !Array.isArray(plan.paradas)) {
+        return;
+    }
+
+    plan.paradas = plan.paradas.filter(parada =>
+        !(
+            parada.tipo === "AVISO" &&
+            String(parada.avisoId || parada.id) === String(avisoId)
+        )
+    );
+
+    actualizarOrdenes(plan);
+}
+
+
+/* ============================================================
+   FORMATO DE COORDENADAS
+   ============================================================ */
 
 function formatearCoordenadasAviso(aviso) {
+    const lat = obtenerLat(aviso);
+    const lng = obtenerLng(aviso);
 
-    const latitud =
-        aviso.latitud ??
-        aviso.lat ??
-        "";
-
-    const longitud =
-        aviso.longitud ??
-        aviso.lng ??
-        "";
-
-    if (
-        latitud === "" ||
-        longitud === ""
-    ) {
-
+    if (!coordenadasValidas(lat, lng)) {
         return "Coordenadas no disponibles";
     }
 
-    return `${Number(latitud).toFixed(4)}, ${Number(longitud).toFixed(4)}`;
+    return `
+        Coordenadas:
+        ${Number(lat).toFixed(5)},
+        ${Number(lng).toFixed(5)}
+    `;
 }
 
 
-// ============================================================
-// CARGAR PLANIFICACIÓN
-// ============================================================
+/* ============================================================
+   CARGAR PLANIFICACIÓN
+   ============================================================ */
 
 function cargarPlanificacionDesdeDatos() {
-
     planificacionDia = {};
 
-    const datos =
-        window.DATOS_MOCK || {};
-
     const vehiculos =
-        Array.isArray(datos.VEHICULOS)
-            ? datos.VEHICULOS
-            : [];
+        window.DATOS_MOCK?.VEHICULOS || [];
 
     const planificacion =
-        Array.isArray(datos.PLANIFICACION)
-            ? datos.PLANIFICACION
-            : [];
+        window.DATOS_MOCK?.PLANIFICACION_DIA ||
+        window.DATOS_MOCK?.PLANIFICACION ||
+        [];
 
-    vehiculos.forEach(
-        (vehiculo, indice) => {
+    vehiculos.forEach(vehiculo => {
+        planificacionDia[vehiculo.id] = {
+            vehiculoId: vehiculo.id,
+            vehiculoNombre:
+                vehiculo.nombre || vehiculo.id,
 
-            const idVehiculo =
-                vehiculo.id_vehiculo ||
-                vehiculo.vehiculo_id ||
-                vehiculo.id ||
-                `V${indice + 1}`;
+            rutaHabitual:
+                vehiculo.rutaHabitual || "",
 
-            const planVehiculo =
-                planificacion.find(plan => {
+            rutaActiva: vehiculo.rutaHabitual || "",
 
-                    const idPlan =
-                        plan.vehiculo_id ||
-                        plan.vehiculo ||
-                        plan.id_vehiculo;
+            rutaNombre:
+                obtenerNombreRuta(
+                    vehiculo.rutaHabitual
+                ),
 
-                    return idPlan === idVehiculo;
-                });
+            horaSalida: "",
+            horaEstimadaRegreso: "",
+
+            tablet:
+                vehiculo.tablet || "",
+
+            paradas: []
+        };
+    });
 
 
-            planificacionDia[idVehiculo] = {
+    if (Array.isArray(planificacion)) {
+        planificacion.forEach(planOriginal => {
+            const vehiculoId =
+                planOriginal.vehiculo ||
+                planOriginal.vehiculoId;
 
-                vehiculoId:
-                    idVehiculo,
+            if (!vehiculoId) {
+                return;
+            }
 
-                nombreVehiculo:
-                    vehiculo.nombre ||
-                    `Vehículo ${indice + 1}`,
+            if (!planificacionDia[vehiculoId]) {
+                planificacionDia[vehiculoId] = {
+                    vehiculoId,
+                    vehiculoNombre: vehiculoId,
+                    rutaHabitual: "",
+                    rutaActiva:
+                        planOriginal.rutaActiva || "",
+                    rutaNombre:
+                        planOriginal.rutaNombre ||
+                        obtenerNombreRuta(
+                            planOriginal.rutaActiva
+                        ),
+                    horaSalida: "",
+                    horaEstimadaRegreso: "",
+                    tablet: "",
+                    paradas: []
+                };
+            }
 
-                tablet:
-                    vehiculo.tablet ||
-                    vehiculo.tablet_id ||
-                    "",
+            const plan =
+                planificacionDia[vehiculoId];
 
-                rutaHabitual:
-                    vehiculo.ruta_id ||
-                    vehiculo.rutaHabitual ||
-                    vehiculo.ruta_habitual ||
-                    "",
+            plan.rutaActiva =
+                planOriginal.rutaActiva ||
+                plan.rutaActiva;
 
-                rutaActiva:
-                    planVehiculo?.ruta_id ||
-                    planVehiculo?.rutaActiva ||
-                    vehiculo.ruta_id ||
-                    "",
+            plan.rutaNombre =
+                planOriginal.rutaNombre ||
+                obtenerNombreRuta(
+                    plan.rutaActiva
+                );
 
-                horaSalida:
-                    planVehiculo?.horaSalida ||
-                    planVehiculo?.hora_salida ||
-                    "08:30",
+            plan.horaSalida =
+                planOriginal.horaSalida || "";
 
-                horaRegreso:
-                    planVehiculo?.horaEstimadaRegreso ||
-                    planVehiculo?.hora_regreso ||
-                    "13:30",
+            plan.horaEstimadaRegreso =
+                planOriginal.horaEstimadaRegreso || "";
 
-                paradas:
-                    Array.isArray(
-                        planVehiculo?.paradas
+            plan.paradas =
+                Array.isArray(planOriginal.paradas)
+                    ? planOriginal.paradas.map(
+                        parada => ({
+                            ...parada,
+                            avisoId:
+                                parada.avisoId ||
+                                (
+                                    parada.tipo === "AVISO"
+                                        ? parada.id
+                                        : null
+                                )
+                        })
                     )
-                        ? planVehiculo.paradas.map(
-                            (parada, index) => ({
-                                ...parada,
-                                orden: index + 1
-                            })
-                        )
-                        : []
-            };
-        }
-    );
+                    : [];
+        });
+    }
 }
 
 
-// ============================================================
-// OBTENER RUTAS
-// ============================================================
+/* ============================================================
+   RUTAS
+   ============================================================ */
 
 function obtenerRutasDisponibles() {
-
-    const datos =
-        window.DATOS_MOCK || {};
-
-    const rutas =
-        Array.isArray(datos.RUTAS)
-            ? datos.RUTAS
-            : [];
-
-    if (rutas.length) {
-        return rutas;
-    }
-
-    return [
-        {
-            ruta_id: "R1",
-            nombre: "Norte",
-            color: "#1976D2"
-        },
-        {
-            ruta_id: "R2",
-            nombre: "Interior",
-            color: "#388E3C"
-        },
-        {
-            ruta_id: "R3",
-            nombre: "Sur",
-            color: "#F57C00"
-        }
-    ];
+    return window.DATOS_MOCK?.RUTAS || [];
 }
 
 
-// ============================================================
-// LEYENDA DE RUTAS
-// ============================================================
+function obtenerNombreRuta(rutaId) {
+    if (!rutaId) {
+        return "Sin ruta";
+    }
+
+    const rutas = obtenerRutasDisponibles();
+
+    const ruta = rutas.find(
+        item => String(item.id) === String(rutaId)
+    );
+
+    if (ruta) {
+        return ruta.nombre;
+    }
+
+    if (typeof CONFIG !== "undefined" &&
+        CONFIG.nombresRutas &&
+        CONFIG.nombresRutas[rutaId]) {
+        return CONFIG.nombresRutas[rutaId];
+    }
+
+    return rutaId;
+}
+
+
+function obtenerColorRuta(rutaId) {
+    const rutas = obtenerRutasDisponibles();
+
+    const ruta = rutas.find(
+        item => String(item.id) === String(rutaId)
+    );
+
+    if (ruta && ruta.color) {
+        return ruta.color;
+    }
+
+    if (
+        typeof CONFIG !== "undefined" &&
+        CONFIG.coloresRutas &&
+        CONFIG.coloresRutas[rutaId]
+    ) {
+        return CONFIG.coloresRutas[rutaId];
+    }
+
+    return "#777777";
+}
+
 
 function renderizarLeyendaRutas() {
-
     const contenedor =
-        document.getElementById(
-            "leyenda-rutas"
-        );
+        document.getElementById("leyenda-rutas");
 
     if (!contenedor) {
         return;
     }
 
-    const rutas =
-        obtenerRutasDisponibles();
+    const rutas = obtenerRutasDisponibles();
 
-    contenedor.innerHTML =
-        rutas
-            .map(ruta => {
+    contenedor.innerHTML = rutas.map(ruta => `
+        <div class="leyenda-ruta">
+            <span
+                class="leyenda-color"
+                style="background:${escaparHTML(ruta.color || "#777")}"
+            ></span>
 
-                const id =
-                    ruta.ruta_id ||
-                    ruta.id ||
-                    "";
-
-                const nombre =
-                    ruta.nombre ||
-                    id;
-
-                const color =
-                    ruta.color ||
-                    CONFIG.coloresRutas?.[id] ||
-                    "#666";
-
-                return `
-                    <div class="leyenda-ruta">
-
-                        <span
-                            class="leyenda-color"
-                            style="background:${color};"
-                        ></span>
-
-                        <span>
-                            ${escaparHTML(nombre)}
-                        </span>
-
-                    </div>
-                `;
-            })
-            .join("");
+            <span>
+                ${escaparHTML(ruta.nombre || ruta.id)}
+            </span>
+        </div>
+    `).join("");
 }
 
 
-// ============================================================
-// RENDERIZAR PLANIFICACIÓN
-// ============================================================
+/* ============================================================
+   RENDERIZAR PLANIFICACIÓN
+   ============================================================ */
 
 function renderizarPlanificacion() {
-
     const contenedor =
-        document.getElementById(
-            "planificacion-dia"
-        );
+        document.getElementById("planificacion-dia");
 
     if (!contenedor) {
-
-        console.warn(
-            "No se encuentra #planificacion-dia."
-        );
-
         return;
     }
 
-    const vehiculos =
-        Object.values(
-            planificacionDia
-        );
+    const planes =
+        Object.values(planificacionDia);
 
-    if (!vehiculos.length) {
-
+    if (!planes.length) {
         contenedor.innerHTML = `
-            <div class="sin-datos">
+            <div class="sin-planificacion">
                 No hay vehículos disponibles.
             </div>
         `;
-
         return;
     }
 
-    contenedor.innerHTML =
-        vehiculos
-            .map(plan => {
-
-                return crearTarjetaVehiculo(
-                    plan
-                );
-
-            })
-            .join("");
+    contenedor.innerHTML = planes
+        .map(plan => crearTarjetaVehiculo(plan))
+        .join("");
 }
 
 
-// ============================================================
-// CREAR TARJETA DE VEHÍCULO
-// ============================================================
-
 function crearTarjetaVehiculo(plan) {
-
-    const colorRutaHabitual =
-        CONFIG.coloresRutas?.[
-            plan.rutaHabitual
-        ] ||
-        "#666";
-
-    const nombreRutaHabitual =
-        CONFIG.nombresRutas?.[
-            plan.rutaHabitual
-        ] ||
-        plan.rutaHabitual ||
-        "Sin ruta";
-
-    const colorRutaActiva =
-        CONFIG.coloresRutas?.[
-            plan.rutaActiva
-        ] ||
-        "#666";
-
-    const nombreRutaActiva =
-        CONFIG.nombresRutas?.[
-            plan.rutaActiva
-        ] ||
-        plan.rutaActiva ||
-        "Sin ruta";
-
-
-    const paradasHTML =
-        plan.paradas.length
-            ? plan.paradas
-                .map(
-                    (parada, index) =>
-                        crearParadaHTML(
-                            plan,
-                            parada,
-                            index
-                        )
-                )
-                .join("")
-            : `
-                <div class="sin-paradas">
-                    No hay paradas planificadas.
-                </div>
-            `;
-
-
-    const selectorRutasHTML =
-        obtenerRutasDisponibles()
-            .map(ruta => {
-
-                const id =
-                    ruta.ruta_id ||
-                    ruta.id ||
-                    "";
-
-                const nombre =
-                    ruta.nombre ||
-                    id;
-
-                return `
-                    <option
-                        value="${escaparHTML(id)}"
-                        ${
-                            id === plan.rutaActiva
-                                ? "selected"
-                                : ""
-                        }
-                    >
-                        ${escaparHTML(nombre)}
-                    </option>
-                `;
-            })
-            .join("");
-
+    const rutaColor =
+        obtenerColorRuta(plan.rutaActiva);
 
     return `
         <div
-            class="tarjeta-plan-vehiculo"
+            class="tarjeta-vehiculo-plan"
             data-vehiculo="${escaparHTML(plan.vehiculoId)}"
         >
 
-            <div class="cabecera-plan">
+            <div class="cabecera-vehiculo-plan">
 
-                <div class="identificacion-vehiculo">
+                <div>
+                    <strong>
+                        ${escaparHTML(plan.vehiculoNombre)}
+                    </strong>
 
-                    <span class="icono-vehiculo">
-                        🚐
+                    <span class="vehiculo-ruta-habitual">
+                        Ruta habitual:
+                        ${escaparHTML(
+                            obtenerNombreRuta(
+                                plan.rutaHabitual
+                            )
+                        )}
                     </span>
-
-                    <div>
-
-                        <strong>
-                            ${escaparHTML(plan.nombreVehiculo)}
-                        </strong>
-
-                        <div class="ruta-habitual">
-
-                            <span
-                                class="punto-ruta"
-                                style="background:${colorRutaHabitual};"
-                            ></span>
-
-                            Ruta habitual:
-                            ${escaparHTML(nombreRutaHabitual)}
-
-                        </div>
-
-                        <div class="ruta-planificada">
-
-                            <span
-                                class="punto-ruta"
-                                style="background:${colorRutaActiva};"
-                            ></span>
-
-                            Ruta planificada:
-                            ${escaparHTML(nombreRutaActiva)}
-
-                        </div>
-
-                    </div>
-
                 </div>
 
-
-                <button
-                    type="button"
-                    class="boton-centro-vehiculo"
-                    onclick="centrarVehiculoDesdePlan('${escaparHTML(plan.vehiculoId)}')"
-                    title="Ver vehículo en el mapa"
+                <span
+                    class="indicador-ruta-plan"
+                    style="background:${escaparHTML(rutaColor)}"
                 >
-                    🗺️
-                </button>
+                    ${escaparHTML(
+                        plan.rutaNombre ||
+                        obtenerNombreRuta(plan.rutaActiva)
+                    )}
+                </span>
 
             </div>
 
 
-            <div class="datos-configuracion-plan">
+            <div class="configuracion-vehiculo-plan">
 
                 <div class="campo-plan">
 
-                    <label>
-                        Ruta del día
-                    </label>
+                    <label>Ruta del día</label>
 
                     <select
                         onchange="cambiarRutaPlanificada(
@@ -989,7 +925,7 @@ function crearTarjetaVehiculo(plan) {
                             this.value
                         )"
                     >
-                        ${selectorRutasHTML}
+                        ${crearOpcionesRutas(plan.rutaActiva)}
                     </select>
 
                 </div>
@@ -997,13 +933,11 @@ function crearTarjetaVehiculo(plan) {
 
                 <div class="campo-plan">
 
-                    <label>
-                        Hora de salida
-                    </label>
+                    <label>Salida</label>
 
                     <input
                         type="time"
-                        value="${escaparHTML(plan.horaSalida)}"
+                        value="${escaparHTML(plan.horaSalida || "")}"
                         onchange="cambiarHoraPlanificacion(
                             '${escaparHTML(plan.vehiculoId)}',
                             'salida',
@@ -1016,13 +950,11 @@ function crearTarjetaVehiculo(plan) {
 
                 <div class="campo-plan">
 
-                    <label>
-                        Regreso estimado
-                    </label>
+                    <label>Regreso estimado</label>
 
                     <input
                         type="time"
-                        value="${escaparHTML(plan.horaRegreso)}"
+                        value="${escaparHTML(plan.horaEstimadaRegreso || "")}"
                         onchange="cambiarHoraPlanificacion(
                             '${escaparHTML(plan.vehiculoId)}',
                             'regreso',
@@ -1035,7 +967,7 @@ function crearTarjetaVehiculo(plan) {
             </div>
 
 
-            <div class="resumen-plan-vehiculo">
+            <div class="resumen-vehiculo-plan">
 
                 <span>
                     Tablet:
@@ -1054,56 +986,83 @@ function crearTarjetaVehiculo(plan) {
             </div>
 
 
-            <div class="titulo-paradas">
+            <div class="titulo-paradas-dia">
                 PARADAS DEL DÍA
             </div>
 
 
-            <div class="lista-paradas">
+            <div class="lista-paradas-dia">
 
-                ${paradasHTML}
+                ${
+                    plan.paradas.length
+                        ? plan.paradas
+                            .map(
+                                (parada, index) =>
+                                    crearParadaHTML(
+                                        plan,
+                                        parada,
+                                        index
+                                    )
+                            )
+                            .join("")
+                        : `
+                            <div class="sin-paradas">
+                                No hay paradas planificadas.
+                            </div>
+                        `
+                }
 
             </div>
 
 
-            <div class="selector-anadir-parada">
+            <div class="anadir-parada-plan">
 
                 <select
-                    id="selector-parada-${escaparHTML(plan.vehiculoId)}"
+                    onchange="anadirParadaSeleccionada(
+                        '${escaparHTML(plan.vehiculoId)}',
+                        this.value
+                    )"
                 >
 
                     <option value="">
-                        + Seleccionar aviso o punto...
+                        + Añadir parada...
                     </option>
 
-                    ${crearOpcionesAvisos(plan)}
+                    <optgroup label="Avisos">
 
-                    ${crearOpcionesPuntos(plan)}
+                        ${crearOpcionesAvisos(plan)}
+
+                    </optgroup>
+
+                    <optgroup label="Puntos habituales">
+
+                        ${crearOpcionesPuntos(plan)}
+
+                    </optgroup>
 
                 </select>
-
-
-                <button
-                    type="button"
-                    class="boton-secundario"
-                    onclick="anadirParadaSeleccionada(
-                        '${escaparHTML(plan.vehiculoId)}'
-                    )"
-                >
-                    Añadir
-                </button>
 
             </div>
 
 
-            <div class="acciones-plan">
+            <div class="acciones-plan-vehiculo">
 
                 <button
                     type="button"
-                    onclick="reordenarParadas('${escaparHTML(plan.vehiculoId)}')"
-                    class="boton-secundario"
+                    onclick="reordenarParadas(
+                        '${escaparHTML(plan.vehiculoId)}'
+                    )"
                 >
-                    ↕ Optimizar orden
+                    Optimizar orden
+                </button>
+
+                <button
+                    type="button"
+                    onclick="centrarVehiculoDesdePlan(
+                        '${escaparHTML(plan.vehiculoId)}'
+                    )"
+                >
+                    Ver vehículo
                 </button>
 
             </div>
@@ -1113,235 +1072,167 @@ function crearTarjetaVehiculo(plan) {
 }
 
 
-// ============================================================
-// OPCIONES DE AVISOS
-// ============================================================
+function crearOpcionesRutas(rutaSeleccionada) {
+    const rutas = obtenerRutasDisponibles();
+
+    return rutas.map(ruta => `
+        <option
+            value="${escaparHTML(ruta.id)}"
+            ${String(ruta.id) === String(rutaSeleccionada)
+                ? "selected"
+                : ""}
+        >
+            ${escaparHTML(ruta.nombre || ruta.id)}
+        </option>
+    `).join("");
+}
+
+
+/* ============================================================
+   OPCIONES DE AVISOS
+   ============================================================ */
 
 function crearOpcionesAvisos(plan) {
-
-    const datos =
-        window.DATOS_MOCK || {};
-
     const avisos =
-        Array.isArray(datos.AVISOS)
-            ? datos.AVISOS
-            : [];
+        window.DATOS_MOCK?.AVISOS || [];
 
-    const idsIncluidos =
-        new Set(
-            plan.paradas
-                .map(parada => parada.aviso_id)
-                .filter(Boolean)
-        );
-
-    const candidatos =
-        avisos.filter(aviso => {
-
-            const id =
-                aviso.id_aviso ||
-                aviso.id;
-
+    return avisos
+        .filter(aviso => {
             const estado =
-                normalizarEstadoParada(
-                    aviso.estado
+                String(aviso.estado || "").toUpperCase();
+
+            if (estado === "RECOGIDO") {
+                return false;
+            }
+
+            const yaIncluido =
+                plan.paradas.some(parada =>
+                    parada.tipo === "AVISO" &&
+                    String(parada.avisoId || parada.id) ===
+                    String(aviso.id)
                 );
 
-            return (
-                estado !== "RECOGIDO" &&
-                !idsIncluidos.has(id)
-            );
-        });
-
-
-    if (!candidatos.length) {
-        return "";
-    }
-
-
-    return `
-        <optgroup label="Avisos">
-
-            ${
-                candidatos
-                    .map(aviso => {
-
-                        const id =
-                            aviso.id_aviso ||
-                            aviso.id;
-
-                        const nombre =
-                            aviso.punto ||
-                            aviso.nombre ||
-                            "Aviso";
-
-                        const especie =
-                            aviso.especie
-                                ? ` — ${aviso.especie}`
-                                : "";
-
-                        return `
-                            <option
-                                value="AVISO|${escaparHTML(id)}"
-                            >
-                                ${escaparHTML(nombre + especie)}
-                            </option>
-                        `;
-                    })
-                    .join("")
+            if (yaIncluido) {
+                return false;
             }
 
-        </optgroup>
-    `;
+            /*
+             * No mostramos aquí avisos que ya estén asignados
+             * a otro vehículo. Se pueden mover desde la tarjeta
+             * de aviso pendiente si es necesario.
+             */
+            const vehiculoActual =
+                encontrarVehiculoConAviso(aviso.id);
+
+            if (
+                vehiculoActual &&
+                vehiculoActual !== plan.vehiculoId
+            ) {
+                return false;
+            }
+
+            return true;
+        })
+        .map(aviso => `
+            <option value="AVISO:${escaparHTML(aviso.id)}">
+                ${escaparHTML(
+                    aviso.punto ||
+                    "Punto de recogida"
+                )}
+                ·
+                ${escaparHTML(
+                    aviso.especie ||
+                    "Especie no indicada"
+                )}
+            </option>
+        `)
+        .join("");
 }
 
 
-// ============================================================
-// OPCIONES DE PUNTOS
-// ============================================================
+/* ============================================================
+   OPCIONES DE PUNTOS
+   ============================================================ */
 
 function crearOpcionesPuntos(plan) {
-
-    const datos =
-        window.DATOS_MOCK || {};
-
     const puntos =
-        Array.isArray(datos.PUNTOS_RECOGIDA)
-            ? datos.PUNTOS_RECOGIDA
-            : [];
+        window.DATOS_MOCK?.PUNTOS_RECOGIDA || [];
 
-    const puntosIncluidos =
-        new Set(
-            plan.paradas
-                .map(parada => parada.punto_id)
-                .filter(Boolean)
-        );
-
-
-    const candidatos =
-        puntos.filter(punto => {
-
-            const id =
-                punto.id_punto ||
-                punto.id;
-
-            return (
-                punto.activo !== false &&
-                !puntosIncluidos.has(id)
-            );
-        });
-
-
-    if (!candidatos.length) {
-        return "";
-    }
-
-
-    return `
-        <optgroup label="Puntos colaboradores">
-
-            ${
-                candidatos
-                    .map(punto => {
-
-                        const id =
-                            punto.id_punto ||
-                            punto.id;
-
-                        const nombre =
-                            punto.nombre ||
-                            "Punto colaborador";
-
-                        return `
-                            <option
-                                value="PUNTO|${escaparHTML(id)}"
-                            >
-                                ${escaparHTML(nombre)}
-                            </option>
-                        `;
-                    })
-                    .join("")
-            }
-
-        </optgroup>
-    `;
+    return puntos
+        .filter(punto => punto.activo !== false)
+        .map(punto => `
+            <option value="PUNTO:${escaparHTML(punto.id)}">
+                ${escaparHTML(
+                    punto.nombre ||
+                    punto.municipio ||
+                    punto.id
+                )}
+            </option>
+        `)
+        .join("");
 }
 
 
-// ============================================================
-// CAMBIAR RUTA PLANIFICADA
-// ============================================================
+/* ============================================================
+   CAMBIAR RUTA PLANIFICADA
+   ============================================================ */
 
-function cambiarRutaPlanificada(
-    vehiculoId,
-    rutaId
-) {
-
+function cambiarRutaPlanificada(vehiculoId, nuevaRuta) {
     const plan =
         planificacionDia[vehiculoId];
 
-    if (
-        !plan ||
-        !rutaId
-    ) {
+    if (!plan) {
         return;
     }
 
-    plan.rutaActiva =
-        rutaId;
+    plan.rutaActiva = nuevaRuta;
+    plan.rutaNombre =
+        obtenerNombreRuta(nuevaRuta);
 
+    marcarPlanificacionModificada();
     renderizarPlanificacion();
-
-    marcarPlanificacionModificada(
-        vehiculoId
-    );
 }
 
 
-// ============================================================
-// CAMBIAR HORAS
-// ============================================================
+/* ============================================================
+   CAMBIAR HORAS
+   ============================================================ */
 
 function cambiarHoraPlanificacion(
     vehiculoId,
     tipo,
     valor
 ) {
-
     const plan =
         planificacionDia[vehiculoId];
 
-    if (
-        !plan ||
-        !valor
-    ) {
+    if (!plan) {
         return;
     }
 
     if (tipo === "salida") {
-
-        plan.horaSalida =
-            valor;
+        plan.horaSalida = valor;
     }
 
     if (tipo === "regreso") {
-
-        plan.horaRegreso =
-            valor;
+        plan.horaEstimadaRegreso = valor;
     }
 
-    marcarPlanificacionModificada(
-        vehiculoId
-    );
+    marcarPlanificacionModificada();
 }
 
 
-// ============================================================
-// CREAR PARADA DESDE SELECTOR
-// ============================================================
+/* ============================================================
+   AÑADIR PARADA
+   ============================================================ */
 
 function anadirParadaSeleccionada(
-    vehiculoId
+    vehiculoId,
+    valor
 ) {
+    if (!valor) {
+        return;
+    }
 
     const plan =
         planificacionDia[vehiculoId];
@@ -1350,267 +1241,197 @@ function anadirParadaSeleccionada(
         return;
     }
 
-
-    const selector =
-        document.getElementById(
-            `selector-parada-${vehiculoId}`
-        );
-
-    if (
-        !selector ||
-        !selector.value
-    ) {
-
-        alert(
-            "Selecciona primero un aviso o un punto."
-        );
-
-        return;
-    }
+    const partes = valor.split(":");
+    const tipo = partes[0];
+    const id = partes.slice(1).join(":");
 
 
-    const partes =
-        selector.value.split("|");
-
-    const tipo =
-        partes[0];
-
-    const id =
-        partes[1];
-
-    const datos =
-        window.DATOS_MOCK || {};
-
+    /* --------------------------------------------------------
+       AVISO
+       -------------------------------------------------------- */
 
     if (tipo === "AVISO") {
-
         const avisos =
-            Array.isArray(datos.AVISOS)
-                ? datos.AVISOS
-                : [];
+            window.DATOS_MOCK?.AVISOS || [];
 
-        const aviso =
-            avisos.find(item => {
-
-                return (
-                    item.id_aviso ||
-                    item.id
-                ) === id;
-            });
-
+        const aviso = avisos.find(
+            item => String(item.id) === String(id)
+        );
 
         if (!aviso) {
+            alert("No se ha encontrado el aviso.");
+            renderizarPlanificacion();
             return;
         }
 
+        const vehiculoActual =
+            encontrarVehiculoConAviso(aviso.id);
 
-        plan.paradas.push({
+        if (
+            vehiculoActual &&
+            vehiculoActual !== vehiculoId
+        ) {
+            alert(
+                `Este aviso ya está asignado a ${obtenerNombreVehiculo(vehiculoActual)}.`
+            );
 
-            orden:
-                plan.paradas.length + 1,
+            renderizarPlanificacion();
+            return;
+        }
 
-            tipo:
-                "AVISO",
-
-            aviso_id:
-                aviso.id_aviso ||
-                aviso.id,
-
-            punto_id:
-                aviso.puntoId ||
-                aviso.punto_id,
-
+        const nuevaParada = {
+            orden: plan.paradas.length + 1,
+            hora: "",
             nombre:
                 aviso.punto ||
-                aviso.nombre ||
-                "Aviso",
+                "Punto de recogida",
+            tipo: "AVISO",
+            estado: "ASIGNADO",
+            avisoId: aviso.id,
+            puntoId: aviso.puntoId || null,
+            especie: aviso.especie || "",
+            cantidad: aviso.cantidad || 1,
+            telefono: aviso.telefono || "",
+            observaciones:
+                aviso.observaciones || "",
+            latitud: obtenerLat(aviso),
+            longitud: obtenerLng(aviso)
+        };
 
-            especie:
-                aviso.especie ||
-                "",
+        plan.paradas.push(nuevaParada);
 
-            cantidad:
-                aviso.cantidad ||
-                1,
-
-            latitud:
-                Number(aviso.latitud),
-
-            longitud:
-                Number(aviso.longitud),
-
-            estado:
-                "ASIGNADO",
-
-            hora:
-                "--:--"
-        });
-
-
-        aviso.estado =
-            "ASIGNADO";
-
-        aviso.vehiculo =
-            vehiculoId;
+        aviso.estado = "ASIGNADO";
+        aviso.vehiculo = vehiculoId;
     }
 
 
+    /* --------------------------------------------------------
+       PUNTO
+       -------------------------------------------------------- */
+
     if (tipo === "PUNTO") {
-
         const puntos =
-            Array.isArray(datos.PUNTOS_RECOGIDA)
-                ? datos.PUNTOS_RECOGIDA
-                : [];
+            window.DATOS_MOCK?.PUNTOS_RECOGIDA || [];
 
-        const punto =
-            puntos.find(item => {
-
-                return (
-                    item.id_punto ||
-                    item.id
-                ) === id;
-            });
-
+        const punto = puntos.find(
+            item => String(item.id) === String(id)
+        );
 
         if (!punto) {
+            alert("No se ha encontrado el punto.");
+            renderizarPlanificacion();
             return;
         }
 
-
-        plan.paradas.push({
-
-            orden:
-                plan.paradas.length + 1,
-
-            tipo:
-                "PUNTO",
-
-            punto_id:
-                punto.id_punto ||
-                punto.id,
-
+        const nuevaParada = {
+            orden: plan.paradas.length + 1,
+            hora: "",
             nombre:
                 punto.nombre ||
-                "Punto colaborador",
+                punto.municipio ||
+                punto.id,
+            tipo: "PUNTO",
+            estado: "PLANIFICADO",
+            puntoId: punto.id,
+            especie: "",
+            cantidad: "",
+            telefono: "",
+            observaciones: "",
+            latitud: obtenerLat(punto),
+            longitud: obtenerLng(punto)
+        };
 
-            latitud:
-                Number(punto.latitud),
-
-            longitud:
-                Number(punto.longitud),
-
-            estado:
-                "PLANIFICADO",
-
-            hora:
-                "--:--"
-        });
+        plan.paradas.push(nuevaParada);
     }
 
+    actualizarOrdenes(plan);
 
-    actualizarOrdenes(
-        plan
-    );
+    marcarPlanificacionModificada();
 
     renderizarAvisosPendientes();
-
     renderizarPlanificacion();
-
-    marcarPlanificacionModificada(
-        vehiculoId
-    );
 }
 
 
-// ============================================================
-// CREAR PARADA HTML
-// ============================================================
+/* ============================================================
+   CREAR HTML DE UNA PARADA
+   ============================================================ */
 
 function crearParadaHTML(
     plan,
     parada,
     index
 ) {
-
-    const estado =
-        normalizarEstadoParada(
-            parada.estado
-        );
-
-    const claseEstado =
-        `estado-parada-${estado.toLowerCase()}`;
+    const esAviso =
+        String(parada.tipo || "").toUpperCase() ===
+        "AVISO";
 
     const icono =
-        obtenerIconoParada(
-            parada
-        );
+        esAviso ? "⚠" : "●";
 
-    const nombre =
-        parada.nombre ||
-        parada.punto ||
-        "Parada";
+    const tipoTexto =
+        esAviso
+            ? "Aviso"
+            : "Punto habitual";
 
     const hora =
-        parada.hora ||
-        parada.hora_estimada ||
-        "--:--";
+        parada.hora
+            ? ` · ${escaparHTML(parada.hora)}`
+            : "";
 
-    const tipo =
-        parada.tipo ||
-        "PUNTO";
+    const especie =
+        parada.especie
+            ? `
+                <span class="especie-parada">
+                    ${escaparHTML(parada.especie)}
+                </span>
+              `
+            : "";
 
-
+    /*
+     * La parada completa es ahora clicable.
+     * mapa.js implementará centrarParadaEnMapa().
+     */
     return `
         <div
-            class="parada-plan ${claseEstado}"
-            data-vehiculo="${escaparHTML(plan.vehiculoId)}"
+            class="parada-plan ${esAviso ? "parada-aviso" : "parada-punto"}"
             data-indice="${index}"
+            onclick="seleccionarParadaEnMapa(
+                '${escaparHTML(plan.vehiculoId)}',
+                ${index}
+            )"
+            title="Mostrar esta parada en el mapa"
         >
 
             <div class="numero-parada">
                 ${index + 1}
             </div>
 
-
             <div class="icono-parada">
                 ${icono}
             </div>
 
-
             <div class="informacion-parada">
 
                 <strong>
-                    ${escaparHTML(nombre)}
+                    ${escaparHTML(
+                        parada.nombre ||
+                        "Parada sin nombre"
+                    )}
                 </strong>
 
-
-                ${
-                    parada.especie
-                        ? `
-                            <div class="especie-parada">
-                                ${escaparHTML(parada.especie)}
-                            </div>
-                        `
-                        : ""
-                }
-
-
                 <div class="detalles-parada">
-
-                    <span>
-                        ${escaparHTML(tipo)}
-                    </span>
-
-                    <span>
-                        ${escaparHTML(hora)}
-                    </span>
-
+                    ${escaparHTML(tipoTexto)}
+                    ${hora}
+                    ${especie}
                 </div>
 
             </div>
 
-
-            <div class="acciones-parada">
+            <div
+                class="acciones-parada"
+                onclick="event.stopPropagation();"
+            >
 
                 <button
                     type="button"
@@ -1619,15 +1440,10 @@ function crearParadaHTML(
                         ${index}
                     )"
                     title="Subir parada"
-                    ${
-                        index === 0
-                            ? "disabled"
-                            : ""
-                    }
+                    ${index === 0 ? "disabled" : ""}
                 >
-                    ↑
+                    ▲
                 </button>
-
 
                 <button
                     type="button"
@@ -1642,9 +1458,8 @@ function crearParadaHTML(
                             : ""
                     }
                 >
-                    ↓
+                    ▼
                 </button>
-
 
                 <button
                     type="button"
@@ -1654,7 +1469,7 @@ function crearParadaHTML(
                     )"
                     title="Eliminar parada"
                 >
-                    ×
+                    ✕
                 </button>
 
             </div>
@@ -1664,14 +1479,339 @@ function crearParadaHTML(
 }
 
 
-// ============================================================
-// ESTADOS
-// ============================================================
+/* ============================================================
+   SELECCIONAR PARADA EN MAPA
+   ============================================================ */
 
-function normalizarEstadoParada(
-    estado
+function seleccionarParadaEnMapa(
+    vehiculoId,
+    indice
 ) {
+    const plan =
+        planificacionDia[vehiculoId];
 
+    if (!plan || !plan.paradas[indice]) {
+        return;
+    }
+
+    const parada =
+        plan.paradas[indice];
+
+    /*
+     * Esta función se implementará en mapa.js.
+     * Dejamos aquí el enlace entre planificación y mapa.
+     */
+    if (
+        typeof centrarParadaEnMapa === "function"
+    ) {
+        centrarParadaEnMapa(parada);
+    } else {
+        console.warn(
+            "centrarParadaEnMapa() todavía no está disponible en mapa.js."
+        );
+    }
+}
+
+
+/* ============================================================
+   ELIMINAR PARADA
+   ============================================================ */
+
+function eliminarParada(
+    vehiculoId,
+    indice
+) {
+    const plan =
+        planificacionDia[vehiculoId];
+
+    if (!plan || !plan.paradas[indice]) {
+        return;
+    }
+
+    const parada =
+        plan.paradas[indice];
+
+    const confirmar = confirm(
+        `¿Eliminar "${parada.nombre || "esta parada"}" de la planificación?`
+    );
+
+    if (!confirmar) {
+        return;
+    }
+
+
+    /* --------------------------------------------------------
+       Si es un AVISO, actualizar también el aviso original.
+       -------------------------------------------------------- */
+
+    if (
+        String(parada.tipo || "").toUpperCase() ===
+        "AVISO"
+    ) {
+        const avisoId =
+            parada.avisoId || parada.id;
+
+        const avisos =
+            window.DATOS_MOCK?.AVISOS || [];
+
+        const aviso =
+            avisos.find(item =>
+                String(item.id) ===
+                String(avisoId)
+            );
+
+        if (aviso) {
+            const estadoActual =
+                String(aviso.estado || "")
+                    .toUpperCase();
+
+            /*
+             * Si todavía no está recogido, vuelve a PENDIENTE.
+             */
+            if (estadoActual !== "RECOGIDO") {
+                aviso.estado = "PENDIENTE";
+                aviso.vehiculo = null;
+            }
+        }
+    }
+
+
+    /* --------------------------------------------------------
+       Eliminar de la planificación
+       -------------------------------------------------------- */
+
+    plan.paradas.splice(indice, 1);
+
+    actualizarOrdenes(plan);
+
+    marcarPlanificacionModificada();
+
+    renderizarAvisosPendientes();
+    renderizarPlanificacion();
+}
+
+
+/* ============================================================
+   REORDENAR PARADAS
+   ============================================================ */
+
+function subirParada(
+    vehiculoId,
+    indice
+) {
+    const plan =
+        planificacionDia[vehiculoId];
+
+    if (
+        !plan ||
+        indice <= 0 ||
+        indice >= plan.paradas.length
+    ) {
+        return;
+    }
+
+    const temporal =
+        plan.paradas[indice - 1];
+
+    plan.paradas[indice - 1] =
+        plan.paradas[indice];
+
+    plan.paradas[indice] =
+        temporal;
+
+    actualizarOrdenes(plan);
+
+    marcarPlanificacionModificada();
+    renderizarPlanificacion();
+}
+
+
+function bajarParada(
+    vehiculoId,
+    indice
+) {
+    const plan =
+        planificacionDia[vehiculoId];
+
+    if (
+        !plan ||
+        indice < 0 ||
+        indice >= plan.paradas.length - 1
+    ) {
+        return;
+    }
+
+    const temporal =
+        plan.paradas[indice + 1];
+
+    plan.paradas[indice + 1] =
+        plan.paradas[indice];
+
+    plan.paradas[indice] =
+        temporal;
+
+    actualizarOrdenes(plan);
+
+    marcarPlanificacionModificada();
+    renderizarPlanificacion();
+}
+
+
+function actualizarOrdenes(plan) {
+    if (!plan || !Array.isArray(plan.paradas)) {
+        return;
+    }
+
+    plan.paradas.forEach(
+        (parada, index) => {
+            parada.orden = index + 1;
+        }
+    );
+}
+
+
+/* ============================================================
+   OPTIMIZAR ORDEN
+   ============================================================ */
+
+function reordenarParadas(vehiculoId) {
+    /*
+     * Por ahora no alteramos automáticamente el orden.
+     * La futura optimización deberá utilizar la red viaria
+     * real y no una distancia aérea simple.
+     */
+    alert(
+        "La optimización automática de la ruta se implementará cuando conectemos la planificación con el cálculo de ruta por carretera."
+    );
+}
+
+
+/* ============================================================
+   CENTRAR VEHÍCULO
+   ============================================================ */
+
+function centrarVehiculoDesdePlan(vehiculoId) {
+    if (
+        typeof centrarVehiculo === "function"
+    ) {
+        centrarVehiculo(vehiculoId);
+        return;
+    }
+
+    if (
+        typeof centrarTodosLosVehiculos === "function"
+    ) {
+        centrarTodosLosVehiculos();
+    }
+}
+
+
+/* ============================================================
+   UTILIDADES DE COORDENADAS
+   ============================================================ */
+
+function obtenerLat(objeto) {
+    if (!objeto) {
+        return null;
+    }
+
+    const valor =
+        objeto.latitud ??
+        objeto.lat ??
+        objeto.latitude;
+
+    if (
+        valor === null ||
+        valor === undefined ||
+        valor === ""
+    ) {
+        return null;
+    }
+
+    const numero =
+        Number(String(valor).replace(",", "."));
+
+    return Number.isFinite(numero)
+        ? numero
+        : null;
+}
+
+
+function obtenerLng(objeto) {
+    if (!objeto) {
+        return null;
+    }
+
+    const valor =
+        objeto.longitud ??
+        objeto.lng ??
+        objeto.lon ??
+        objeto.longitude;
+
+    if (
+        valor === null ||
+        valor === undefined ||
+        valor === ""
+    ) {
+        return null;
+    }
+
+    const numero =
+        Number(String(valor).replace(",", "."));
+
+    return Number.isFinite(numero)
+        ? numero
+        : null;
+}
+
+
+function coordenadasValidas(lat, lng) {
+    return (
+        Number.isFinite(Number(lat)) &&
+        Number.isFinite(Number(lng)) &&
+        Number(lat) >= -90 &&
+        Number(lat) <= 90 &&
+        Number(lng) >= -180 &&
+        Number(lng) <= 180
+    );
+}
+
+
+function obtenerIdVehiculo(objeto) {
+    if (!objeto) {
+        return null;
+    }
+
+    return (
+        objeto.id ||
+        objeto.vehiculo ||
+        objeto.vehiculoId ||
+        null
+    );
+}
+
+
+function obtenerNombreVehiculo(vehiculoId) {
+    const vehiculos =
+        window.DATOS_MOCK?.VEHICULOS || [];
+
+    const vehiculo =
+        vehiculos.find(item =>
+            String(item.id) ===
+            String(vehiculoId)
+        );
+
+    return vehiculo
+        ? vehiculo.nombre || vehiculo.id
+        : vehiculoId;
+}
+
+
+/* ============================================================
+   ESTADOS
+   ============================================================ */
+
+function normalizarEstadoParada(estado) {
     const valor =
         String(estado || "")
             .trim()
@@ -1689,18 +1829,20 @@ function normalizarEstadoParada(
         return "PENDIENTE";
     }
 
-    return "PLANIFICADO";
+    if (valor === "PLANIFICADO") {
+        return "PLANIFICADO";
+    }
+
+    return valor || "PLANIFICADO";
 }
 
 
-function obtenerTextoEstadoParada(
-    estado
-) {
-
-    switch (estado) {
-
+function obtenerTextoEstadoParada(estado) {
+    switch (
+        normalizarEstadoParada(estado)
+    ) {
         case "RECOGIDO":
-            return "✓ Recogido";
+            return "Recogido";
 
         case "ASIGNADO":
             return "Asignado";
@@ -1708,329 +1850,71 @@ function obtenerTextoEstadoParada(
         case "PENDIENTE":
             return "Pendiente";
 
-        default:
+        case "PLANIFICADO":
             return "Planificado";
+
+        default:
+            return estado || "";
     }
 }
 
 
-function obtenerIconoParada(
-    parada
-) {
+/* ============================================================
+   MARCAR CAMBIOS
+   ============================================================ */
 
-    const tipo =
-        String(parada.tipo || "")
-            .toUpperCase();
+function marcarPlanificacionModificada() {
+    window.planificacionModificada = true;
 
-    if (tipo === "AVISO") {
-        return "🔔";
+    const indicador =
+        document.getElementById(
+            "indicador-planificacion-modificada"
+        );
+
+    if (indicador) {
+        indicador.style.display = "block";
+        indicador.textContent =
+            "Planificación modificada";
     }
-
-    if (tipo === "PUNTO") {
-        return "📍";
-    }
-
-    return "📌";
 }
 
 
-// ============================================================
-// REORDENAR PARADAS
-// ============================================================
+/* ============================================================
+   ESCAPAR HTML
+   ============================================================ */
 
-function subirParada(
-    vehiculoId,
-    indice
-) {
-
-    const plan =
-        planificacionDia[vehiculoId];
-
+function escaparHTML(valor) {
     if (
-        !plan ||
-        indice <= 0
+        valor === null ||
+        valor === undefined
     ) {
-        return;
+        return "";
     }
 
-
-    const temporal =
-        plan.paradas[indice - 1];
-
-    plan.paradas[indice - 1] =
-        plan.paradas[indice];
-
-    plan.paradas[indice] =
-        temporal;
-
-
-    actualizarOrdenes(
-        plan
-    );
-
-    renderizarPlanificacion();
-
-    marcarPlanificacionModificada(
-        vehiculoId
-    );
+    return String(valor)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 }
 
 
-function bajarParada(
-    vehiculoId,
-    indice
-) {
-
-    const plan =
-        planificacionDia[vehiculoId];
-
-    if (
-        !plan ||
-        indice >= plan.paradas.length - 1
-    ) {
-        return;
-    }
-
-
-    const temporal =
-        plan.paradas[indice + 1];
-
-    plan.paradas[indice + 1] =
-        plan.paradas[indice];
-
-    plan.paradas[indice] =
-        temporal;
-
-
-    actualizarOrdenes(
-        plan
-    );
-
-    renderizarPlanificacion();
-
-    marcarPlanificacionModificada(
-        vehiculoId
-    );
-}
-
-
-function actualizarOrdenes(
-    plan
-) {
-
-    plan.paradas.forEach(
-        (parada, index) => {
-
-            parada.orden =
-                index + 1;
-        }
-    );
-}
-
-
-// ============================================================
-// ELIMINAR PARADA
-// ============================================================
-
-function eliminarParada(
-    vehiculoId,
-    indice
-) {
-
-    const plan =
-        planificacionDia[vehiculoId];
-
-    if (!plan) {
-        return;
-    }
-
-
-    const parada =
-        plan.paradas[indice];
-
-    if (!parada) {
-        return;
-    }
-
-
-    const nombre =
-        parada.nombre ||
-        parada.punto ||
-        "esta parada";
-
-
-    const confirmar =
-        window.confirm(
-            `¿Quieres eliminar "${nombre}" de la planificación de este vehículo?`
-        );
-
-
-    if (!confirmar) {
-        return;
-    }
-
-
-    plan.paradas.splice(
-        indice,
-        1
-    );
-
-
-    actualizarOrdenes(
-        plan
-    );
-
-    renderizarPlanificacion();
-
-    marcarPlanificacionModificada(
-        vehiculoId
-    );
-}
-
-
-// ============================================================
-// OPTIMIZACIÓN FUTURA
-// ============================================================
-
-function reordenarParadas(
-    vehiculoId
-) {
-
-    const plan =
-        planificacionDia[vehiculoId];
-
-    if (
-        !plan ||
-        plan.paradas.length < 2
-    ) {
-        return;
-    }
-
-
-    alert(
-        "La optimización automática de la ruta se implementará posteriormente.\n\n" +
-        "Por ahora puedes modificar el orden manualmente con ↑ y ↓."
-    );
-}
-
-
-// ============================================================
-// CENTRAR VEHÍCULO
-// ============================================================
-
-function centrarVehiculoDesdePlan(
-    vehiculoId
-) {
-
-    if (
-        typeof centrarVehiculo === "function"
-    ) {
-
-        centrarVehiculo(
-            vehiculoId
-        );
-
-        return;
-    }
-
-
-    if (
-        typeof window.centrarVehiculo === "function"
-    ) {
-
-        window.centrarVehiculo(
-            vehiculoId
-        );
-
-        return;
-    }
-
-
-    console.warn(
-        "No se ha encontrado la función centrarVehiculo()."
-    );
-}
-
-
-// ============================================================
-// MARCAR PLANIFICACIÓN MODIFICADA
-// ============================================================
-
-function marcarPlanificacionModificada(
-    vehiculoId
-) {
-
-    const tarjeta =
-        document.querySelector(
-            `.tarjeta-plan-vehiculo[data-vehiculo="${vehiculoId}"]`
-        );
-
-    if (!tarjeta) {
-        return;
-    }
-
-
-    tarjeta.classList.add(
-        "plan-modificado"
-    );
-
-
-    setTimeout(() => {
-
-        tarjeta.classList.remove(
-            "plan-modificado"
-        );
-
-    }, 1200);
-}
-
-
-// ============================================================
-// UTILIDADES
-// ============================================================
-
-function escaparHTML(
-    valor
-) {
-
-    return String(
-        valor ?? ""
-    )
-        .replace(
-            /&/g,
-            "&amp;"
-        )
-        .replace(
-            /</g,
-            "&lt;"
-        )
-        .replace(
-            />/g,
-            "&gt;"
-        )
-        .replace(
-            /"/g,
-            "&quot;"
-        )
-        .replace(
-            /'/g,
-            "&#039;"
-        );
-}
-
-
-// ============================================================
-// COMPATIBILIDAD
-// ============================================================
+/* ============================================================
+   EXPORTAR FUNCIONES
+   ============================================================ */
 
 window.inicializarPlanificacion =
     inicializarPlanificacion;
 
-window.renderizarLeyendaRutas =
-    renderizarLeyendaRutas;
-
 window.renderizarPlanificacion =
     renderizarPlanificacion;
+
+window.renderizarAvisosPendientes =
+    renderizarAvisosPendientes;
+
+window.asignarAvisoAVehiculo =
+    asignarAvisoAVehiculo;
 
 window.cambiarRutaPlanificada =
     cambiarRutaPlanificada;
@@ -2040,9 +1924,6 @@ window.cambiarHoraPlanificacion =
 
 window.anadirParadaSeleccionada =
     anadirParadaSeleccionada;
-
-window.asignarAvisoAVehiculo =
-    asignarAvisoAVehiculo;
 
 window.eliminarParada =
     eliminarParada;
@@ -2058,3 +1939,9 @@ window.reordenarParadas =
 
 window.centrarVehiculoDesdePlan =
     centrarVehiculoDesdePlan;
+
+window.seleccionarParadaEnMapa =
+    seleccionarParadaEnMapa;
+
+window.obtenerVehiculoRecomendado =
+    obtenerVehiculoRecomendado;
