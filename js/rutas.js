@@ -92,14 +92,19 @@ function crearTarjetaAvisoPendiente(aviso) {
         obtenerColorRuta(aviso.ruta);
 
     return `
-        <div class="tarjeta-aviso-pendiente">
+        <article
+            class="tarjeta-aviso-pendiente"
+            data-aviso="${escaparHTML(aviso.id || "")}"
+        >
 
             <!-- CABECERA -->
-
             <div class="cabecera-aviso-pendiente">
 
-                <div class="icono-aviso-pendiente">
-                    ⚠
+                <div
+                    class="icono-aviso-pendiente"
+                    aria-hidden="true"
+                >
+                    🔔
                 </div>
 
                 <div class="datos-aviso-pendiente">
@@ -123,19 +128,20 @@ function crearTarjetaAvisoPendiente(aviso) {
                     class="ruta-aviso-pendiente"
                     style="color:${escaparHTML(rutaColor)}"
                 >
+
                     <span
                         class="punto-ruta"
                         style="background:${escaparHTML(rutaColor)}"
                     ></span>
 
                     ${escaparHTML(rutaNombre)}
+
                 </div>
 
             </div>
 
 
             <!-- DATOS PRINCIPALES -->
-
             <div class="contenido-aviso-pendiente">
 
                 <div class="dato-aviso">
@@ -174,7 +180,7 @@ function crearTarjetaAvisoPendiente(aviso) {
                 <div class="dato-aviso">
 
                     <span class="etiqueta-dato">
-                        ☎ Teléfono
+                        📞 Teléfono
                     </span>
 
                     <strong>
@@ -190,7 +196,6 @@ function crearTarjetaAvisoPendiente(aviso) {
 
 
             <!-- OBSERVACIONES -->
-
             ${
                 aviso.observaciones
                     ? `
@@ -203,9 +208,11 @@ function crearTarjetaAvisoPendiente(aviso) {
                                 📝
                             </span>
 
-                            ${escaparHTML(
-                                aviso.observaciones
-                            )}
+                            <span>
+                                ${escaparHTML(
+                                    aviso.observaciones
+                                )}
+                            </span>
 
                         </div>
                     `
@@ -214,7 +221,6 @@ function crearTarjetaAvisoPendiente(aviso) {
 
 
             <!-- PIE -->
-
             <div class="pie-aviso-pendiente">
 
                 <div class="coordenadas-aviso-pendiente">
@@ -228,61 +234,44 @@ function crearTarjetaAvisoPendiente(aviso) {
             </div>
 
 
-            <!-- RECOMENDACIÓN -->
-
-            ${
-                vehiculoRecomendado
-                    ? `
-                        <div class="recomendacion-vehiculo">
-
-                            <div>
-                                <span aria-hidden="true">★</span>
-
-                                <strong>
-                                    Vehículo recomendado
-                                </strong>
-                            </div>
-
-                            <div class="nombre-vehiculo-recomendado">
-                                ${escaparHTML(
-                                    vehiculoRecomendado.nombre
-                                )}
-                            </div>
-
-                            <div class="motivo-vehiculo-recomendado">
-                                ${escaparHTML(
-                                    vehiculoRecomendado.motivo
-                                )}
-                            </div>
-
-                        </div>
-                    `
-                    : ""
-            }
-
-
             <!-- ASIGNACIÓN -->
+            <div class="asignacion-aviso-pendiente">
 
-            <div class="asignacion-aviso">
-
-                <select
-                    id="vehiculo-${escaparHTML(aviso.id)}"
-                    class="selector-vehiculo-aviso"
+                <label
+                    for="vehiculo-${escaparHTML(aviso.id)}"
                 >
-                    ${opcionesVehiculos}
-                </select>
+                    Asignar a vehículo
+                </label>
 
-                <button
-                    type="button"
-                    class="boton-secundario"
-                    onclick="asignarAvisoAVehiculo('${escaparHTML(aviso.id)}')"
-                >
-                    ✓ Asignar
-                </button>
+                <div class="control-asignacion-aviso">
+
+                    <select
+                        id="vehiculo-${escaparHTML(aviso.id)}"
+                        class="selector-vehiculo-aviso"
+                        aria-label="Vehículo para ${escaparHTML(
+                            aviso.punto ||
+                            aviso.id ||
+                            "aviso"
+                        )}"
+                    >
+                        ${opcionesVehiculos}
+                    </select>
+
+                    <button
+                        type="button"
+                        class="boton-secundario boton-asignar-aviso"
+                        onclick="asignarAvisoAVehiculo('${escaparHTML(
+                            aviso.id
+                        )}')"
+                    >
+                        ✓ Asignar
+                    </button>
+
+                </div>
 
             </div>
 
-        </div>
+        </article>
     `;
 }
 
