@@ -1349,8 +1349,18 @@ min-height: 560px;
     border-color: #F57C00;
 }
 
-.tarjeta-plan-vehiculo:hover {
-    border-color: #c7d3d7;
+.tarjeta-plan-vehiculo[data-vehiculo="V1"]:hover {
+    border-color: #1976D2;
+    box-shadow: var(--shadow);
+}
+
+.tarjeta-plan-vehiculo[data-vehiculo="V2"]:hover {
+    border-color: #388E3C;
+    box-shadow: var(--shadow);
+}
+
+.tarjeta-plan-vehiculo[data-vehiculo="V3"]:hover {
+    border-color: #F57C00;
     box-shadow: var(--shadow);
 }
 
