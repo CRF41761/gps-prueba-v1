@@ -1388,8 +1388,8 @@ min-height: 560px;
 }
 
 .icono-vehiculo {
-    width: 32px;
-    height: 32px;
+    width: 30px;
+    height: 30px;
 
     flex-shrink: 0;
 
@@ -1410,7 +1410,19 @@ min-height: 560px;
     font-size: 12px;
     line-height: 1.2;
 }
+.nombre-vehiculo-linea {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    white-space: nowrap;
+}
 
+.tablet-vehiculo {
+    color: var(--muted);
+    font-size: 9px;
+    font-weight: 600;
+}
 .ruta-habitual {
     display: flex;
     align-items: center;
