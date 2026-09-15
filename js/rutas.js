@@ -2056,7 +2056,7 @@ function crearParadaHTML(
 
     const icono =
         esAviso
-            ? "⚠"
+            ? "🔔"
             : "●";
 
     const claseTipo =
@@ -2119,7 +2119,7 @@ function crearParadaHTML(
                     <span>
                         ${
                             esAviso
-                                ? "⚠ Aviso"
+                                ? "🔔 Aviso"
                                 : "● Punto habitual"
                         }
                     </span>
