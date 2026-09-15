@@ -92,10 +92,11 @@ function crearTarjetaAvisoPendiente(aviso) {
         obtenerColorRuta(aviso.ruta);
 
     return `
-        <article
-            class="tarjeta-aviso-pendiente"
-            data-aviso="${escaparHTML(aviso.id || "")}"
-        >
+       <article
+    class="tarjeta-aviso-pendiente"
+    data-aviso="${escaparHTML(aviso.id || "")}"
+    data-ruta="${escaparHTML(aviso.ruta || "")}"
+>
 
             <!-- CABECERA -->
             <div class="cabecera-aviso-pendiente">
