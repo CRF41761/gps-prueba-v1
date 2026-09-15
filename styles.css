@@ -1321,7 +1321,7 @@ min-height: 560px;
     border: 1px solid var(--border);
     border-radius: 9px;
 
-    background: #f7f9fc;
+    background: #f1f6fb;
 
     padding: 12px;
 
@@ -1331,20 +1331,20 @@ min-height: 560px;
         outline 0.15s ease;
 }
 
-/* Diferenciación muy sutil por vehículo */
+/* Diferenciación por vehículo */
 .tarjeta-plan-vehiculo[data-vehiculo="V1"] {
-    background: #f7f9fc;
-    border-color: #dce6ef;
+    background: #eef5fc;
+    border-color: #d2e1ef;
 }
 
 .tarjeta-plan-vehiculo[data-vehiculo="V2"] {
-    background: #f7faf8;
-    border-color: #dce8df;
+    background: #eef7f1;
+    border-color: #d3e4d9;
 }
 
 .tarjeta-plan-vehiculo[data-vehiculo="V3"] {
-    background: #fcfaf7;
-    border-color: #eee5d9;
+    background: #fcf4ea;
+    border-color: #eadbc8;
 }
 
 .tarjeta-plan-vehiculo:hover {
