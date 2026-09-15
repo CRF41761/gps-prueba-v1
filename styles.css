@@ -358,7 +358,7 @@ button {
         minmax(500px, 1fr)
         310px;
 
-   height: calc(100vh - 320px);
+   height: calc(100vh - 360px);
 min-height: 560px;
 
     background: var(--surface);
