@@ -1931,7 +1931,7 @@ min-height: 560px;
 }
 
 .tarjeta-aviso-pendiente {
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
     border-radius: 9px;
     background: var(--surface);
     padding: 10px 12px;
