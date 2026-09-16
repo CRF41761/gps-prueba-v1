@@ -442,7 +442,160 @@ button {
     background: var(--border);
     margin: 15px 0;
 }
+/* ============================================================
+   RESUMEN DEL DÍA
+============================================================ */
 
+.resumen-dia {
+    padding-bottom: 4px;
+}
+
+.resumen-dia-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+
+    gap: 8px;
+
+    margin-bottom: 12px;
+}
+
+.resumen-dia-header h2 {
+    margin: 2px 0 0;
+
+    font-size: 15px;
+    line-height: 1.2;
+}
+
+.resumen-dia-header .counter-badge {
+    flex-shrink: 0;
+}
+
+.resumen-kpis {
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 7px;
+}
+
+.resumen-kpis .kpi-card {
+    min-height: 68px;
+    padding: 9px;
+}
+
+.resumen-kpis .kpi-card strong {
+    font-size: 20px;
+}
+
+
+/* ============================================================
+   ACCIONES OPERATIVAS — PANEL DERECHO
+============================================================ */
+
+.acciones-oficina {
+    margin-top: 16px;
+}
+
+.acciones-oficina-header {
+    margin-bottom: 9px;
+}
+
+.acciones-oficina-header h2 {
+    margin: 2px 0 0;
+
+    font-size: 15px;
+}
+
+.acciones-oficina-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.accion-oficina {
+    width: 100%;
+
+    min-height: 47px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 9px;
+
+    padding: 8px 9px;
+
+    border: 1px solid var(--border);
+    border-radius: 7px;
+
+    background: white;
+
+    text-align: left;
+
+    transition:
+        border-color 0.15s ease,
+        background 0.15s ease,
+        transform 0.15s ease;
+}
+
+.accion-oficina:hover {
+    border-color: var(--primary);
+
+    background: var(--surface-soft);
+
+    transform: translateY(-1px);
+}
+
+.accion-oficina.accion-principal {
+    border-color: var(--primary);
+
+    background: #eef6f8;
+}
+
+.accion-oficina-icono {
+    width: 29px;
+    height: 29px;
+
+    flex-shrink: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 6px;
+
+    background: #edf2f4;
+
+    color: var(--primary);
+
+    font-size: 14px;
+}
+
+.accion-oficina.accion-principal .accion-oficina-icono {
+    background: var(--primary);
+    color: white;
+}
+
+.accion-oficina-texto {
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 2px;
+}
+
+.accion-oficina-texto strong {
+    font-size: 10px;
+    line-height: 1.2;
+}
+
+.accion-oficina-texto small {
+    color: var(--muted);
+
+    font-size: 8px;
+    line-height: 1.2;
+}
 
 /* ============================================================
    VEHÍCULOS
