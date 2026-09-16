@@ -1511,7 +1511,7 @@ function actualizarResumenPlanificacion() {
         <button
             type="button"
             id="btn-ver-detalle-planificacion"
-            class="boton-link-planificacion"
+            class="link-action"
             onclick="mostrarDetallePlanificacion()"
         >
             Ver detalle
@@ -1613,9 +1613,9 @@ function crearSelectorVehiculosPlan(
             return `
                 <button
                     type="button"
-                    class="boton-selector-vehiculo-plan ${
+                    class="boton-vehiculo-plan ${
                         seleccionado
-                            ? "activo"
+                            ? "active"
                             : ""
                     }"
                     data-vehiculo="${escaparHTML(
@@ -1624,6 +1624,11 @@ function crearSelectorVehiculosPlan(
                     onclick="seleccionarVehiculoPlan('${escaparHTML(
                         plan.vehiculoId
                     )}')"
+                    aria-pressed="${
+                        seleccionado
+                            ? "true"
+                            : "false"
+                    }"
                 >
 
                     <span class="selector-vehiculo-icono">
@@ -1672,387 +1677,453 @@ function crearDetalleVehiculoPlan(
             plan.rutaActiva
         );
 
+    const rutaHabitualColor =
+        obtenerColorRuta(
+            plan.rutaHabitual
+        );
+
     return `
         <div
-            class="detalle-plan-vehiculo"
+            class="plan-vehiculo-seleccionado"
             data-vehiculo="${escaparHTML(
                 plan.vehiculoId
             )}"
         >
 
-            <!-- ================================================
-                 COLUMNA IZQUIERDA
-            ================================================= -->
+            <div class="plan-vehiculo-columnas">
 
-            <div class="columna-info-plan">
+                <!-- =================================================
+                     COLUMNA IZQUIERDA · INFORMACIÓN
+                ================================================== -->
 
-                <div class="cabecera-plan">
+                <div class="plan-columna">
 
-                    <div class="identificacion-vehiculo">
+                    <div class="plan-bloque">
 
-                        <div class="icono-vehiculo">
-                            🚐
-                        </div>
+                        <div class="cabecera-plan">
 
-                        <div>
+                            <div class="identificacion-vehiculo">
 
-                            <div class="nombre-vehiculo-linea">
+                                <div class="icono-vehiculo">
+                                    🚐
+                                </div>
 
-                                <strong>
-                                    ${escaparHTML(
-                                        plan.vehiculoNombre
-                                    )}
-                                </strong>
+                                <div>
 
-                                <span class="tablet-vehiculo">
-                                    · 📱 ${escaparHTML(
-                                        plan.tablet ||
-                                        "Sin tablet"
-                                    )}
-                                </span>
+                                    <div class="nombre-vehiculo-linea">
 
-                            </div>
+                                        <strong>
+                                            ${escaparHTML(
+                                                plan.vehiculoNombre
+                                            )}
+                                        </strong>
 
-                            <div class="ruta-habitual">
+                                        <span class="tablet-vehiculo">
+                                            · 📱 ${escaparHTML(
+                                                plan.tablet ||
+                                                "Sin tablet"
+                                            )}
+                                        </span>
 
-                                <span
-                                    class="punto-ruta"
-                                    style="background:${escaparHTML(
-                                        obtenerColorRuta(
-                                            plan.rutaHabitual
-                                        )
-                                    )}"
-                                ></span>
-
-                                Ruta habitual:
-                                ${escaparHTML(
-                                    obtenerNombreRuta(
-                                        plan.rutaHabitual
-                                    )
-                                )}
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-
-                    <button
-                        type="button"
-                        class="boton-centro-vehiculo"
-                        onclick="centrarVehiculoDesdePlan('${escaparHTML(
-                            plan.vehiculoId
-                        )}')"
-                        title="Ver vehículo en el mapa"
-                    >
-                        ⌖
-                    </button>
-
-                </div>
-
-
-                <div class="bloque-ruta-activa-plan">
-
-                    <div class="etiqueta-bloque-plan">
-                        RUTA ACTIVA
-                    </div>
-
-                    <div
-                        class="ruta-activa-destacada"
-                        style="--ruta-color:${escaparHTML(
-                            rutaColor
-                        )}"
-                    >
-
-                        <span class="punto-ruta"></span>
-
-                        <strong>
-                            ${escaparHTML(
-                                obtenerNombreRuta(
-                                    plan.rutaActiva
-                                )
-                            )}
-                        </strong>
-
-                    </div>
-
-                </div>
-
-
-                <div class="datos-configuracion-plan">
-
-                    <div class="campo-plan">
-
-                        <label>
-                            🛣 Ruta del día
-                        </label>
-
-                        <select
-                            onchange="cambiarRutaPlanificada(
-                                '${escaparHTML(
-                                    plan.vehiculoId
-                                )}',
-                                this.value
-                            )"
-                        >
-                            ${crearOpcionesRutas(
-                                plan.rutaActiva
-                            )}
-                        </select>
-
-                    </div>
-
-
-                    <div class="campo-plan">
-
-                        <label>
-                            🕐 Salida
-                        </label>
-
-                        <input
-                            type="time"
-                            value="${escaparHTML(
-                                plan.horaSalida ||
-                                ""
-                            )}"
-                            onchange="cambiarHoraPlanificacion(
-                                '${escaparHTML(
-                                    plan.vehiculoId
-                                )}',
-                                'salida',
-                                this.value
-                            )"
-                        >
-
-                    </div>
-
-
-                    <div class="campo-plan">
-
-                        <label>
-                            🏁 Regreso estimado
-                        </label>
-
-                        <input
-                            type="time"
-                            value="${escaparHTML(
-                                plan.horaEstimadaRegreso ||
-                                ""
-                            )}"
-                            onchange="cambiarHoraPlanificacion(
-                                '${escaparHTML(
-                                    plan.vehiculoId
-                                )}',
-                                'regreso',
-                                this.value
-                            )"
-                        >
-
-                    </div>
-
-                </div>
-
-
-                <div class="resumen-plan-vehiculo">
-
-                    <span>
-                        📍 Paradas:
-                        <strong>
-                            ${plan.paradas.length}
-                        </strong>
-                    </span>
-
-                    <span>
-                        🐾 Animales:
-                        <strong>
-                            ${calcularAnimalesPlan(plan)}
-                        </strong>
-                    </span>
-
-                </div>
-
-
-                <div
-                    id="indicador-planificacion-modificada"
-                    class="plan-modificado"
-                    style="display:none;"
-                >
-                    Planificación modificada
-                </div>
-
-            </div>
-
-
-            <!-- ================================================
-                 COLUMNA DERECHA · RUTA PROPUESTA
-            ================================================= -->
-
-            <div class="columna-ruta-plan">
-
-                <div class="cabecera-ruta-propuesta">
-
-                    <div>
-
-                        <div class="etiqueta-bloque-plan">
-                            PLANIFICACIÓN
-                        </div>
-
-                        <h3>
-                            RUTA PROPUESTA
-                        </h3>
-
-                    </div>
-
-                    <span class="contador-paradas-ruta">
-                        ${plan.paradas.length}
-                        paradas
-                    </span>
-
-                </div>
-
-
-                <div class="lista-paradas">
-
-                    ${
-                        plan.paradas.length
-                            ? plan.paradas
-                                .map(
-                                    (
-                                        parada,
-                                        index
-                                    ) =>
-                                        crearParadaHTML(
-                                            plan,
-                                            parada,
-                                            index
-                                        )
-                                )
-                                .join("")
-                            : `
-                                <div class="sin-paradas">
-
-                                    <div>
-                                        📍
                                     </div>
 
-                                    <strong>
-                                        No hay paradas planificadas
-                                    </strong>
+                                    <div class="ruta-habitual">
 
-                                    <span>
-                                        Añade un aviso o punto habitual para construir la ruta.
-                                    </span>
+                                        <span
+                                            class="punto-ruta"
+                                            style="background:${escaparHTML(
+                                                rutaHabitualColor
+                                            )}"
+                                        ></span>
+
+                                        Ruta habitual:
+                                        ${escaparHTML(
+                                            obtenerNombreRuta(
+                                                plan.rutaHabitual
+                                            )
+                                        )}
+
+                                    </div>
 
                                 </div>
-                            `
-                    }
 
-                </div>
+                            </div>
 
 
-                <div class="anadir-parada-principal">
+                            <button
+                                type="button"
+                                class="boton-centro-vehiculo"
+                                onclick="centrarVehiculoDesdePlan('${escaparHTML(
+                                    plan.vehiculoId
+                                )}')"
+                                title="Ver vehículo en el mapa"
+                                aria-label="Ver vehículo en el mapa"
+                            >
+                                ⌖
+                            </button>
 
-                    <button
-                        type="button"
-                        class="boton-anadir-parada-principal"
-                        onclick="mostrarMenuAnadirParada('${escaparHTML(
-                            plan.vehiculoId
-                        )}')"
-                    >
-                        <span>
-                            ＋
-                        </span>
+                        </div>
 
-                        <strong>
-                            Añadir parada
-                        </strong>
-                    </button>
+                    </div>
+
+
+                    <div class="plan-bloque">
+
+                        <div class="etiqueta-bloque-plan">
+                            RUTA ACTIVA
+                        </div>
+
+                        <div
+                            class="ruta-activa-destacada"
+                            style="--ruta-color:${escaparHTML(
+                                rutaColor
+                            )}"
+                        >
+
+                            <span class="punto-ruta"></span>
+
+                            <strong>
+                                ${escaparHTML(
+                                    obtenerNombreRuta(
+                                        plan.rutaActiva
+                                    )
+                                )}
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="plan-bloque">
+
+                        <div class="datos-configuracion-plan">
+
+                            <div class="campo-plan">
+
+                                <label>
+                                    🛣 Ruta del día
+                                </label>
+
+                                <select
+                                    onchange="cambiarRutaPlanificada(
+                                        '${escaparHTML(
+                                            plan.vehiculoId
+                                        )}',
+                                        this.value
+                                    )"
+                                >
+                                    ${crearOpcionesRutas(
+                                        plan.rutaActiva
+                                    )}
+                                </select>
+
+                            </div>
+
+
+                            <div class="campo-plan">
+
+                                <label>
+                                    🕐 Salida
+                                </label>
+
+                                <input
+                                    type="time"
+                                    value="${escaparHTML(
+                                        plan.horaSalida ||
+                                        ""
+                                    )}"
+                                    onchange="cambiarHoraPlanificacion(
+                                        '${escaparHTML(
+                                            plan.vehiculoId
+                                        )}',
+                                        'salida',
+                                        this.value
+                                    )"
+                                >
+
+                            </div>
+
+
+                            <div class="campo-plan">
+
+                                <label>
+                                    🏁 Regreso estimado
+                                </label>
+
+                                <input
+                                    type="time"
+                                    value="${escaparHTML(
+                                        plan.horaEstimadaRegreso ||
+                                        ""
+                                    )}"
+                                    onchange="cambiarHoraPlanificacion(
+                                        '${escaparHTML(
+                                            plan.vehiculoId
+                                        )}',
+                                        'regreso',
+                                        this.value
+                                    )"
+                                >
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="plan-bloque">
+
+                        <div class="resumen-plan-vehiculo">
+
+                            <span>
+                                📍 Paradas:
+                                <strong>
+                                    ${plan.paradas.length}
+                                </strong>
+                            </span>
+
+                            <span>
+                                🐾 Animales:
+                                <strong>
+                                    ${calcularAnimalesPlan(plan)}
+                                </strong>
+                            </span>
+
+                        </div>
+
+                    </div>
 
 
                     <div
-                        id="menu-anadir-parada-${escaparHTML(
-                            plan.vehiculoId
-                        )}"
-                        class="menu-anadir-parada"
+                        id="indicador-planificacion-modificada"
+                        class="plan-modificado"
                         style="display:none;"
                     >
-
-                        <button
-                            type="button"
-                            onclick="mostrarOpcionesAvisosParada('${escaparHTML(
-                                plan.vehiculoId
-                            )}')"
-                        >
-                            🔔
-                            <span>
-                                Aviso pendiente
-                            </span>
-                        </button>
-
-
-                        <button
-                            type="button"
-                            onclick="mostrarOpcionesPuntosParada('${escaparHTML(
-                                plan.vehiculoId
-                            )}')"
-                        >
-                            📍
-                            <span>
-                                Punto habitual
-                            </span>
-                        </button>
-
-
-                        <button
-                            type="button"
-                            onclick="prepararNuevoPuntoEnMapa('${escaparHTML(
-                                plan.vehiculoId
-                            )}')"
-                        >
-                            📌
-                            <span>
-                                Nuevo punto señalado en mapa
-                            </span>
-                        </button>
-
-
-                        <button
-                            type="button"
-                            onclick="buscarDireccionParaParada('${escaparHTML(
-                                plan.vehiculoId
-                            )}')"
-                        >
-                            🔎
-                            <span>
-                                Buscar dirección
-                            </span>
-                        </button>
-
-
-                        <div
-                            id="subopciones-parada-${escaparHTML(
-                                plan.vehiculoId
-                            )}"
-                            class="subopciones-anadir-parada"
-                        ></div>
-
+                        Planificación modificada
                     </div>
 
                 </div>
 
 
-                <div class="acciones-plan">
+                <!-- =================================================
+                     COLUMNA DERECHA · RUTA PROPUESTA
+                ================================================== -->
 
-                    <button
-                        type="button"
-                        class="boton-secundario"
-                        onclick="reordenarParadas('${escaparHTML(
-                            plan.vehiculoId
-                        )}')"
-                    >
-                        ↕ Optimizar orden
-                    </button>
+                <div class="plan-columna">
+
+                    <div class="plan-bloque">
+
+                        <div class="ruta-propuesta-header">
+
+                            <div>
+
+                                <div class="etiqueta-bloque-plan">
+                                    PLANIFICACIÓN
+                                </div>
+
+                                <h3>
+                                    RUTA PROPUESTA
+                                </h3>
+
+                                <div class="ruta-propuesta-info">
+
+                                    ${escaparHTML(
+                                        plan.horaSalida ||
+                                        "Salida pendiente"
+                                    )}
+
+                                    <span>
+                                        →
+                                    </span>
+
+                                    ${escaparHTML(
+                                        plan.horaEstimadaRegreso ||
+                                        "Regreso pendiente"
+                                    )}
+
+                                </div>
+
+                            </div>
+
+                            <span class="contador-paradas-ruta">
+                                ${plan.paradas.length}
+                                paradas
+                            </span>
+
+                        </div>
+
+
+                        <div class="ruta-propuesta">
+
+                            ${
+                                plan.paradas.length
+                                    ? plan.paradas
+                                        .map(
+                                            (
+                                                parada,
+                                                index
+                                            ) =>
+                                                crearParadaHTML(
+                                                    plan,
+                                                    parada,
+                                                    index
+                                                )
+                                        )
+                                        .join("")
+                                    : `
+                                        <div class="sin-paradas">
+
+                                            <div>
+                                                📍
+                                            </div>
+
+                                            <strong>
+                                                No hay paradas planificadas
+                                            </strong>
+
+                                            <span>
+                                                Añade un aviso o punto habitual para construir la ruta.
+                                            </span>
+
+                                        </div>
+                                    `
+                            }
+
+                        </div>
+
+
+                        <!-- =========================================
+                             AÑADIR PARADA
+                        ========================================== -->
+
+                        <div class="anadir-parada-principal">
+
+                            <button
+                                type="button"
+                                class="boton-anadir-parada-principal"
+                                onclick="mostrarMenuAnadirParada('${escaparHTML(
+                                    plan.vehiculoId
+                                )}')"
+                            >
+                                <span>
+                                    ＋
+                                </span>
+
+                                <strong>
+                                    Añadir parada
+                                </strong>
+                            </button>
+
+
+                            <div
+                                id="menu-anadir-parada-${escaparHTML(
+                                    plan.vehiculoId
+                                )}"
+                                class="menu-anadir-parada"
+                                style="display:none;"
+                            >
+
+                                <div class="opciones-anadir-parada">
+
+                                    <button
+                                        type="button"
+                                        class="opcion-anadir-parada"
+                                        onclick="mostrarOpcionesAvisosParada('${escaparHTML(
+                                            plan.vehiculoId
+                                        )}')"
+                                    >
+                                        <span>
+                                            🔔
+                                        </span>
+
+                                        <strong>
+                                            Aviso pendiente
+                                        </strong>
+                                    </button>
+
+
+                                    <button
+                                        type="button"
+                                        class="opcion-anadir-parada"
+                                        onclick="mostrarOpcionesPuntosParada('${escaparHTML(
+                                            plan.vehiculoId
+                                        )}')"
+                                    >
+                                        <span>
+                                            📍
+                                        </span>
+
+                                        <strong>
+                                            Punto habitual
+                                        </strong>
+                                    </button>
+
+
+                                    <button
+                                        type="button"
+                                        class="opcion-anadir-parada"
+                                        onclick="prepararNuevoPuntoEnMapa('${escaparHTML(
+                                            plan.vehiculoId
+                                        )}')"
+                                    >
+                                        <span>
+                                            📌
+                                        </span>
+
+                                        <strong>
+                                            Nuevo punto en mapa
+                                        </strong>
+                                    </button>
+
+
+                                    <button
+                                        type="button"
+                                        class="opcion-anadir-parada"
+                                        onclick="buscarDireccionParaParada('${escaparHTML(
+                                            plan.vehiculoId
+                                        )}')"
+                                    >
+                                        <span>
+                                            🔎
+                                        </span>
+
+                                        <strong>
+                                            Buscar dirección
+                                        </strong>
+                                    </button>
+
+                                </div>
+
+
+                                <div
+                                    id="subopciones-parada-${escaparHTML(
+                                        plan.vehiculoId
+                                    )}"
+                                    class="selector-secundario-parada"
+                                ></div>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="acciones-plan">
+
+                            <button
+                                type="button"
+                                class="boton-secundario"
+                                onclick="reordenarParadas('${escaparHTML(
+                                    plan.vehiculoId
+                                )}')"
+                            >
+                                ↕ Optimizar orden
+                            </button>
+
+                        </div>
+
+                    </div>
 
                 </div>
 
@@ -2256,10 +2327,18 @@ function mostrarMenuAnadirParada(
     const visible =
         menu.style.display !== "none";
 
+    if (visible) {
+
+        menu.style.display =
+            "none";
+
+        return;
+    }
+
+    cerrarMenusAnadirParada();
+
     menu.style.display =
-        visible
-            ? "none"
-            : "block";
+        "block";
 }
 
 
@@ -2361,6 +2440,17 @@ function mostrarOpcionesPuntosParada(
     const opciones =
         crearOpcionesPuntos(plan);
 
+    if (!opciones) {
+
+        contenedor.innerHTML = `
+            <div class="sin-opciones-parada">
+                No hay puntos habituales disponibles.
+            </div>
+        `;
+
+        return;
+    }
+
     contenedor.innerHTML = `
         <label>
             Seleccionar punto habitual
@@ -2399,13 +2489,14 @@ function prepararNuevoPuntoEnMapa(
     );
 
     /*
-       Aquí conectaremos:
+       Próximo paso:
 
        1. Activar modo selección en mapa.
        2. Usuario pulsa una ubicación.
        3. Obtener coordenadas.
-       4. Crear parada NUEVO_PUNTO.
-       5. Añadirla al plan.
+       4. Opcionalmente obtener dirección con Nominatim.
+       5. Crear parada NUEVO_PUNTO.
+       6. Añadirla al plan.
     */
 }
 
@@ -2425,13 +2516,14 @@ function buscarDireccionParaParada(
     );
 
     /*
-       Aquí conectaremos:
+       Próximo paso:
 
-       1. Buscador de dirección.
-       2. Nominatim.
-       3. Selección de resultado.
-       4. Coordenadas.
-       5. Crear parada DIRECCION.
+       1. Abrir buscador de dirección.
+       2. Buscar con Nominatim.
+       3. Mostrar resultados.
+       4. Seleccionar ubicación.
+       5. Obtener coordenadas.
+       6. Crear parada DIRECCION.
     */
 }
 
@@ -2537,7 +2629,9 @@ function anadirParadaSeleccionada(
         partes.slice(1).join(":");
 
 
-    /* AVISO */
+    /* ========================================================
+       AVISO
+    ======================================================== */
 
     if (tipo === "AVISO") {
 
@@ -2639,7 +2733,9 @@ function anadirParadaSeleccionada(
     }
 
 
-    /* PUNTO */
+    /* ========================================================
+       PUNTO HABITUAL
+    ======================================================== */
 
     if (tipo === "PUNTO") {
 
@@ -2703,6 +2799,7 @@ function anadirParadaSeleccionada(
             nuevaParada
         );
     }
+
 
     vehiculoPlanSeleccionado =
         vehiculoId;
