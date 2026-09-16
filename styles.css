@@ -1252,7 +1252,259 @@ button {
     font-size: 9px;
     line-height: 1.4;
 }
+/* ============================================================
+   SELECTOR DE VEHÍCULO — PLANIFICACIÓN
+============================================================ */
 
+.selector-vehiculos-plan {
+    display: grid;
+
+    grid-template-columns: repeat(3, 1fr);
+
+    gap: 7px;
+
+    margin-bottom: 10px;
+}
+
+.boton-vehiculo-plan {
+    min-width: 0;
+
+    min-height: 42px;
+
+    padding: 7px 9px;
+
+    border: 1px solid var(--border);
+    border-radius: 7px;
+
+    background: white;
+
+    text-align: left;
+
+    transition:
+        border-color 0.15s ease,
+        background 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+.boton-vehiculo-plan:hover {
+    border-color: var(--primary);
+
+    background: var(--surface-soft);
+}
+
+.boton-vehiculo-plan.active {
+    border-color: var(--primary);
+
+    background: #eef6f8;
+
+    box-shadow:
+        0 0 0 1px rgba(70,120,134,0.08);
+}
+
+.boton-vehiculo-plan strong {
+    display: block;
+
+    font-size: 10px;
+}
+
+.boton-vehiculo-plan span {
+    display: block;
+
+    margin-top: 2px;
+
+    color: var(--muted);
+
+    font-size: 8px;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+
+/* ============================================================
+   PLAN DEL VEHÍCULO SELECCIONADO
+============================================================ */
+
+.plan-vehiculo-seleccionado {
+    min-width: 0;
+}
+
+.plan-vehiculo-columnas {
+    display: grid;
+
+    grid-template-columns:
+        minmax(240px, 0.75fr)
+        minmax(360px, 1.25fr);
+
+    gap: 12px;
+
+    align-items: start;
+}
+
+.plan-columna {
+    min-width: 0;
+}
+
+.plan-columna + .plan-columna {
+    border-left: 1px solid var(--border);
+
+    padding-left: 12px;
+}
+
+.plan-bloque {
+    padding: 10px;
+
+    border: 1px solid var(--border);
+    border-radius: 7px;
+
+    background: var(--surface-soft);
+
+    margin-bottom: 9px;
+}
+
+.plan-bloque:last-child {
+    margin-bottom: 0;
+}
+
+.plan-bloque-titulo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 8px;
+
+    margin-bottom: 8px;
+}
+
+.plan-bloque-titulo strong {
+    font-size: 10px;
+}
+
+.plan-bloque-titulo span {
+    color: var(--muted);
+
+    font-size: 8px;
+}
+
+
+/* ============================================================
+   RUTA PROPUESTA
+============================================================ */
+
+.ruta-propuesta-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 8px;
+
+    margin-bottom: 8px;
+}
+
+.ruta-propuesta-header h3 {
+    margin: 0;
+
+    font-size: 11px;
+}
+
+.ruta-propuesta-info {
+    color: var(--muted);
+
+    font-size: 8px;
+}
+
+.ruta-propuesta {
+    display: flex;
+    flex-direction: column;
+
+    gap: 5px;
+}
+
+
+/* ============================================================
+   AÑADIR PARADA — ACCIÓN PRINCIPAL
+============================================================ */
+
+.boton-anadir-parada-principal {
+    width: 100%;
+
+    min-height: 38px;
+
+    margin-top: 8px;
+
+    border: 1px dashed var(--primary);
+    border-radius: 7px;
+
+    background: #f1f8fa;
+
+    color: var(--primary);
+
+    font-size: 10px;
+    font-weight: 800;
+
+    transition:
+        background 0.15s ease,
+        border-color 0.15s ease;
+}
+
+.boton-anadir-parada-principal:hover {
+    background: #e7f2f5;
+
+    border-color: var(--primary-dark);
+
+    color: var(--primary-dark);
+}
+
+
+/* ============================================================
+   OPCIONES PARA AÑADIR PARADA
+============================================================ */
+
+.opciones-anadir-parada {
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 6px;
+
+    margin-top: 7px;
+}
+
+.opcion-anadir-parada {
+    min-height: 38px;
+
+    padding: 6px 8px;
+
+    border: 1px solid var(--border);
+    border-radius: 6px;
+
+    background: white;
+
+    text-align: left;
+
+    font-size: 8px;
+    font-weight: 700;
+
+    color: var(--text);
+}
+
+.opcion-anadir-parada:hover {
+    border-color: var(--primary);
+
+    background: var(--surface-soft);
+}
+
+.opcion-anadir-parada span {
+    display: block;
+
+    color: var(--muted);
+
+    font-size: 7px;
+    font-weight: 500;
+
+    margin-top: 2px;
+}
 
 /* ============================================================
    ACCIONES
