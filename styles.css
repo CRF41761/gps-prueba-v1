@@ -2521,8 +2521,7 @@ button {
 
 @media (max-width: 800px) {
 
- 
-    .selector-anadir-parada {
+    .datos-configuracion-plan {
         grid-template-columns: 1fr;
     }
 
