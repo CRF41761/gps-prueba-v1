@@ -1660,53 +1660,94 @@ button {
    RESPONSIVE
 ============================================================ */
 
-@media (max-width: 1250px) {
+@media (max-width: 1350px) {
 
     .workspace {
         grid-template-columns:
             225px
-            minmax(400px, 1fr)
-            275px;
+            minmax(520px, 1fr)
+            290px;
     }
 
-    .nav-item {
-        padding: 0 11px;
-    }
-
-    .nav-item strong {
-        font-size: 11px;
+    .dashboard-lower {
+        grid-template-columns:
+            minmax(320px, 0.8fr)
+            minmax(520px, 1.2fr);
     }
 }
 
 
-@media (max-width: 1050px) {
+@media (max-width: 1150px) {
 
     .workspace {
-        grid-template-columns: 210px 1fr;
+        grid-template-columns:
+            210px
+            minmax(450px, 1fr)
+            270px;
+    }
+
+    .plan-vehiculo-columnas {
+        grid-template-columns: 1fr;
+    }
+
+    .plan-columna + .plan-columna {
+        border-left: 0;
+
+        border-top: 1px solid var(--border);
+
+        padding-left: 0;
+        padding-top: 10px;
+    }
+
+    .dashboard-lower {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+@media (max-width: 900px) {
+
+    .workspace {
+        display: flex;
+
+        flex-direction: column;
+
+        height: auto;
+
+        min-height: 0;
+    }
+
+    .left-panel {
+        border-right: 0;
+        border-bottom: 1px solid var(--border);
+
+        max-height: 260px;
+    }
+
+    .map-panel {
+        height: 620px;
+
+        min-height: 620px;
     }
 
     .right-panel {
-        grid-column: 1 / -1;
-
         border-left: 0;
         border-top: 1px solid var(--border);
 
-        max-height: 330px;
+        max-height: none;
     }
 
-    .alert-list,
-    .planning-list {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
+    .dashboard-lower {
+        grid-template-columns: 1fr;
     }
 
-    .actions-grid {
-        grid-template-columns: repeat(2, 1fr);
+    .resumen-kpis {
+        grid-template-columns: repeat(4, 1fr);
     }
 }
 
 
-@media (max-width: 800px) {
+@media (max-width: 700px) {
 
     .topbar {
         height: auto;
@@ -1719,48 +1760,30 @@ button {
         display: none;
     }
 
-    .main-nav {
-        overflow-x: auto;
-    }
-
-    .nav-item {
-        flex-shrink: 0;
-    }
-
     .dashboard {
         padding: 8px;
     }
 
-    .kpi-row {
-        grid-template-columns: repeat(2, 1fr);
-    }
+    .map-panel {
+        height: 500px;
 
-    .workspace {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .left-panel,
-    .right-panel {
-        border: 0;
-    }
-
-    .left-panel {
-        border-bottom: 1px solid var(--border);
-    }
-
-    .right-panel {
-        border-top: 1px solid var(--border);
-    }
-
-    .map-panel,
-    #map {
         min-height: 500px;
     }
 
-    .alert-list,
-    .planning-list {
+    .resumen-kpis {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .selector-vehiculos-plan {
         grid-template-columns: 1fr;
+    }
+
+    .contenido-aviso-pendiente {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .opciones-anadir-parada {
+        grid-template-columns: 1fr 1fr;
     }
 }
 
@@ -1779,21 +1802,52 @@ button {
         font-size: 16px;
     }
 
-    .kpi-card {
+    .lower-panel {
         padding: 10px;
     }
 
-    .kpi-card strong {
-        font-size: 20px;
+    .lower-panel-header {
+        align-items: flex-start;
     }
 
-    .actions-grid {
+    .contenido-aviso-pendiente {
         grid-template-columns: 1fr;
     }
 
-    .footer {
+    .cabecera-aviso-pendiente {
+        grid-template-columns: 28px minmax(0, 1fr);
+    }
+
+    .ruta-aviso-pendiente {
+        grid-column: 2;
+        justify-self: start;
+    }
+
+    .pie-aviso-pendiente {
+        align-items: flex-start;
+
         flex-direction: column;
-        gap: 5px;
+    }
+
+    .plan-vehiculo-columnas {
+        grid-template-columns: 1fr;
+    }
+
+    .parada-plan {
+        grid-template-columns:
+            22px
+            24px
+            minmax(0, 1fr);
+    }
+
+    .estado-parada {
+        grid-column: 3;
+    }
+
+    .acciones-parada {
+        grid-column: 3;
+
+        justify-content: flex-end;
     }
 }
 /* ============================================================
