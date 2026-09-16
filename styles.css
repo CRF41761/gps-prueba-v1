@@ -2264,29 +2264,122 @@ button {
 
 
 /* ============================================================
-   SELECTOR PARA AÑADIR PARADA
+   AÑADIR PARADA
 ============================================================ */
 
 .selector-anadir-parada {
+    margin-top: 10px;
+}
+
+
+/* Botón principal */
+
+.boton-anadir-parada-principal {
+    width: 100%;
+    min-height: 38px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 8px 12px;
+
+    border: 1px solid var(--primary);
+    border-radius: 7px;
+
+    background: var(--primary);
+    color: white;
+
+    font-size: 10px;
+    font-weight: 700;
+
+    cursor: pointer;
+    transition: 0.15s ease;
+}
+
+.boton-anadir-parada-principal:hover {
+    background: var(--primary-dark);
+}
+
+
+/* Opciones */
+
+.opciones-anadir-parada {
     display: grid;
 
-    grid-template-columns:
-        minmax(0, 1fr)
-        auto;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
 
-    gap: 7px;
+    gap: 6px;
 
-    margin-top: 9px;
+    margin-top: 7px;
 }
 
-.selector-anadir-parada select {
+
+.opcion-anadir-parada {
+    min-height: 36px;
+
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+
+    gap: 6px;
+
+    padding: 7px 8px;
+
+    border: 1px solid var(--border);
+    border-radius: 6px;
+
+    background: var(--surface-soft);
+    color: var(--text);
+
+    font-size: 9px;
+    font-weight: 600;
+
+    cursor: pointer;
+    transition: 0.15s ease;
+}
+
+.opcion-anadir-parada:hover {
+    border-color: var(--primary);
+    background: white;
+}
+
+.opcion-anadir-parada .icono {
+    font-size: 13px;
+}
+
+
+/* Selectores secundarios de aviso/punto */
+
+.selector-secundario-parada {
+    display: grid;
+
+    grid-template-columns: minmax(0, 1fr) auto;
+
+    gap: 6px;
+
+    margin-top: 7px;
+}
+
+.selector-secundario-parada select {
     min-width: 0;
+
+    min-height: 32px;
+
+    padding: 5px 7px;
+
+    border: 1px solid var(--border);
+    border-radius: 5px;
+
+    background: white;
+
+    font-size: 9px;
 }
 
-.selector-anadir-parada button {
-    min-height: 31px;
+.selector-secundario-parada button {
+    min-height: 32px;
 
-    padding: 5px 10px;
+    padding: 5px 9px;
 
     border: 1px solid var(--primary);
     border-radius: 5px;
@@ -2296,12 +2389,13 @@ button {
 
     font-size: 9px;
     font-weight: 700;
+
+    cursor: pointer;
 }
 
-.selector-anadir-parada button:hover {
+.selector-secundario-parada button:hover {
     background: var(--primary-dark);
 }
-
 
 /* ============================================================
    ESPECIE DEL AVISO
