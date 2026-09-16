@@ -1,4 +1,3 @@
-```js
 /* ============================================================
    CRF LA GRANJA DE EL SALER
    RUTAS.JS · PLANIFICACIÓN Y GESTIÓN DE PARADAS
@@ -5897,4 +5896,4 @@ window.obtenerPuntoAviso =
 
 window.obtenerRutaAviso =
     obtenerRutaAviso;
-```
+
