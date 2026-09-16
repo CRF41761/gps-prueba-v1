@@ -42,6 +42,7 @@ body {
     padding: 0;
     width: 100%;
     min-height: 100%;
+
     font-family:
         Inter,
         system-ui,
@@ -55,7 +56,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
     font: inherit;
 }
 
@@ -79,6 +81,7 @@ button {
 
 .topbar {
     height: 72px;
+
     background: var(--surface);
     border-bottom: 1px solid var(--border);
 
@@ -158,6 +161,7 @@ button {
     height: 9px;
 
     border-radius: 50%;
+
     background: #43a047;
 
     box-shadow: 0 0 0 4px #e8f5e9;
@@ -170,10 +174,12 @@ button {
 
 .top-clock {
     min-width: 65px;
+
     text-align: right;
 
     font-size: 20px;
     font-weight: 700;
+
     letter-spacing: 0.5px;
 }
 
@@ -258,7 +264,9 @@ button {
 .dashboard {
     width: 100%;
     max-width: 1900px;
+
     margin: 0 auto;
+
     padding: 14px;
 }
 
@@ -276,6 +284,7 @@ button {
         320px;
 
     height: calc(100vh - 205px);
+
     min-height: 650px;
 
     background: var(--surface);
@@ -287,6 +296,7 @@ button {
 
     box-shadow: var(--shadow);
 }
+
 
 /* ============================================================
    ZONA INFERIOR DEL DASHBOARD
@@ -371,8 +381,10 @@ button {
     color: var(--primary-dark);
     text-decoration: underline;
 }
+
+
 /* ============================================================
-   KPI — AHORA INTEGRADOS EN RESUMEN DEL DÍA
+   KPI
 ============================================================ */
 
 .kpi-row {
@@ -391,6 +403,7 @@ button {
 
     display: flex;
     align-items: center;
+
     gap: 9px;
 }
 
@@ -402,6 +415,7 @@ button {
 
 .kpi-card span {
     color: var(--muted);
+
     font-size: 9px;
     font-weight: 700;
 }
@@ -451,15 +465,17 @@ button {
 
 
 /* ============================================================
-   PANELS
+   PANELES LATERALES
 ============================================================ */
 
-.left-panel, 
-.right-panel { 
-    background: var(--surface); 
-    padding: 15px; 
- 
+.left-panel,
+.right-panel {
+    background: var(--surface);
+
+    padding: 15px;
+
     overflow-y: auto;
+
     min-height: 0;
 }
 
@@ -521,9 +537,13 @@ button {
 
 .panel-divider {
     height: 1px;
+
     background: var(--border);
+
     margin: 15px 0;
 }
+
+
 /* ============================================================
    RESUMEN DEL DÍA
 ============================================================ */
@@ -572,71 +592,103 @@ button {
 
 
 /* ============================================================
-   ACCIONES OPERATIVAS — PANEL DERECHO
+   ACCIONES · PANEL DERECHO
 ============================================================ */
 
 .acciones-oficina {
-    margin-top: 16px;
+    margin-top: 18px;
+
+    padding: 12px;
+
+    background: var(--surface-soft);
+
+    border: 1px solid var(--border);
+    border-radius: 9px;
 }
 
 .acciones-oficina-header {
-    margin-bottom: 9px;
+    margin-bottom: 11px;
 }
 
 .acciones-oficina-header h2 {
     margin: 2px 0 0;
 
-    font-size: 15px;
+    font-size: 14px;
+    line-height: 1.2;
 }
 
 .acciones-oficina-lista {
     display: flex;
     flex-direction: column;
-    gap: 7px;
+
+    gap: 9px;
 }
 
 .accion-oficina {
     width: 100%;
 
-    min-height: 47px;
+    min-height: 48px;
 
     display: flex;
     align-items: center;
 
-    gap: 9px;
+    gap: 10px;
 
-    padding: 8px 9px;
+    padding: 9px 10px;
 
-    border: 1px solid var(--border);
-    border-radius: 7px;
+    border: 1px solid #d9e0e3;
+    border-radius: 8px;
 
-    background: white;
+    background: var(--surface);
+
+    color: var(--text);
 
     text-align: left;
+
+    box-shadow: 0 1px 2px rgba(30, 50, 60, 0.025);
 
     transition:
         border-color 0.15s ease,
         background 0.15s ease,
+        box-shadow 0.15s ease,
         transform 0.15s ease;
 }
 
 .accion-oficina:hover {
-    border-color: var(--primary);
+    border-color: #b9cbd0;
 
-    background: var(--surface-soft);
+    background: white;
+
+    box-shadow: 0 3px 8px rgba(30, 50, 60, 0.07);
 
     transform: translateY(-1px);
 }
 
-.accion-oficina.accion-principal {
+.accion-oficina:focus-visible {
+    outline: none;
+
     border-color: var(--primary);
 
-    background: #eef6f8;
+    box-shadow:
+        0 0 0 2px rgba(70,120,134,0.12),
+        0 2px 7px rgba(30,50,60,0.06);
+}
+
+.accion-oficina.accion-principal {
+    border-color: #a9c3ca;
+
+    background: #f1f7f8;
+}
+
+.accion-oficina.accion-principal:hover {
+    border-color: var(--primary);
+
+    background: #edf5f7;
 }
 
 .accion-oficina-icono {
-    width: 29px;
-    height: 29px;
+    width: 30px;
+    height: 30px;
 
     flex-shrink: 0;
 
@@ -644,7 +696,7 @@ button {
     align-items: center;
     justify-content: center;
 
-    border-radius: 6px;
+    border-radius: 7px;
 
     background: #edf2f4;
 
@@ -669,15 +721,16 @@ button {
 
 .accion-oficina-texto strong {
     font-size: 10px;
-    line-height: 1.2;
+    line-height: 1.25;
 }
 
 .accion-oficina-texto small {
     color: var(--muted);
 
     font-size: 8px;
-    line-height: 1.2;
+    line-height: 1.25;
 }
+
 
 /* ============================================================
    VEHÍCULOS
@@ -686,6 +739,7 @@ button {
 .vehicle-list {
     display: flex;
     flex-direction: column;
+
     gap: 8px;
 }
 
@@ -704,11 +758,13 @@ button {
 
 .vehicle-card:hover {
     border-color: var(--primary);
+
     transform: translateY(-1px);
 }
 
 .vehicle-card.active {
     border-color: var(--primary);
+
     background: #f0f7f8;
 }
 
@@ -723,6 +779,7 @@ button {
 .vehicle-name {
     display: flex;
     align-items: center;
+
     gap: 7px;
 
     font-size: 13px;
@@ -736,6 +793,7 @@ button {
 .vehicle-status {
     display: flex;
     align-items: center;
+
     gap: 4px;
 
     color: var(--success);
@@ -751,6 +809,7 @@ button {
     height: 6px;
 
     border-radius: 50%;
+
     background: #43a047;
 }
 
@@ -775,6 +834,7 @@ button {
 .layer-list {
     display: flex;
     flex-direction: column;
+
     gap: 7px;
 }
 
@@ -803,6 +863,7 @@ button {
 
 .layer-symbol {
     width: 19px;
+
     text-align: center;
 }
 
@@ -840,12 +901,14 @@ button {
 .route-legend {
     display: flex;
     flex-direction: column;
+
     gap: 7px;
 }
 
 .route-legend-item {
     display: flex;
     align-items: center;
+
     gap: 8px;
 
     font-size: 11px;
@@ -864,6 +927,7 @@ button {
 
 .route-count {
     color: var(--muted);
+
     font-size: 10px;
 }
 
@@ -877,6 +941,7 @@ button {
 
     min-width: 0;
     min-height: 0;
+
     height: 100%;
 
     background: #e9eef0;
@@ -915,6 +980,7 @@ button {
 
     display: flex;
     flex-direction: column;
+
     gap: 2px;
 }
 
@@ -924,6 +990,7 @@ button {
 
 .map-title span {
     color: var(--muted);
+
     font-size: 10px;
 }
 
@@ -956,6 +1023,7 @@ button {
 #map {
     width: 100%;
     height: 100%;
+
     min-height: 0;
 }
 
@@ -976,6 +1044,7 @@ button {
 
     display: flex;
     align-items: center;
+
     gap: 7px;
 
     font-size: 10px;
@@ -1038,7 +1107,7 @@ button {
 
 
 /* ============================================================
-   AVISOS MAPA
+   AVISOS EN MAPA
 ============================================================ */
 
 .alert-map-marker {
@@ -1075,7 +1144,7 @@ button {
 
 
 /* ============================================================
-   PUNTOS MAPA
+   PUNTOS EN MAPA
 ============================================================ */
 
 .point-map-marker {
@@ -1093,12 +1162,13 @@ button {
 
 
 /* ============================================================
-   AVISOS
+   AVISOS · ESTILOS GENERALES
 ============================================================ */
 
 .alert-list {
     display: flex;
     flex-direction: column;
+
     gap: 8px;
 }
 
@@ -1175,6 +1245,7 @@ button {
 
 .alert-details {
     color: var(--muted);
+
     font-size: 9px;
 
     line-height: 1.4;
@@ -1199,12 +1270,521 @@ button {
 
 
 /* ============================================================
+   AVISOS PENDIENTES · TABLA
+============================================================ */
+
+.panel-avisos-pendientes {
+    margin-bottom: 12px;
+}
+
+.avisos-pendientes-controles {
+    display: grid;
+
+    grid-template-columns: minmax(180px, 1fr) auto;
+
+    gap: 8px;
+
+    margin-bottom: 10px;
+}
+
+.buscador-avisos {
+    position: relative;
+
+    min-width: 0;
+}
+
+.buscador-avisos input {
+    width: 100%;
+
+    min-height: 34px;
+
+    padding: 7px 10px 7px 30px;
+
+    border: 1px solid var(--border);
+    border-radius: 7px;
+
+    background: var(--surface-soft);
+    color: var(--text);
+
+    font-size: 9px;
+
+    transition:
+        border-color 0.15s ease,
+        background 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+.buscador-avisos::before {
+    content: "🔎";
+
+    position: absolute;
+
+    left: 9px;
+    top: 50%;
+
+    transform: translateY(-50%);
+
+    font-size: 11px;
+
+    pointer-events: none;
+}
+
+.buscador-avisos input::placeholder {
+    color: #8a959c;
+}
+
+.buscador-avisos input:focus {
+    outline: none;
+
+    border-color: var(--primary);
+
+    background: white;
+
+    box-shadow:
+        0 0 0 2px rgba(70,120,134,0.08);
+}
+
+.filtro-avisos {
+    min-width: 118px;
+
+    min-height: 34px;
+
+    padding: 6px 8px;
+
+    border: 1px solid var(--border);
+    border-radius: 7px;
+
+    background: white;
+    color: var(--text);
+
+    font-size: 9px;
+
+    cursor: pointer;
+}
+
+.filtro-avisos:focus {
+    outline: none;
+
+    border-color: var(--primary);
+
+    box-shadow:
+        0 0 0 2px rgba(70,120,134,0.08);
+}
+
+.avisos-pendientes-tabla-wrapper {
+    width: 100%;
+
+    overflow-x: auto;
+    overflow-y: hidden;
+
+    border: 1px solid var(--border);
+    border-radius: 8px;
+
+    background: white;
+
+    -webkit-overflow-scrolling: touch;
+}
+
+.tabla-avisos {
+    width: 100%;
+
+    min-width: 760px;
+
+    border-collapse: separate;
+    border-spacing: 0;
+
+    table-layout: fixed;
+
+    font-size: 9px;
+}
+
+.tabla-avisos thead th {
+    position: sticky;
+    top: 0;
+
+    z-index: 2;
+
+    height: 34px;
+
+    padding: 7px 8px;
+
+    background: #f5f8f9;
+
+    border-bottom: 1px solid var(--border);
+
+    color: var(--muted);
+
+    font-size: 8px;
+    font-weight: 800;
+
+    letter-spacing: 0.45px;
+
+    text-align: left;
+    text-transform: uppercase;
+
+    white-space: nowrap;
+}
+
+.tabla-avisos thead th:first-child {
+    padding-left: 10px;
+}
+
+.tabla-avisos tbody tr {
+    background: white;
+
+    transition:
+        background 0.12s ease;
+}
+
+.tabla-avisos tbody tr:hover {
+    background: #f8fbfc;
+}
+
+.tabla-avisos tbody tr:not(:last-child) td {
+    border-bottom: 1px solid #edf0f2;
+}
+
+.tabla-avisos td {
+    height: 50px;
+
+    padding: 7px 8px;
+
+    vertical-align: middle;
+
+    color: var(--text);
+
+    overflow: hidden;
+}
+
+.tabla-avisos td:first-child {
+    padding-left: 10px;
+}
+
+
+/* Anchos de columnas */
+
+.tabla-avisos th:nth-child(1),
+.tabla-avisos td:nth-child(1) {
+    width: 64px;
+}
+
+.tabla-avisos th:nth-child(2),
+.tabla-avisos td:nth-child(2) {
+    width: 28%;
+}
+
+.tabla-avisos th:nth-child(3),
+.tabla-avisos td:nth-child(3) {
+    width: 16%;
+}
+
+.tabla-avisos th:nth-child(4),
+.tabla-avisos td:nth-child(4) {
+    width: 70px;
+
+    text-align: center;
+}
+
+.tabla-avisos th:nth-child(5),
+.tabla-avisos td:nth-child(5) {
+    width: 105px;
+}
+
+.tabla-avisos th:nth-child(6),
+.tabla-avisos td:nth-child(6) {
+    width: 105px;
+}
+
+.tabla-avisos th:nth-child(7),
+.tabla-avisos td:nth-child(7) {
+    width: 115px;
+}
+
+
+/* ID */
+
+.aviso-id {
+    color: var(--text);
+
+    font-size: 9px;
+    font-weight: 800;
+
+    white-space: nowrap;
+}
+
+
+/* Colaborador */
+
+.aviso-colaborador {
+    min-width: 0;
+}
+
+.aviso-colaborador-principal {
+    display: block;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    font-size: 9px;
+    font-weight: 700;
+}
+
+.aviso-colaborador-secundario {
+    display: block;
+
+    margin-top: 2px;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    color: var(--muted);
+
+    font-size: 8px;
+    font-style: italic;
+}
+
+
+/* Municipio */
+
+.aviso-municipio {
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    font-size: 9px;
+    font-weight: 700;
+}
+
+
+/* Animales */
+
+.aviso-animales {
+    text-align: center;
+
+    font-size: 9px;
+    font-weight: 800;
+}
+
+.aviso-animales::before {
+    content: "🦌";
+
+    margin-right: 3px;
+
+    font-size: 9px;
+}
+
+
+/* Estado */
+
+.aviso-estado {
+    white-space: nowrap;
+}
+
+.estado-aviso-tabla {
+    display: inline-flex;
+    align-items: center;
+
+    gap: 5px;
+
+    padding: 4px 6px;
+
+    border-radius: 5px;
+
+    font-size: 8px;
+    font-weight: 800;
+
+    white-space: nowrap;
+}
+
+.estado-dot-tabla {
+    width: 6px;
+    height: 6px;
+
+    flex-shrink: 0;
+
+    border-radius: 50%;
+}
+
+.estado-aviso-tabla.pendiente {
+    background: var(--danger-soft);
+    color: var(--danger);
+}
+
+.estado-aviso-tabla.pendiente .estado-dot-tabla {
+    background: var(--danger);
+}
+
+.estado-aviso-tabla.asignado {
+    background: var(--warning-soft);
+    color: var(--warning);
+}
+
+.estado-aviso-tabla.asignado .estado-dot-tabla {
+    background: var(--warning);
+}
+
+.estado-aviso-tabla.recogido {
+    background: var(--success-soft);
+    color: var(--success);
+}
+
+.estado-aviso-tabla.recogido .estado-dot-tabla {
+    background: var(--success);
+}
+
+
+/* Teléfono */
+
+.aviso-telefono {
+    color: var(--muted);
+
+    font-size: 8px;
+
+    white-space: nowrap;
+}
+
+.aviso-telefono a {
+    color: inherit;
+
+    text-decoration: none;
+}
+
+.aviso-telefono a:hover {
+    color: var(--primary);
+
+    text-decoration: underline;
+}
+
+
+/* Vehículo */
+
+.aviso-vehiculo {
+    min-width: 0;
+}
+
+.selector-vehiculo-aviso {
+    width: 100%;
+
+    min-height: 30px;
+
+    padding: 5px 6px;
+
+    border: 1px solid #d6dfe2;
+    border-radius: 6px;
+
+    background: white;
+    color: var(--text);
+
+    font-size: 8px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        border-color 0.15s ease,
+        box-shadow 0.15s ease,
+        background 0.15s ease;
+}
+
+.selector-vehiculo-aviso:hover {
+    border-color: #b7c9ce;
+
+    background: var(--surface-soft);
+}
+
+.selector-vehiculo-aviso:focus {
+    outline: none;
+
+    border-color: var(--primary);
+
+    box-shadow:
+        0 0 0 2px rgba(70,120,134,0.08);
+}
+
+.selector-vehiculo-aviso.recomendado {
+    border-color: #a8c4ca;
+
+    background: #f1f7f8;
+}
+
+
+/* Texto de recomendación */
+
+.recomendacion-vehiculo {
+    display: block;
+
+    margin-top: 2px;
+
+    color: var(--primary);
+
+    font-size: 7px;
+    font-weight: 700;
+
+    white-space: nowrap;
+}
+
+
+/* Aviso sin resultados */
+
+.sin-avisos-pendientes {
+    display: flex;
+    align-items: center;
+
+    gap: 9px;
+
+    padding: 14px;
+
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+
+    background: var(--surface-soft);
+}
+
+.icono-sin-avisos {
+    width: 28px;
+    height: 28px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    border-radius: 50%;
+
+    background: #edf7ed;
+
+    font-weight: 800;
+}
+
+.sin-avisos-pendientes strong {
+    display: block;
+
+    font-size: 10px;
+    color: var(--text);
+}
+
+.sin-avisos-pendientes div div {
+    margin-top: 2px;
+
+    font-size: 9px;
+    color: var(--muted);
+}
+
+
+/* ============================================================
    PLANIFICACIÓN
 ============================================================ */
 
 .planning-list {
     display: flex;
     flex-direction: column;
+
     gap: 8px;
 }
 
@@ -1249,11 +1829,15 @@ button {
 
 .planning-description {
     color: var(--muted);
+
     font-size: 9px;
+
     line-height: 1.4;
 }
+
+
 /* ============================================================
-   SELECTOR DE VEHÍCULO — PLANIFICACIÓN
+   SELECTOR DE VEHÍCULO · PLANIFICACIÓN
 ============================================================ */
 
 .selector-vehiculos-plan {
@@ -1389,469 +1973,7 @@ button {
 
 
 /* ============================================================
-   RUTA PROPUESTA
-============================================================ */
-
-.ruta-propuesta-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    gap: 8px;
-
-    margin-bottom: 8px;
-}
-
-.ruta-propuesta-header h3 {
-    margin: 0;
-
-    font-size: 11px;
-}
-
-.ruta-propuesta-info {
-    color: var(--muted);
-
-    font-size: 8px;
-}
-
-.ruta-propuesta {
-    display: flex;
-    flex-direction: column;
-
-    gap: 5px;
-}
-
-
-/* ============================================================
-   AÑADIR PARADA — ACCIÓN PRINCIPAL
-============================================================ */
-
-.boton-anadir-parada-principal {
-    width: 100%;
-
-    min-height: 38px;
-
-    margin-top: 8px;
-
-    border: 1px dashed var(--primary);
-    border-radius: 7px;
-
-    background: #f1f8fa;
-
-    color: var(--primary);
-
-    font-size: 10px;
-    font-weight: 800;
-
-    transition:
-        background 0.15s ease,
-        border-color 0.15s ease;
-}
-
-.boton-anadir-parada-principal:hover {
-    background: #e7f2f5;
-
-    border-color: var(--primary-dark);
-
-    color: var(--primary-dark);
-}
-
-
-/* ============================================================
-   OPCIONES PARA AÑADIR PARADA
-============================================================ */
-
-.opciones-anadir-parada {
-    display: grid;
-
-    grid-template-columns: 1fr 1fr;
-
-    gap: 6px;
-
-    margin-top: 7px;
-}
-
-.opcion-anadir-parada {
-    min-height: 38px;
-
-    padding: 6px 8px;
-
-    border: 1px solid var(--border);
-    border-radius: 6px;
-
-    background: white;
-
-    text-align: left;
-
-    font-size: 8px;
-    font-weight: 700;
-
-    color: var(--text);
-}
-
-.opcion-anadir-parada:hover {
-    border-color: var(--primary);
-
-    background: var(--surface-soft);
-}
-
-.opcion-anadir-parada span {
-    display: block;
-
-    color: var(--muted);
-
-    font-size: 7px;
-    font-weight: 500;
-
-    margin-top: 2px;
-}
-
-/* ============================================================
-   ACCIONES
-============================================================ */
-
-.actions-panel {
-    margin-top: 14px;
-
-    background: var(--surface);
-
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-
-    box-shadow: var(--shadow);
-
-    padding: 14px;
-}
-
-.actions-heading {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    margin-bottom: 11px;
-}
-
-.actions-heading h2 {
-    margin: 2px 0 0;
-
-    font-size: 15px;
-}
-
-.actions-info {
-    color: var(--muted);
-    font-size: 10px;
-}
-
-.actions-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-
-    gap: 9px;
-}
-
-.action-button {
-    border: 1px solid var(--border);
-    border-radius: 8px;
-
-    background: white;
-
-    min-height: 65px;
-
-    padding: 10px 12px;
-
-    display: flex;
-    align-items: center;
-    gap: 10px;
-
-    text-align: left;
-
-    transition: 0.15s ease;
-}
-
-.action-button:hover {
-    transform: translateY(-1px);
-
-    border-color: var(--primary);
-
-    box-shadow: var(--shadow);
-}
-
-.action-button.primary-action {
-    border-color: var(--primary);
-    background: #f0f7f8;
-}
-
-.action-icon {
-    width: 34px;
-    height: 34px;
-
-    flex-shrink: 0;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    border-radius: 7px;
-
-    background: #edf2f4;
-    color: var(--primary);
-
-    font-size: 16px;
-    font-weight: 800;
-}
-
-.action-button > div:last-child {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-}
-
-.action-button strong {
-    font-size: 11px;
-}
-
-.action-button small {
-    color: var(--muted);
-    font-size: 9px;
-}
-
-
-/* ============================================================
-   FOOTER
-============================================================ */
-
-.footer {
-    max-width: 1900px;
-    margin: 0 auto;
-
-    padding: 10px 16px;
-
-    display: flex;
-    justify-content: space-between;
-
-    color: var(--muted);
-
-    font-size: 9px;
-}
-
-.footer strong {
-    color: var(--warning);
-}
-
-
-/* ============================================================
-   LEAFLET
-============================================================ */
-
-.leaflet-control-zoom {
-    margin-top: 70px !important;
-}
-
-.leaflet-popup-content {
-    font-size: 12px;
-}
-
-.leaflet-popup-content strong {
-    font-size: 13px;
-}
-
-
-/* ============================================================
-   RESPONSIVE
-============================================================ */
-
-@media (max-width: 1350px) {
-
-    .workspace {
-        grid-template-columns:
-            225px
-            minmax(520px, 1fr)
-            290px;
-    }
-
-    .dashboard-lower {
-        grid-template-columns:
-            minmax(320px, 0.8fr)
-            minmax(520px, 1.2fr);
-    }
-}
-
-
-@media (max-width: 1150px) {
-
-    .workspace {
-        grid-template-columns:
-            210px
-            minmax(450px, 1fr)
-            270px;
-    }
-
-    .plan-vehiculo-columnas {
-        grid-template-columns: 1fr;
-    }
-
-    .plan-columna + .plan-columna {
-        border-left: 0;
-
-        border-top: 1px solid var(--border);
-
-        padding-left: 0;
-        padding-top: 10px;
-    }
-
-    .dashboard-lower {
-        grid-template-columns: 1fr;
-    }
-}
-
-
-@media (max-width: 900px) {
-
-    .workspace {
-        display: flex;
-
-        flex-direction: column;
-
-        height: auto;
-
-        min-height: 0;
-    }
-
-    .left-panel {
-        border-right: 0;
-        border-bottom: 1px solid var(--border);
-
-        max-height: 260px;
-    }
-
-    .map-panel {
-        height: 620px;
-
-        min-height: 620px;
-    }
-
-    .right-panel {
-        border-left: 0;
-        border-top: 1px solid var(--border);
-
-        max-height: none;
-    }
-
-    .dashboard-lower {
-        grid-template-columns: 1fr;
-    }
-
-    .resumen-kpis {
-        grid-template-columns: repeat(4, 1fr);
-    }
-}
-
-
-@media (max-width: 700px) {
-
-    .topbar {
-        height: auto;
-        min-height: 68px;
-
-        padding: 10px 14px;
-    }
-
-    .system-status {
-        display: none;
-    }
-
-    .dashboard {
-        padding: 8px;
-    }
-
-    .map-panel {
-        height: 500px;
-
-        min-height: 500px;
-    }
-
-    .resumen-kpis {
-        grid-template-columns: 1fr 1fr;
-    }
-
-    .selector-vehiculos-plan {
-        grid-template-columns: 1fr;
-    }
-
-    .contenido-aviso-pendiente {
-        grid-template-columns: 1fr 1fr;
-    }
-
-    .opciones-anadir-parada {
-        grid-template-columns: 1fr 1fr;
-    }
-}
-
-
-@media (max-width: 560px) {
-
-    .brand-text span {
-        display: none;
-    }
-
-    .brand-text strong {
-        font-size: 12px;
-    }
-
-    .top-clock {
-        font-size: 16px;
-    }
-
-    .lower-panel {
-        padding: 10px;
-    }
-
-    .lower-panel-header {
-        align-items: flex-start;
-    }
-
-    .contenido-aviso-pendiente {
-        grid-template-columns: 1fr;
-    }
-
-    .cabecera-aviso-pendiente {
-        grid-template-columns: 28px minmax(0, 1fr);
-    }
-
-    .ruta-aviso-pendiente {
-        grid-column: 2;
-        justify-self: start;
-    }
-
-    .pie-aviso-pendiente {
-        align-items: flex-start;
-
-        flex-direction: column;
-    }
-
-    .plan-vehiculo-columnas {
-        grid-template-columns: 1fr;
-    }
-
-    .parada-plan {
-        grid-template-columns:
-            22px
-            24px
-            minmax(0, 1fr);
-    }
-
-    .estado-parada {
-        grid-column: 3;
-    }
-
-    .acciones-parada {
-        grid-column: 3;
-
-        justify-content: flex-end;
-    }
-}
-/* ============================================================
-   PLANIFICACIÓN · TARJETAS DE VEHÍCULO
+   TARJETAS DE VEHÍCULO · PLANIFICACIÓN
 ============================================================ */
 
 .tarjeta-plan-vehiculo {
@@ -1868,38 +1990,36 @@ button {
         outline 0.15s ease;
 }
 
-/* V1 · Ruta Norte */
 .tarjeta-plan-vehiculo[data-vehiculo="V1"] {
     background: #eef5fc;
-    border-color: #1976D2;
+    border-color: var(--blue);
 }
 
-/* V2 · Ruta Interior */
 .tarjeta-plan-vehiculo[data-vehiculo="V2"] {
     background: #eef7f1;
-    border-color: #388E3C;
+    border-color: var(--green);
 }
 
-/* V3 · Ruta Sur */
 .tarjeta-plan-vehiculo[data-vehiculo="V3"] {
     background: #fcf4ea;
-    border-color: #F57C00;
+    border-color: var(--orange);
 }
 
 .tarjeta-plan-vehiculo[data-vehiculo="V1"]:hover {
-    border-color: #1976D2;
+    border-color: var(--blue);
     box-shadow: var(--shadow);
 }
 
 .tarjeta-plan-vehiculo[data-vehiculo="V2"]:hover {
-    border-color: #388E3C;
+    border-color: var(--green);
     box-shadow: var(--shadow);
 }
 
 .tarjeta-plan-vehiculo[data-vehiculo="V3"]:hover {
-    border-color: #F57C00;
+    border-color: var(--orange);
     box-shadow: var(--shadow);
 }
+
 
 /* ============================================================
    CABECERA VEHÍCULO
@@ -1947,19 +2067,25 @@ button {
     font-size: 12px;
     line-height: 1.2;
 }
+
 .nombre-vehiculo-linea {
     display: flex;
     align-items: center;
+
     gap: 4px;
+
     min-width: 0;
+
     white-space: nowrap;
 }
 
 .tablet-vehiculo {
     color: var(--muted);
+
     font-size: 11px;
     font-weight: 600;
 }
+
 .ruta-habitual {
     display: flex;
     align-items: center;
@@ -2009,6 +2135,7 @@ button {
 
 .boton-centro-vehiculo:hover {
     border-color: var(--primary);
+
     color: var(--primary);
 
     background: var(--surface-soft);
@@ -2062,6 +2189,7 @@ button {
 .campo-plan select,
 .campo-plan input {
     width: 100%;
+
     min-height: 31px;
 
     padding: 5px 7px;
@@ -2088,8 +2216,10 @@ button {
 
     border-color: var(--primary);
 
-    box-shadow: 0 0 0 2px rgba(70, 120, 134, 0.10);
+    box-shadow:
+        0 0 0 2px rgba(70,120,134,0.10);
 }
+
 
 /* ============================================================
    RUTA PLANIFICADA
@@ -2108,9 +2238,8 @@ button {
 }
 
 
-
 /* ============================================================
-   RESUMEN
+   RESUMEN PLAN VEHÍCULO
 ============================================================ */
 
 .resumen-plan-vehiculo {
@@ -2214,7 +2343,6 @@ button {
     border-radius: 50%;
 
     background: #edf2f4;
-
     color: var(--text);
 
     font-size: 9px;
@@ -2327,11 +2455,9 @@ button {
     margin-top: 10px;
 }
 
-
-/* Botón principal */
-
 .boton-anadir-parada-principal {
     width: 100%;
+
     min-height: 38px;
 
     display: flex;
@@ -2350,6 +2476,7 @@ button {
     font-weight: 700;
 
     cursor: pointer;
+
     transition: 0.15s ease;
 }
 
@@ -2357,19 +2484,16 @@ button {
     background: var(--primary-dark);
 }
 
-
-/* Opciones */
-
 .opciones-anadir-parada {
     display: grid;
 
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
 
     gap: 6px;
 
     margin-top: 7px;
 }
-
 
 .opcion-anadir-parada {
     min-height: 36px;
@@ -2392,11 +2516,13 @@ button {
     font-weight: 600;
 
     cursor: pointer;
+
     transition: 0.15s ease;
 }
 
 .opcion-anadir-parada:hover {
     border-color: var(--primary);
+
     background: white;
 }
 
@@ -2405,12 +2531,16 @@ button {
 }
 
 
-/* Selectores secundarios de aviso/punto */
+/* ============================================================
+   SELECTORES SECUNDARIOS DE PARADA
+============================================================ */
 
 .selector-secundario-parada {
     display: grid;
 
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns:
+        minmax(0, 1fr)
+        auto;
 
     gap: 6px;
 
@@ -2453,6 +2583,7 @@ button {
     background: var(--primary-dark);
 }
 
+
 /* ============================================================
    ESPECIE DEL AVISO
 ============================================================ */
@@ -2463,6 +2594,7 @@ button {
     color: var(--muted);
 
     font-size: 8px;
+
     font-style: italic;
 }
 
@@ -2511,12 +2643,280 @@ button {
     outline: 2px solid var(--primary);
     outline-offset: -2px;
 
-    box-shadow: 0 0 0 3px rgba(70, 120, 134, 0.08);
+    box-shadow:
+        0 0 0 3px rgba(70,120,134,0.08);
 }
 
 
 /* ============================================================
-   RESPONSIVE · PLANIFICACIÓN
+   ACTIONS · PANEL INFERIOR ALTERNATIVO
+   Se conserva por compatibilidad con HTML existente
+============================================================ */
+
+.actions-panel {
+    margin-top: 14px;
+
+    background: var(--surface);
+
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+
+    box-shadow: var(--shadow);
+
+    padding: 14px;
+}
+
+.actions-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    margin-bottom: 11px;
+}
+
+.actions-heading h2 {
+    margin: 2px 0 0;
+
+    font-size: 15px;
+}
+
+.actions-info {
+    color: var(--muted);
+
+    font-size: 10px;
+}
+
+.actions-grid {
+    display: grid;
+
+    grid-template-columns: repeat(4, 1fr);
+
+    gap: 9px;
+}
+
+.action-button {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+
+    background: white;
+
+    min-height: 65px;
+
+    padding: 10px 12px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+
+    text-align: left;
+
+    transition: 0.15s ease;
+}
+
+.action-button:hover {
+    transform: translateY(-1px);
+
+    border-color: var(--primary);
+
+    box-shadow: var(--shadow);
+}
+
+.action-button.primary-action {
+    border-color: var(--primary);
+
+    background: #f0f7f8;
+}
+
+.action-icon {
+    width: 34px;
+    height: 34px;
+
+    flex-shrink: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 7px;
+
+    background: #edf2f4;
+    color: var(--primary);
+
+    font-size: 16px;
+    font-weight: 800;
+}
+
+.action-button > div:last-child {
+    display: flex;
+    flex-direction: column;
+
+    gap: 3px;
+}
+
+.action-button strong {
+    font-size: 11px;
+}
+
+.action-button small {
+    color: var(--muted);
+
+    font-size: 9px;
+}
+
+
+/* ============================================================
+   FOOTER
+============================================================ */
+
+.footer {
+    max-width: 1900px;
+
+    margin: 0 auto;
+
+    padding: 10px 16px;
+
+    display: flex;
+    justify-content: space-between;
+
+    color: var(--muted);
+
+    font-size: 9px;
+}
+
+.footer strong {
+    color: var(--warning);
+}
+
+
+/* ============================================================
+   LEAFLET
+============================================================ */
+
+.leaflet-control-zoom {
+    margin-top: 70px !important;
+}
+
+.leaflet-popup-content {
+    font-size: 12px;
+}
+
+.leaflet-popup-content strong {
+    font-size: 13px;
+}
+
+
+/* ============================================================
+   RESPONSIVE · 1350
+============================================================ */
+
+@media (max-width: 1350px) {
+
+    .workspace {
+        grid-template-columns:
+            225px
+            minmax(520px, 1fr)
+            290px;
+    }
+
+    .dashboard-lower {
+        grid-template-columns:
+            minmax(320px, 0.8fr)
+            minmax(520px, 1.2fr);
+    }
+}
+
+
+/* ============================================================
+   RESPONSIVE · 1150
+============================================================ */
+
+@media (max-width: 1150px) {
+
+    .workspace {
+        grid-template-columns:
+            210px
+            minmax(450px, 1fr)
+            270px;
+    }
+
+    .plan-vehiculo-columnas {
+        grid-template-columns: 1fr;
+    }
+
+    .plan-columna + .plan-columna {
+        border-left: 0;
+
+        border-top: 1px solid var(--border);
+
+        padding-left: 0;
+        padding-top: 10px;
+    }
+
+    .dashboard-lower {
+        grid-template-columns: 1fr;
+    }
+
+    .acciones-oficina {
+        padding: 11px;
+    }
+}
+
+
+/* ============================================================
+   RESPONSIVE · 900
+============================================================ */
+
+@media (max-width: 900px) {
+
+    .workspace {
+        display: flex;
+
+        flex-direction: column;
+
+        height: auto;
+
+        min-height: 0;
+    }
+
+    .left-panel {
+        border-right: 0;
+
+        border-bottom: 1px solid var(--border);
+
+        max-height: 260px;
+    }
+
+    .map-panel {
+        height: 620px;
+
+        min-height: 620px;
+    }
+
+    .right-panel {
+        border-left: 0;
+
+        border-top: 1px solid var(--border);
+
+        max-height: none;
+    }
+
+    .dashboard-lower {
+        grid-template-columns: 1fr;
+    }
+
+    .resumen-kpis {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    .acciones-oficina-lista {
+        gap: 8px;
+    }
+}
+
+
+/* ============================================================
+   RESPONSIVE · 800
 ============================================================ */
 
 @media (max-width: 800px) {
@@ -2538,211 +2938,155 @@ button {
 
     .acciones-parada {
         grid-column: 3;
+
         justify-content: flex-end;
     }
 
     .acciones-plan {
         flex-wrap: wrap;
     }
-}
-/* ============================================================
-   AVISOS PENDIENTES DE ASIGNACIÓN
-   ============================================================ */
 
-.panel-avisos-pendientes {
-    margin-bottom: 12px;
-}
+    .avisos-pendientes-controles {
+        grid-template-columns: 1fr;
+    }
 
-.avisos-pendientes-lista {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
+    .filtro-avisos {
+        width: 100%;
+    }
 
-.tarjeta-aviso-pendiente {
-    border: 2px solid var(--border);
-    border-radius: 9px;
-    background: var(--surface);
-    padding: 10px 12px;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-.tarjeta-aviso-pendiente[data-ruta="R1"] {
-    border-left: 4px solid #1976D2;
-}
-
-.tarjeta-aviso-pendiente[data-ruta="R2"] {
-    border-left: 4px solid #388E3C;
-}
-
-.tarjeta-aviso-pendiente[data-ruta="R3"] {
-    border-left: 4px solid #F57C00;
-}
-
-.tarjeta-aviso-pendiente:hover {
-    border-color: #b8c2cc;
-    box-shadow: 0 2px 7px rgba(0, 0, 0, 0.06);
-}
-
-.cabecera-aviso-pendiente {
-    display: grid;
-    grid-template-columns: 28px minmax(0, 1fr) auto;
-    gap: 8px;
-    align-items: center;
-}
-
-.icono-aviso-pendiente {
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 6px;
-    background: #fff4f4;
-    font-size: 15px;
-}
-
-.datos-aviso-pendiente {
-    min-width: 0;
-}
-
-.titulo-aviso-pendiente {
-    font-size: 11px;
-    font-weight: 800;
-    color: var(--text);
-    line-height: 1.3;
-}
-
-.identificador-aviso-pendiente {
-    margin-top: 2px;
-    font-size: 8px;
-    color: var(--muted);
-    font-weight: 700;
-}
-
-.ruta-aviso-pendiente {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 9px;
-    font-weight: 800;
-    white-space: nowrap;
-}
-
-.contenido-aviso-pendiente {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
-    margin-top: 9px;
-    padding-top: 8px;
-    border-top: 1px solid var(--border);
-}
-
-.dato-aviso {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
-}
-
-.etiqueta-dato {
-    font-size: 8px;
-    color: var(--muted);
-    font-weight: 700;
-    text-transform: uppercase;
-}
-
-.dato-aviso strong {
-    font-size: 9px;
-    color: var(--text);
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.observaciones-aviso-pendiente {
-    margin-top: 8px;
-    padding: 7px 8px;
-    background: var(--surface-soft);
-    border-radius: 5px;
-    font-size: 9px;
-    line-height: 1.4;
-    color: var(--muted);
-}
-
-.pie-aviso-pendiente {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    margin-top: 8px;
-}
-
-.estado-aviso-pendiente {
-    font-size: 8px;
-    font-weight: 800;
-    color: #b3261e;
-}
-
-.coordenadas-aviso-pendiente {
-    font-size: 8px;
-    color: var(--muted);
-    font-family: monospace;
-}
-
-.sin-avisos-pendientes {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    padding: 14px;
-    border: 1px dashed var(--border);
-    border-radius: 8px;
-    background: var(--surface-soft);
-}
-
-.icono-sin-avisos {
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    background: #edf7ed;
-    font-weight: 800;
-}
-
-.sin-avisos-pendientes strong {
-    display: block;
-    font-size: 10px;
-    color: var(--text);
-}
-
-.sin-avisos-pendientes div div {
-    margin-top: 2px;
-    font-size: 9px;
-    color: var(--muted);
+    .tabla-avisos {
+        min-width: 720px;
+    }
 }
 
 
 /* ============================================================
-   RESPONSIVE — AVISOS PENDIENTES
-   ============================================================ */
+   RESPONSIVE · 700
+============================================================ */
 
-@media (max-width: 800px) {
+@media (max-width: 700px) {
 
-    .cabecera-aviso-pendiente {
-        grid-template-columns: 28px minmax(0, 1fr);
+    .topbar {
+        height: auto;
+
+        min-height: 68px;
+
+        padding: 10px 14px;
     }
 
-    .ruta-aviso-pendiente {
-        grid-column: 2;
-        justify-self: start;
+    .system-status {
+        display: none;
     }
 
-    .contenido-aviso-pendiente {
+    .dashboard {
+        padding: 8px;
+    }
+
+    .map-panel {
+        height: 500px;
+
+        min-height: 500px;
+    }
+
+    .resumen-kpis {
         grid-template-columns: 1fr 1fr;
     }
 
-    .pie-aviso-pendiente {
+    .selector-vehiculos-plan {
+        grid-template-columns: 1fr;
+    }
+
+    .opciones-anadir-parada {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .acciones-oficina {
+        margin-top: 14px;
+
+        padding: 10px;
+    }
+
+    .accion-oficina {
+        min-height: 46px;
+    }
+
+    .avisos-pendientes-tabla-wrapper {
+        margin-left: -1px;
+        margin-right: -1px;
+
+        width: calc(100% + 2px);
+    }
+}
+
+
+/* ============================================================
+   RESPONSIVE · 560
+============================================================ */
+
+@media (max-width: 560px) {
+
+    .brand-text span {
+        display: none;
+    }
+
+    .brand-text strong {
+        font-size: 12px;
+    }
+
+    .top-clock {
+        font-size: 16px;
+    }
+
+    .lower-panel {
+        padding: 10px;
+    }
+
+    .lower-panel-header {
         align-items: flex-start;
-        flex-direction: column;
+    }
+
+    .plan-vehiculo-columnas {
+        grid-template-columns: 1fr;
+    }
+
+    .parada-plan {
+        grid-template-columns:
+            22px
+            24px
+            minmax(0, 1fr);
+    }
+
+    .estado-parada {
+        grid-column: 3;
+    }
+
+    .acciones-parada {
+        grid-column: 3;
+
+        justify-content: flex-end;
+    }
+
+    .tabla-avisos {
+        min-width: 700px;
+    }
+
+    .tabla-avisos td {
+        height: 48px;
+    }
+
+    .tabla-avisos thead th {
+        height: 32px;
+    }
+
+    .avisos-pendientes-controles {
+        gap: 6px;
+    }
+
+    .accion-oficina-texto strong {
+        font-size: 10px;
+    }
+
+    .accion-oficina-texto small {
+        font-size: 8px;
     }
 }
