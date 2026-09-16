@@ -1,4 +1,5 @@
 let planificacionDia = {};
+let vehiculoPlanSeleccionado = null;
 
 
 /* ============================================================
@@ -6,9 +7,15 @@ let planificacionDia = {};
 ============================================================ */
 
 function inicializarPlanificacion() {
+
     cargarPlanificacionDesdeDatos();
+
     renderizarLeyendaRutas();
+
     renderizarAvisosPendientes();
+
+    seleccionarVehiculoPlanInicial();
+
     renderizarPlanificacion();
 }
 
@@ -18,6 +25,7 @@ function inicializarPlanificacion() {
 ============================================================ */
 
 function obtenerAvisosPendientes() {
+
     if (
         !window.DATOS_MOCK ||
         !Array.isArray(window.DATOS_MOCK.AVISOS)
@@ -32,43 +40,62 @@ function obtenerAvisosPendientes() {
 
 
 function renderizarAvisosPendientes() {
+
     const contenedor =
-        document.getElementById("avisos-pendientes-planificacion");
+        document.getElementById(
+            "avisos-pendientes-planificacion"
+        );
 
     const contador =
-        document.getElementById("contador-avisos-pendientes");
+        document.getElementById(
+            "contador-avisos-pendientes"
+        );
 
     if (!contenedor) {
         return;
     }
 
-    const avisos = obtenerAvisosPendientes();
+    const avisos =
+        obtenerAvisosPendientes();
 
     if (contador) {
-        contador.textContent = avisos.length;
+        contador.textContent =
+            avisos.length;
     }
 
     if (avisos.length === 0) {
+
         contenedor.innerHTML = `
             <div class="sin-avisos-pendientes">
-                <div class="icono-sin-avisos">✓</div>
+
+                <div class="icono-sin-avisos">
+                    ✓
+                </div>
 
                 <div>
-                    <strong>No hay avisos pendientes</strong>
+
+                    <strong>
+                        No hay avisos pendientes
+                    </strong>
 
                     <div>
                         Todos los avisos están asignados o recogidos.
                     </div>
+
                 </div>
+
             </div>
         `;
 
         return;
     }
 
-    contenedor.innerHTML = avisos
-        .map(aviso => crearTarjetaAvisoPendiente(aviso))
-        .join("");
+    contenedor.innerHTML =
+        avisos
+            .map(aviso =>
+                crearTarjetaAvisoPendiente(aviso)
+            )
+            .join("");
 }
 
 
@@ -92,13 +119,12 @@ function crearTarjetaAvisoPendiente(aviso) {
         obtenerColorRuta(aviso.ruta);
 
     return `
-       <article
-    class="tarjeta-aviso-pendiente"
-    data-aviso="${escaparHTML(aviso.id || "")}"
-    data-ruta="${escaparHTML(aviso.ruta || "")}"
->
+        <article
+            class="tarjeta-aviso-pendiente"
+            data-aviso="${escaparHTML(aviso.id || "")}"
+            data-ruta="${escaparHTML(aviso.ruta || "")}"
+        >
 
-            <!-- CABECERA -->
             <div class="cabecera-aviso-pendiente">
 
                 <div
@@ -142,7 +168,6 @@ function crearTarjetaAvisoPendiente(aviso) {
             </div>
 
 
-            <!-- DATOS PRINCIPALES -->
             <div class="contenido-aviso-pendiente">
 
                 <div class="dato-aviso">
@@ -196,7 +221,6 @@ function crearTarjetaAvisoPendiente(aviso) {
             </div>
 
 
-            <!-- OBSERVACIONES -->
             ${
                 aviso.observaciones
                     ? `
@@ -221,7 +245,6 @@ function crearTarjetaAvisoPendiente(aviso) {
             }
 
 
-            <!-- PIE -->
             <div class="pie-aviso-pendiente">
 
                 <div class="coordenadas-aviso-pendiente">
@@ -235,7 +258,6 @@ function crearTarjetaAvisoPendiente(aviso) {
             </div>
 
 
-            <!-- ASIGNACIÓN -->
             <div class="asignacion-aviso-pendiente">
 
                 <label
@@ -338,13 +360,12 @@ function evaluarVehiculoParaAviso(
         ).toUpperCase();
 
 
-    /* Ruta planificada */
-
     if (
         rutaAviso &&
         rutaPlanificada &&
         rutaAviso === rutaPlanificada
     ) {
+
         puntuacion += 100;
 
         motivos.push(
@@ -353,13 +374,12 @@ function evaluarVehiculoParaAviso(
     }
 
 
-    /* Ruta habitual */
-
     if (
         rutaAviso &&
         rutaHabitual &&
         rutaAviso === rutaHabitual
     ) {
+
         puntuacion += 50;
 
         if (
@@ -367,14 +387,13 @@ function evaluarVehiculoParaAviso(
                 "misma ruta planificada"
             )
         ) {
+
             motivos.push(
                 "ruta habitual"
             );
         }
     }
 
-
-    /* Cercanía a otras paradas */
 
     const distanciaParada =
         obtenerDistanciaAvisoAParadasPlanificadas(
@@ -407,8 +426,6 @@ function evaluarVehiculoParaAviso(
     }
 
 
-    /* GPS actual */
-
     const distanciaGPS =
         obtenerDistanciaAvisoAVehiculo(
             aviso,
@@ -436,6 +453,7 @@ function evaluarVehiculoParaAviso(
         "mejor combinación disponible";
 
     if (motivos.length) {
+
         motivo =
             motivos
                 .slice(0, 2)
@@ -515,7 +533,9 @@ function obtenerDistanciaAvisoAParadasPlanificadas(
             distanciaMinima === null ||
             distancia < distanciaMinima
         ) {
-            distanciaMinima = distancia;
+
+            distanciaMinima =
+                distancia;
         }
     });
 
@@ -597,7 +617,8 @@ function calcularDistanciaKm(
     lng2
 ) {
 
-    const radioTierra = 6371;
+    const radioTierra =
+        6371;
 
     const dLat =
         gradosARadianes(
@@ -719,10 +740,12 @@ function asignarAvisoAVehiculo(avisoId) {
         );
 
     if (!selector) {
+
         console.error(
             "No se encontró el selector:",
             avisoId
         );
+
         return;
     }
 
@@ -730,9 +753,11 @@ function asignarAvisoAVehiculo(avisoId) {
         selector.value;
 
     if (!vehiculoId) {
+
         alert(
             "Selecciona un vehículo para asignar el aviso."
         );
+
         return;
     }
 
@@ -746,9 +771,11 @@ function asignarAvisoAVehiculo(avisoId) {
         );
 
     if (!aviso) {
+
         alert(
             "No se ha encontrado el aviso."
         );
+
         return;
     }
 
@@ -756,12 +783,13 @@ function asignarAvisoAVehiculo(avisoId) {
         planificacionDia[vehiculoId];
 
     if (!plan) {
+
         alert(
             "El vehículo seleccionado no tiene una planificación creada."
         );
+
         return;
     }
-
 
     const yaExiste =
         plan.paradas.some(parada =>
@@ -774,12 +802,13 @@ function asignarAvisoAVehiculo(avisoId) {
         );
 
     if (yaExiste) {
+
         alert(
             "Este aviso ya está incluido en las paradas del vehículo."
         );
+
         return;
     }
-
 
     const otroVehiculo =
         encontrarVehiculoConAviso(
@@ -806,8 +835,8 @@ function asignarAvisoAVehiculo(avisoId) {
         );
     }
 
-
     const nuevaParada = {
+
         orden:
             plan.paradas.length + 1,
 
@@ -821,7 +850,8 @@ function asignarAvisoAVehiculo(avisoId) {
 
         estado: "ASIGNADO",
 
-        avisoId: aviso.id,
+        avisoId:
+            aviso.id,
 
         puntoId:
             aviso.puntoId || null,
@@ -859,7 +889,11 @@ function asignarAvisoAVehiculo(avisoId) {
 
     marcarPlanificacionModificada();
 
+    vehiculoPlanSeleccionado =
+        vehiculoId;
+
     renderizarAvisosPendientes();
+
     renderizarPlanificacion();
 }
 
@@ -1072,7 +1106,7 @@ function obtenerIdVehiculo(objeto) {
 
 
 /* ============================================================
-   PLANIFICACIÓN
+   CARGAR PLANIFICACIÓN
 ============================================================ */
 
 function cargarPlanificacionDesdeDatos() {
@@ -1345,6 +1379,148 @@ function renderizarLeyendaRutas() {
 
 
 /* ============================================================
+   SELECCIÓN DE VEHÍCULO
+============================================================ */
+
+function seleccionarVehiculoPlanInicial() {
+
+    const vehiculos =
+        obtenerVehiculosDisponibles();
+
+    if (!vehiculos.length) {
+
+        vehiculoPlanSeleccionado =
+            null;
+
+        return;
+    }
+
+    if (
+        vehiculoPlanSeleccionado &&
+        planificacionDia[
+            vehiculoPlanSeleccionado
+        ]
+    ) {
+        return;
+    }
+
+    vehiculoPlanSeleccionado =
+        vehiculos[0].id;
+}
+
+
+function seleccionarVehiculoPlan(
+    vehiculoId
+) {
+
+    if (
+        !planificacionDia[
+            vehiculoId
+        ]
+    ) {
+        return;
+    }
+
+    vehiculoPlanSeleccionado =
+        vehiculoId;
+
+    renderizarPlanificacion();
+}
+
+
+function obtenerPlanSeleccionado() {
+
+    if (
+        !vehiculoPlanSeleccionado
+    ) {
+        return null;
+    }
+
+    return planificacionDia[
+        vehiculoPlanSeleccionado
+    ] || null;
+}
+
+
+/* ============================================================
+   RESUMEN DE PLANIFICACIÓN
+============================================================ */
+
+function actualizarResumenPlanificacion() {
+
+    const resumen =
+        document.getElementById(
+            "resumen-planificacion"
+        );
+
+    if (!resumen) {
+        return;
+    }
+
+    const planes =
+        Object.values(
+            planificacionDia
+        );
+
+    const numeroRutas =
+        planes.length;
+
+    let numeroAnimales = 0;
+
+    planes.forEach(plan => {
+
+        if (
+            !Array.isArray(
+                plan.paradas
+            )
+        ) {
+            return;
+        }
+
+        plan.paradas.forEach(parada => {
+
+            if (
+                String(
+                    parada.tipo || ""
+                ).toUpperCase() !==
+                "AVISO"
+            ) {
+                return;
+            }
+
+            numeroAnimales +=
+                Number(
+                    parada.cantidad || 1
+                );
+        });
+    });
+
+    resumen.innerHTML = `
+        <span>
+            ${numeroRutas} rutas
+        </span>
+
+        <span class="separador-resumen">
+            ·
+        </span>
+
+        <span>
+            ${numeroAnimales} animales
+        </span>
+
+        <button
+            type="button"
+            id="btn-ver-detalle-planificacion"
+            class="boton-link-planificacion"
+            onclick="mostrarDetallePlanificacion()"
+        >
+            Ver detalle
+        </button>
+    `;
+}
+
+
+/* ============================================================
    RENDERIZAR PLANIFICACIÓN
 ============================================================ */
 
@@ -1364,6 +1540,8 @@ function renderizarPlanificacion() {
             planificacionDia
         );
 
+    actualizarResumenPlanificacion();
+
     if (!planes.length) {
 
         contenedor.innerHTML = `
@@ -1375,16 +1553,119 @@ function renderizarPlanificacion() {
         return;
     }
 
-    contenedor.innerHTML =
-        planes
-            .map(plan =>
-                crearTarjetaVehiculo(plan)
-            )
-            .join("");
+    seleccionarVehiculoPlanInicial();
+
+    const botonesVehiculos =
+        crearSelectorVehiculosPlan(
+            planes
+        );
+
+    const plan =
+        obtenerPlanSeleccionado();
+
+    contenedor.innerHTML = `
+
+        <div class="selector-vehiculos-plan">
+
+            ${botonesVehiculos}
+
+        </div>
+
+
+        ${
+            plan
+                ? crearDetalleVehiculoPlan(plan)
+                : `
+                    <div class="sin-paradas">
+                        Selecciona un vehículo.
+                    </div>
+                `
+        }
+
+    `;
 }
 
 
-function crearTarjetaVehiculo(plan) {
+/* ============================================================
+   BOTONES DE VEHÍCULOS
+============================================================ */
+
+function crearSelectorVehiculosPlan(
+    planes
+) {
+
+    return planes
+        .map(plan => {
+
+            const seleccionado =
+                String(
+                    plan.vehiculoId
+                ) ===
+                String(
+                    vehiculoPlanSeleccionado
+                );
+
+            const rutaNombre =
+                obtenerNombreRuta(
+                    plan.rutaHabitual
+                );
+
+            return `
+                <button
+                    type="button"
+                    class="boton-selector-vehiculo-plan ${
+                        seleccionado
+                            ? "activo"
+                            : ""
+                    }"
+                    data-vehiculo="${escaparHTML(
+                        plan.vehiculoId
+                    )}"
+                    onclick="seleccionarVehiculoPlan('${escaparHTML(
+                        plan.vehiculoId
+                    )}')"
+                >
+
+                    <span class="selector-vehiculo-icono">
+                        🚐
+                    </span>
+
+                    <span class="selector-vehiculo-texto">
+
+                        <strong>
+                            ${escaparHTML(
+                                plan.vehiculoId
+                            )}
+                            ·
+                            ${escaparHTML(
+                                plan.tablet ||
+                                "Sin tablet"
+                            )}
+                        </strong>
+
+                        <small>
+                            Ruta habitual:
+                            ${escaparHTML(
+                                rutaNombre
+                            )}
+                        </small>
+
+                    </span>
+
+                </button>
+            `;
+        })
+        .join("");
+}
+
+
+/* ============================================================
+   DETALLE DE VEHÍCULO
+============================================================ */
+
+function crearDetalleVehiculoPlan(
+    plan
+) {
 
     const rutaColor =
         obtenerColorRuta(
@@ -1393,245 +1674,387 @@ function crearTarjetaVehiculo(plan) {
 
     return `
         <div
-            class="tarjeta-plan-vehiculo"
+            class="detalle-plan-vehiculo"
             data-vehiculo="${escaparHTML(
                 plan.vehiculoId
             )}"
         >
 
-            <!-- CABECERA VEHÍCULO -->
+            <!-- ================================================
+                 COLUMNA IZQUIERDA
+            ================================================= -->
 
-            <div class="cabecera-plan">
+            <div class="columna-info-plan">
 
-               <div class="identificacion-vehiculo">
+                <div class="cabecera-plan">
 
-    <div class="icono-vehiculo">
-        🚐
-    </div>
+                    <div class="identificacion-vehiculo">
 
-    <div>
+                        <div class="icono-vehiculo">
+                            🚐
+                        </div>
 
-        <div class="nombre-vehiculo-linea">
-            <strong>
-                ${escaparHTML(
-                    plan.vehiculoNombre
-                )}
-            </strong>
+                        <div>
 
-            <span class="tablet-vehiculo">
-                · 📱 ${escaparHTML(
-                    plan.tablet ||
-                    "Sin tablet"
-                )}
-            </span>
-        </div>
+                            <div class="nombre-vehiculo-linea">
 
-        <div class="ruta-habitual">
+                                <strong>
+                                    ${escaparHTML(
+                                        plan.vehiculoNombre
+                                    )}
+                                </strong>
 
-                            <span
-                                class="punto-ruta"
-                                style="background:${escaparHTML(
-                                    obtenerColorRuta(
+                                <span class="tablet-vehiculo">
+                                    · 📱 ${escaparHTML(
+                                        plan.tablet ||
+                                        "Sin tablet"
+                                    )}
+                                </span>
+
+                            </div>
+
+                            <div class="ruta-habitual">
+
+                                <span
+                                    class="punto-ruta"
+                                    style="background:${escaparHTML(
+                                        obtenerColorRuta(
+                                            plan.rutaHabitual
+                                        )
+                                    )}"
+                                ></span>
+
+                                Ruta habitual:
+                                ${escaparHTML(
+                                    obtenerNombreRuta(
                                         plan.rutaHabitual
                                     )
-                                )}"
-                            ></span>
+                                )}
 
-                            Ruta habitual:
-                            ${escaparHTML(
-                                obtenerNombreRuta(
-                                    plan.rutaHabitual
-                                )
-                            )}
+                            </div>
 
                         </div>
+
+                    </div>
+
+
+                    <button
+                        type="button"
+                        class="boton-centro-vehiculo"
+                        onclick="centrarVehiculoDesdePlan('${escaparHTML(
+                            plan.vehiculoId
+                        )}')"
+                        title="Ver vehículo en el mapa"
+                    >
+                        ⌖
+                    </button>
+
+                </div>
+
+
+                <div class="bloque-ruta-activa-plan">
+
+                    <div class="etiqueta-bloque-plan">
+                        RUTA ACTIVA
+                    </div>
+
+                    <div
+                        class="ruta-activa-destacada"
+                        style="--ruta-color:${escaparHTML(
+                            rutaColor
+                        )}"
+                    >
+
+                        <span class="punto-ruta"></span>
+
+                        <strong>
+                            ${escaparHTML(
+                                obtenerNombreRuta(
+                                    plan.rutaActiva
+                                )
+                            )}
+                        </strong>
 
                     </div>
 
                 </div>
 
 
-                <button
-                    type="button"
-                    class="boton-centro-vehiculo"
-                    onclick="centrarVehiculoDesdePlan('${escaparHTML(
-                        plan.vehiculoId
-                    )}')"
-                    title="Ver vehículo en el mapa"
+                <div class="datos-configuracion-plan">
+
+                    <div class="campo-plan">
+
+                        <label>
+                            🛣 Ruta del día
+                        </label>
+
+                        <select
+                            onchange="cambiarRutaPlanificada(
+                                '${escaparHTML(
+                                    plan.vehiculoId
+                                )}',
+                                this.value
+                            )"
+                        >
+                            ${crearOpcionesRutas(
+                                plan.rutaActiva
+                            )}
+                        </select>
+
+                    </div>
+
+
+                    <div class="campo-plan">
+
+                        <label>
+                            🕐 Salida
+                        </label>
+
+                        <input
+                            type="time"
+                            value="${escaparHTML(
+                                plan.horaSalida ||
+                                ""
+                            )}"
+                            onchange="cambiarHoraPlanificacion(
+                                '${escaparHTML(
+                                    plan.vehiculoId
+                                )}',
+                                'salida',
+                                this.value
+                            )"
+                        >
+
+                    </div>
+
+
+                    <div class="campo-plan">
+
+                        <label>
+                            🏁 Regreso estimado
+                        </label>
+
+                        <input
+                            type="time"
+                            value="${escaparHTML(
+                                plan.horaEstimadaRegreso ||
+                                ""
+                            )}"
+                            onchange="cambiarHoraPlanificacion(
+                                '${escaparHTML(
+                                    plan.vehiculoId
+                                )}',
+                                'regreso',
+                                this.value
+                            )"
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <div class="resumen-plan-vehiculo">
+
+                    <span>
+                        📍 Paradas:
+                        <strong>
+                            ${plan.paradas.length}
+                        </strong>
+                    </span>
+
+                    <span>
+                        🐾 Animales:
+                        <strong>
+                            ${calcularAnimalesPlan(plan)}
+                        </strong>
+                    </span>
+
+                </div>
+
+
+                <div
+                    id="indicador-planificacion-modificada"
+                    class="plan-modificado"
+                    style="display:none;"
                 >
-                    ⌖
-                </button>
-
-            </div>
-
-
-            <!-- CONFIGURACIÓN -->
-
-            <div class="datos-configuracion-plan">
-
-                <div class="campo-plan">
-
-                    <label>
-                        🛣 Ruta del día
-                    </label>
-
-                    <select
-                        onchange="cambiarRutaPlanificada(
-                            '${escaparHTML(
-                                plan.vehiculoId
-                            )}',
-                            this.value
-                        )"
-                    >
-                        ${crearOpcionesRutas(
-                            plan.rutaActiva
-                        )}
-                    </select>
-
-                </div>
-
-
-                <div class="campo-plan">
-
-                    <label>
-                        🕐 Salida
-                    </label>
-
-                    <input
-                        type="time"
-                        value="${escaparHTML(
-                            plan.horaSalida ||
-                            ""
-                        )}"
-                        onchange="cambiarHoraPlanificacion(
-                            '${escaparHTML(
-                                plan.vehiculoId
-                            )}',
-                            'salida',
-                            this.value
-                        )"
-                    >
-
-                </div>
-
-
-                <div class="campo-plan">
-
-                    <label>
-                        🏁 Regreso estimado
-                    </label>
-
-                    <input
-                        type="time"
-                        value="${escaparHTML(
-                            plan.horaEstimadaRegreso ||
-                            ""
-                        )}"
-                        onchange="cambiarHoraPlanificacion(
-                            '${escaparHTML(
-                                plan.vehiculoId
-                            )}',
-                            'regreso',
-                            this.value
-                        )"
-                    >
-
+                    Planificación modificada
                 </div>
 
             </div>
 
 
-            <!-- RESUMEN -->
+            <!-- ================================================
+                 COLUMNA DERECHA · RUTA PROPUESTA
+            ================================================= -->
 
-            <div class="resumen-plan-vehiculo">
+            <div class="columna-ruta-plan">
 
-    <span>
-        📍 Paradas:
-        <strong>
-            ${plan.paradas.length}
-        </strong>
-    </span>
+                <div class="cabecera-ruta-propuesta">
 
-</div>
+                    <div>
+
+                        <div class="etiqueta-bloque-plan">
+                            PLANIFICACIÓN
+                        </div>
+
+                        <h3>
+                            RUTA PROPUESTA
+                        </h3>
+
+                    </div>
+
+                    <span class="contador-paradas-ruta">
+                        ${plan.paradas.length}
+                        paradas
+                    </span>
+
+                </div>
 
 
-            <!-- PARADAS -->
+                <div class="lista-paradas">
 
-            <div class="titulo-paradas">
-                PARADAS DEL DÍA
-            </div>
-
-
-            <div class="lista-paradas">
-
-                ${
-                    plan.paradas.length
-                        ? plan.paradas
-                            .map(
-                                (
-                                    parada,
-                                    index
-                                ) =>
-                                    crearParadaHTML(
-                                        plan,
+                    ${
+                        plan.paradas.length
+                            ? plan.paradas
+                                .map(
+                                    (
                                         parada,
                                         index
-                                    )
-                            )
-                            .join("")
-                        : `
-                            <div class="sin-paradas">
-                                No hay paradas planificadas.
-                            </div>
-                        `
-                }
+                                    ) =>
+                                        crearParadaHTML(
+                                            plan,
+                                            parada,
+                                            index
+                                        )
+                                )
+                                .join("")
+                            : `
+                                <div class="sin-paradas">
 
-            </div>
+                                    <div>
+                                        📍
+                                    </div>
+
+                                    <strong>
+                                        No hay paradas planificadas
+                                    </strong>
+
+                                    <span>
+                                        Añade un aviso o punto habitual para construir la ruta.
+                                    </span>
+
+                                </div>
+                            `
+                    }
+
+                </div>
 
 
-            <!-- AÑADIR PARADA -->
+                <div class="anadir-parada-principal">
 
-            <div class="selector-anadir-parada">
-
-                <select
-                    onchange="anadirParadaSeleccionada(
-                        '${escaparHTML(
+                    <button
+                        type="button"
+                        class="boton-anadir-parada-principal"
+                        onclick="mostrarMenuAnadirParada('${escaparHTML(
                             plan.vehiculoId
-                        )}',
-                        this.value
-                    )"
-                >
+                        )}')"
+                    >
+                        <span>
+                            ＋
+                        </span>
 
-                    <option value="">
-                        + Añadir parada...
-                    </option>
-
-                    <optgroup label="Avisos">
-                        ${crearOpcionesAvisos(plan)}
-                    </optgroup>
-
-                    <optgroup label="Puntos habituales">
-                        ${crearOpcionesPuntos(plan)}
-                    </optgroup>
-
-                </select>
-
-            </div>
+                        <strong>
+                            Añadir parada
+                        </strong>
+                    </button>
 
 
-            <!-- ACCIONES -->
+                    <div
+                        id="menu-anadir-parada-${escaparHTML(
+                            plan.vehiculoId
+                        )}"
+                        class="menu-anadir-parada"
+                        style="display:none;"
+                    >
 
-            <div class="acciones-plan">
+                        <button
+                            type="button"
+                            onclick="mostrarOpcionesAvisosParada('${escaparHTML(
+                                plan.vehiculoId
+                            )}')"
+                        >
+                            🔔
+                            <span>
+                                Aviso pendiente
+                            </span>
+                        </button>
 
-                <button
-                    type="button"
-                    class="boton-secundario"
-                    onclick="reordenarParadas('${escaparHTML(
-                        plan.vehiculoId
-                    )}')"
-                >
-                    ↕ Optimizar orden
-                </button>
+
+                        <button
+                            type="button"
+                            onclick="mostrarOpcionesPuntosParada('${escaparHTML(
+                                plan.vehiculoId
+                            )}')"
+                        >
+                            📍
+                            <span>
+                                Punto habitual
+                            </span>
+                        </button>
+
+
+                        <button
+                            type="button"
+                            onclick="prepararNuevoPuntoEnMapa('${escaparHTML(
+                                plan.vehiculoId
+                            )}')"
+                        >
+                            📌
+                            <span>
+                                Nuevo punto señalado en mapa
+                            </span>
+                        </button>
+
+
+                        <button
+                            type="button"
+                            onclick="buscarDireccionParaParada('${escaparHTML(
+                                plan.vehiculoId
+                            )}')"
+                        >
+                            🔎
+                            <span>
+                                Buscar dirección
+                            </span>
+                        </button>
+
+
+                        <div
+                            id="subopciones-parada-${escaparHTML(
+                                plan.vehiculoId
+                            )}"
+                            class="subopciones-anadir-parada"
+                        ></div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="acciones-plan">
+
+                    <button
+                        type="button"
+                        class="boton-secundario"
+                        onclick="reordenarParadas('${escaparHTML(
+                            plan.vehiculoId
+                        )}')"
+                    >
+                        ↕ Optimizar orden
+                    </button>
+
+                </div>
 
             </div>
 
@@ -1639,6 +2062,45 @@ function crearTarjetaVehiculo(plan) {
     `;
 }
 
+
+/* ============================================================
+   RESUMEN DE ANIMALES
+============================================================ */
+
+function calcularAnimalesPlan(plan) {
+
+    if (
+        !plan ||
+        !Array.isArray(plan.paradas)
+    ) {
+        return 0;
+    }
+
+    return plan.paradas.reduce(
+        (total, parada) => {
+
+            if (
+                String(
+                    parada.tipo || ""
+                ).toUpperCase() !==
+                "AVISO"
+            ) {
+                return total;
+            }
+
+            return total +
+                Number(
+                    parada.cantidad || 1
+                );
+        },
+        0
+    );
+}
+
+
+/* ============================================================
+   OPCIONES DE RUTAS
+============================================================ */
 
 function crearOpcionesRutas(
     rutaSeleccionada
@@ -1726,9 +2188,11 @@ function crearOpcionesAvisos(plan) {
             return true;
         })
         .map(aviso => `
-            <option value="AVISO:${escaparHTML(
-                aviso.id
-            )}">
+            <option
+                value="AVISO:${escaparHTML(
+                    aviso.id
+                )}"
+            >
                 ${escaparHTML(
                     aviso.punto ||
                     "Punto de recogida"
@@ -1756,9 +2220,11 @@ function crearOpcionesPuntos(plan) {
                 punto.activo !== false
         )
         .map(punto => `
-            <option value="PUNTO:${escaparHTML(
-                punto.id
-            )}">
+            <option
+                value="PUNTO:${escaparHTML(
+                    punto.id
+                )}"
+            >
                 ${escaparHTML(
                     punto.nombre ||
                     punto.municipio ||
@@ -1767,6 +2233,206 @@ function crearOpcionesPuntos(plan) {
             </option>
         `)
         .join("");
+}
+
+
+/* ============================================================
+   MENÚ AÑADIR PARADA
+============================================================ */
+
+function mostrarMenuAnadirParada(
+    vehiculoId
+) {
+
+    const menu =
+        document.getElementById(
+            `menu-anadir-parada-${vehiculoId}`
+        );
+
+    if (!menu) {
+        return;
+    }
+
+    const visible =
+        menu.style.display !== "none";
+
+    menu.style.display =
+        visible
+            ? "none"
+            : "block";
+}
+
+
+function cerrarMenusAnadirParada() {
+
+    document
+        .querySelectorAll(
+            ".menu-anadir-parada"
+        )
+        .forEach(menu => {
+
+            menu.style.display =
+                "none";
+        });
+}
+
+
+function mostrarOpcionesAvisosParada(
+    vehiculoId
+) {
+
+    const plan =
+        planificacionDia[
+            vehiculoId
+        ];
+
+    if (!plan) {
+        return;
+    }
+
+    const contenedor =
+        document.getElementById(
+            `subopciones-parada-${vehiculoId}`
+        );
+
+    if (!contenedor) {
+        return;
+    }
+
+    const opciones =
+        crearOpcionesAvisos(plan);
+
+    if (!opciones) {
+
+        contenedor.innerHTML = `
+            <div class="sin-opciones-parada">
+                No hay avisos disponibles para añadir.
+            </div>
+        `;
+
+        return;
+    }
+
+    contenedor.innerHTML = `
+        <label>
+            Seleccionar aviso
+        </label>
+
+        <select
+            onchange="anadirParadaSeleccionada(
+                '${escaparHTML(vehiculoId)}',
+                this.value
+            )"
+        >
+
+            <option value="">
+                Seleccionar aviso...
+            </option>
+
+            ${opciones}
+
+        </select>
+    `;
+}
+
+
+function mostrarOpcionesPuntosParada(
+    vehiculoId
+) {
+
+    const plan =
+        planificacionDia[
+            vehiculoId
+        ];
+
+    if (!plan) {
+        return;
+    }
+
+    const contenedor =
+        document.getElementById(
+            `subopciones-parada-${vehiculoId}`
+        );
+
+    if (!contenedor) {
+        return;
+    }
+
+    const opciones =
+        crearOpcionesPuntos(plan);
+
+    contenedor.innerHTML = `
+        <label>
+            Seleccionar punto habitual
+        </label>
+
+        <select
+            onchange="anadirParadaSeleccionada(
+                '${escaparHTML(vehiculoId)}',
+                this.value
+            )"
+        >
+
+            <option value="">
+                Seleccionar punto...
+            </option>
+
+            ${opciones}
+
+        </select>
+    `;
+}
+
+
+/* ============================================================
+   FUTURO · NUEVO PUNTO EN MAPA
+============================================================ */
+
+function prepararNuevoPuntoEnMapa(
+    vehiculoId
+) {
+
+    cerrarMenusAnadirParada();
+
+    alert(
+        "La selección de un nuevo punto directamente sobre el mapa se conectará con el mapa principal en el siguiente paso."
+    );
+
+    /*
+       Aquí conectaremos:
+
+       1. Activar modo selección en mapa.
+       2. Usuario pulsa una ubicación.
+       3. Obtener coordenadas.
+       4. Crear parada NUEVO_PUNTO.
+       5. Añadirla al plan.
+    */
+}
+
+
+/* ============================================================
+   FUTURO · BUSCAR DIRECCIÓN
+============================================================ */
+
+function buscarDireccionParaParada(
+    vehiculoId
+) {
+
+    cerrarMenusAnadirParada();
+
+    alert(
+        "El buscador de dirección se conectará con Nominatim/mapa.js en el siguiente paso."
+    );
+
+    /*
+       Aquí conectaremos:
+
+       1. Buscador de dirección.
+       2. Nominatim.
+       3. Selección de resultado.
+       4. Coordenadas.
+       5. Crear parada DIRECCION.
+    */
 }
 
 
@@ -1796,6 +2462,9 @@ function cambiarRutaPlanificada(
             nuevaRuta
         );
 
+    vehiculoPlanSeleccionado =
+        vehiculoId;
+
     marcarPlanificacionModificada();
 
     renderizarPlanificacion();
@@ -1818,14 +2487,19 @@ function cambiarHoraPlanificacion(
     }
 
     if (tipo === "salida") {
+
         plan.horaSalida =
             valor;
     }
 
     if (tipo === "regreso") {
+
         plan.horaEstimadaRegreso =
             valor;
     }
+
+    vehiculoPlanSeleccionado =
+        vehiculoId;
 
     marcarPlanificacionModificada();
 }
@@ -1878,6 +2552,7 @@ function anadirParadaSeleccionada(
             );
 
         if (!aviso) {
+
             alert(
                 "No se ha encontrado el aviso."
             );
@@ -2029,11 +2704,17 @@ function anadirParadaSeleccionada(
         );
     }
 
+    vehiculoPlanSeleccionado =
+        vehiculoId;
+
     actualizarOrdenes(plan);
 
     marcarPlanificacionModificada();
 
+    cerrarMenusAnadirParada();
+
     renderizarAvisosPendientes();
+
     renderizarPlanificacion();
 }
 
@@ -2057,7 +2738,7 @@ function crearParadaHTML(
     const icono =
         esAviso
             ? "🔔"
-            : "●";
+            : "📍";
 
     const claseTipo =
         esAviso
@@ -2083,6 +2764,11 @@ function crearParadaHTML(
                 )}
             `
             : "";
+
+    const estado =
+        obtenerTextoEstadoParada(
+            parada.estado
+        );
 
     return `
         <div
@@ -2120,7 +2806,7 @@ function crearParadaHTML(
                         ${
                             esAviso
                                 ? "🔔 Aviso"
-                                : "● Punto habitual"
+                                : "📍 Punto habitual"
                         }
                     </span>
 
@@ -2129,6 +2815,12 @@ function crearParadaHTML(
                     ${especie}
 
                 </div>
+
+                <span class="estado-parada">
+                    ${escaparHTML(
+                        estado
+                    )}
+                </span>
 
             </div>
 
@@ -2156,6 +2848,7 @@ function crearParadaHTML(
                     ▲
                 </button>
 
+
                 <button
                     type="button"
                     onclick="bajarParada(
@@ -2174,6 +2867,7 @@ function crearParadaHTML(
                 >
                     ▼
                 </button>
+
 
                 <button
                     type="button"
@@ -2230,8 +2924,6 @@ function seleccionarParadaEnMapa(
 
         return;
     }
-
-    /* Fallback si mapa.js todavía no tiene la función */
 
     const lat =
         obtenerLat(parada);
@@ -2296,8 +2988,6 @@ function eliminarParada(
     }
 
 
-    /* Si es AVISO, devolver a PENDIENTE */
-
     if (
         String(
             parada.tipo || ""
@@ -2347,11 +3037,15 @@ function eliminarParada(
         1
     );
 
+    vehiculoPlanSeleccionado =
+        vehiculoId;
+
     actualizarOrdenes(plan);
 
     marcarPlanificacionModificada();
 
     renderizarAvisosPendientes();
+
     renderizarPlanificacion();
 }
 
@@ -2392,6 +3086,9 @@ function subirParada(
     plan.paradas[indice] =
         temporal;
 
+    vehiculoPlanSeleccionado =
+        vehiculoId;
+
     actualizarOrdenes(plan);
 
     marcarPlanificacionModificada();
@@ -2431,6 +3128,9 @@ function bajarParada(
 
     plan.paradas[indice] =
         temporal;
+
+    vehiculoPlanSeleccionado =
+        vehiculoId;
 
     actualizarOrdenes(plan);
 
@@ -2497,6 +3197,39 @@ function centrarVehiculoDesdePlan(
     ) {
 
         centrarTodosLosVehiculos();
+    }
+}
+
+
+/* ============================================================
+   VER DETALLE
+============================================================ */
+
+function mostrarDetallePlanificacion() {
+
+    if (
+        typeof mostrarVista ===
+        "function"
+    ) {
+
+        mostrarVista(
+            "planificacion"
+        );
+
+        return;
+    }
+
+    const detalle =
+        document.getElementById(
+            "planificacion-detalle"
+        );
+
+    if (detalle) {
+
+        detalle.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
     }
 }
 
@@ -2685,3 +3418,24 @@ window.seleccionarParadaEnMapa =
 
 window.obtenerVehiculoRecomendado =
     obtenerVehiculoRecomendado;
+
+window.seleccionarVehiculoPlan =
+    seleccionarVehiculoPlan;
+
+window.mostrarMenuAnadirParada =
+    mostrarMenuAnadirParada;
+
+window.mostrarOpcionesAvisosParada =
+    mostrarOpcionesAvisosParada;
+
+window.mostrarOpcionesPuntosParada =
+    mostrarOpcionesPuntosParada;
+
+window.prepararNuevoPuntoEnMapa =
+    prepararNuevoPuntoEnMapa;
+
+window.buscarDireccionParaParada =
+    buscarDireccionParaParada;
+
+window.mostrarDetallePlanificacion =
+    mostrarDetallePlanificacion;
