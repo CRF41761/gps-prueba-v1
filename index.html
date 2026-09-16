@@ -101,15 +101,8 @@
             class="nav-item nav-button active"
             data-section="inicio"
         >
-
-            <span>
-                🏠
-            </span>
-
-            <strong>
-                Inicio
-            </strong>
-
+            <span>🏠</span>
+            <strong>Inicio</strong>
         </button>
 
 
@@ -118,15 +111,8 @@
             class="nav-item nav-button"
             data-section="planificacion"
         >
-
-            <span>
-                📋
-            </span>
-
-            <strong>
-                Planificación
-            </strong>
-
+            <span>📋</span>
+            <strong>Planificación</strong>
         </button>
 
 
@@ -135,14 +121,8 @@
             class="nav-item nav-button"
             data-section="avisos"
         >
-
-            <span>
-                🔔
-            </span>
-
-            <strong>
-                Avisos
-            </strong>
+            <span>🔔</span>
+            <strong>Avisos</strong>
 
             <span
                 id="nav-badge-avisos"
@@ -150,7 +130,6 @@
             >
                 0
             </span>
-
         </button>
 
 
@@ -159,15 +138,8 @@
             class="nav-item nav-button"
             data-section="vehiculos"
         >
-
-            <span>
-                🚐
-            </span>
-
-            <strong>
-                Vehículos
-            </strong>
-
+            <span>🚐</span>
+            <strong>Vehículos</strong>
         </button>
 
 
@@ -176,15 +148,8 @@
             class="nav-item nav-button"
             data-section="puntos"
         >
-
-            <span>
-                📍
-            </span>
-
-            <strong>
-                Puntos colaboradores
-            </strong>
-
+            <span>📍</span>
+            <strong>Puntos colaboradores</strong>
         </button>
 
 
@@ -193,15 +158,8 @@
             class="nav-item nav-button"
             data-section="rutas"
         >
-
-            <span>
-                🛣️
-            </span>
-
-            <strong>
-                Rutas y zonas
-            </strong>
-
+            <span>🛣️</span>
+            <strong>Rutas y zonas</strong>
         </button>
 
 
@@ -210,15 +168,8 @@
             class="nav-item nav-button"
             data-section="historial"
         >
-
-            <span>
-                🕘
-            </span>
-
-            <strong>
-                Historial
-            </strong>
-
+            <span>🕘</span>
+            <strong>Historial</strong>
         </button>
 
 
@@ -227,15 +178,8 @@
             class="nav-item nav-button"
             data-section="estadisticas"
         >
-
-            <span>
-                📊
-            </span>
-
-            <strong>
-                Estadísticas
-            </strong>
-
+            <span>📊</span>
+            <strong>Estadísticas</strong>
         </button>
 
 
@@ -244,15 +188,8 @@
             class="nav-item nav-button"
             data-section="ajustes"
         >
-
-            <span>
-                ⚙️
-            </span>
-
-            <strong>
-                Ajustes
-            </strong>
-
+            <span>⚙️</span>
+            <strong>Ajustes</strong>
         </button>
 
 
@@ -261,688 +198,487 @@
 
 
     <!-- ========================================================
-         DASHBOARD PRINCIPAL
+         DASHBOARD
     ========================================================= -->
 
     <main class="dashboard">
 
 
         <!-- ====================================================
-             WORKSPACE SUPERIOR
+             KPIs
+        ===================================================== -->
+
+        <section class="kpi-row">
+
+
+            <div class="kpi-card danger">
+
+                <div class="kpi-icon">
+                    🔴
+                </div>
+
+                <div>
+
+                    <span>
+                        Pendientes
+                    </span>
+
+                    <strong id="kpi-pendientes">
+                        0
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="kpi-card warning">
+
+                <div class="kpi-icon">
+                    🟠
+                </div>
+
+                <div>
+
+                    <span>
+                        Asignados
+                    </span>
+
+                    <strong id="kpi-asignados">
+                        0
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="kpi-card success">
+
+                <div class="kpi-icon">
+                    🟢
+                </div>
+
+                <div>
+
+                    <span>
+                        Recogidos
+                    </span>
+
+                    <strong id="kpi-recogidos">
+                        0
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="kpi-card primary">
+
+                <div class="kpi-icon">
+                    🚐
+                </div>
+
+                <div>
+
+                    <span>
+                        Vehículos activos
+                    </span>
+
+                    <strong id="kpi-vehiculos">
+                        0
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+        </section>
+
+
+
+        <!-- ====================================================
+             WORKSPACE PRINCIPAL
              
-             IZQUIERDA:
-             Operativa / capas / rutas
-
-             CENTRO:
-             Mapa
-
-             DERECHA:
-             Resumen del día / acciones
+             IZQUIERDA · MAPA · RESUMEN/ACCIONES
         ===================================================== -->
 
         <section class="workspace">
 
 
             <!-- ==================================================
-                 ZONA SUPERIOR DEL WORKSPACE
+                 PANEL IZQUIERDO
             =================================================== -->
 
-            <div class="workspace-top">
+            <aside class="left-panel">
 
 
-                <!-- ==============================================
-                     PANEL IZQUIERDO
-                =============================================== -->
+                <div class="panel-header">
 
-                <aside class="left-panel">
+                    <div>
 
-
-                    <div class="panel-header">
-
-                        <div>
-
-                            <div class="eyebrow">
-                                OPERATIVA
-                            </div>
-
-                            <h2>
-                                Vehículos
-                            </h2>
-
+                        <div class="eyebrow">
+                            OPERATIVA
                         </div>
 
+                        <h2>
+                            Vehículos
+                        </h2>
+
                     </div>
 
-
-                    <div
-                        id="lista-vehiculos"
-                        class="vehicle-list"
-                    >
-                        <!-- Generado por vehiculos.js -->
-                    </div>
+                </div>
 
 
-                    <div class="panel-divider"></div>
+                <div
+                    id="lista-vehiculos"
+                    class="vehicle-list"
+                >
+                    <!-- Generado por vehiculos.js -->
+                </div>
 
 
-                    <div class="panel-header">
+                <div class="panel-divider"></div>
 
-                        <div>
 
-                            <div class="eyebrow">
-                                VISUALIZACIÓN
-                            </div>
+                <div class="panel-header">
 
-                            <h2>
-                                Capas del mapa
-                            </h2>
+                    <div>
 
+                        <div class="eyebrow">
+                            VISUALIZACIÓN
                         </div>
 
-                    </div>
-
-
-                    <div class="layer-list">
-
-
-                        <label class="layer-option">
-
-                            <input
-                                type="checkbox"
-                                id="capa-rutas"
-                                checked
-                            >
-
-                            <span class="layer-symbol route-symbol">
-                                ━
-                            </span>
-
-                            <span>
-                                Rutas
-                            </span>
-
-                        </label>
-
-
-                        <label class="layer-option">
-
-                            <input
-                                type="checkbox"
-                                id="capa-puntos"
-                                checked
-                            >
-
-                            <span class="layer-symbol point-symbol">
-                                ●
-                            </span>
-
-                            <span>
-                                Puntos colaboradores
-                            </span>
-
-                        </label>
-
-
-                        <label class="layer-option">
-
-                            <input
-                                type="checkbox"
-                                id="capa-avisos"
-                                checked
-                            >
-
-                            <span class="layer-symbol alert-symbol">
-                                !
-                            </span>
-
-                            <span>
-                                Avisos
-                            </span>
-
-                        </label>
-
-
-                        <label class="layer-option">
-
-                            <input
-                                type="checkbox"
-                                id="capa-vehiculos"
-                                checked
-                            >
-
-                            <span class="layer-symbol">
-                                🚐
-                            </span>
-
-                            <span>
-                                Vehículos
-                            </span>
-
-                        </label>
-
+                        <h2>
+                            Capas del mapa
+                        </h2>
 
                     </div>
 
+                </div>
 
-                    <div class="panel-divider"></div>
+
+                <div class="layer-list">
 
 
-                    <div class="panel-header">
+                    <label class="layer-option">
 
-                        <div>
+                        <input
+                            type="checkbox"
+                            id="capa-rutas"
+                            checked
+                        >
 
-                            <div class="eyebrow">
-                                ZONAS DE TRABAJO
-                            </div>
+                        <span class="layer-symbol route-symbol">
+                            ━
+                        </span>
 
-                            <h2>
-                                Rutas
-                            </h2>
+                        <span>
+                            Rutas
+                        </span>
 
+                    </label>
+
+
+                    <label class="layer-option">
+
+                        <input
+                            type="checkbox"
+                            id="capa-puntos"
+                            checked
+                        >
+
+                        <span class="layer-symbol point-symbol">
+                            ●
+                        </span>
+
+                        <span>
+                            Puntos colaboradores
+                        </span>
+
+                    </label>
+
+
+                    <label class="layer-option">
+
+                        <input
+                            type="checkbox"
+                            id="capa-avisos"
+                            checked
+                        >
+
+                        <span class="layer-symbol alert-symbol">
+                            !
+                        </span>
+
+                        <span>
+                            Avisos
+                        </span>
+
+                    </label>
+
+
+                    <label class="layer-option">
+
+                        <input
+                            type="checkbox"
+                            id="capa-vehiculos"
+                            checked
+                        >
+
+                        <span class="layer-symbol">
+                            🚐
+                        </span>
+
+                        <span>
+                            Vehículos
+                        </span>
+
+                    </label>
+
+
+                </div>
+
+
+                <div class="panel-divider"></div>
+
+
+                <div class="panel-header">
+
+                    <div>
+
+                        <div class="eyebrow">
+                            ZONAS DE TRABAJO
                         </div>
 
-                    </div>
-
-
-                    <div
-                        id="leyenda-rutas"
-                        class="route-legend"
-                    >
-                        <!-- Generado por rutas.js -->
-                    </div>
-
-
-                </aside>
-
-
-
-                <!-- ==============================================
-                     MAPA CENTRAL
-                =============================================== -->
-
-                <section class="map-panel">
-
-
-                    <div class="map-toolbar">
-
-
-                        <div class="map-title">
-
-                            <strong>
-                                Situación operativa
-                            </strong>
-
-                            <span>
-                                Vehículos · avisos · colaboradores
-                            </span>
-
-                        </div>
-
-
-                        <div class="map-tools">
-
-                            <button
-                                type="button"
-                                class="map-tool"
-                                id="btn-centrar-mapa"
-                            >
-                                🎯 Centrar
-                            </button>
-
-                        </div>
-
+                        <h2>
+                            Rutas
+                        </h2>
 
                     </div>
 
-
-                    <div
-                        id="map"
-                    ></div>
+                </div>
 
 
-                    <div
-                        id="map-status"
-                        class="map-status"
-                    >
+                <div
+                    id="leyenda-rutas"
+                    class="route-legend"
+                >
+                    <!-- Generado por rutas.js -->
+                </div>
 
-                        <span class="status-dot"></span>
 
-                        <span id="map-status-text">
-                            GPS operativo · posiciones simuladas
+            </aside>
+
+
+
+            <!-- ==================================================
+                 MAPA
+            =================================================== -->
+
+            <section class="map-panel">
+
+
+                <div class="map-toolbar">
+
+
+                    <div class="map-title">
+
+                        <strong>
+                            Situación operativa
+                        </strong>
+
+                        <span>
+                            Vehículos · avisos · colaboradores
                         </span>
 
                     </div>
 
 
-                </section>
+                    <div class="map-tools">
 
+                        <button
+                            type="button"
+                            class="map-tool"
+                            id="btn-centrar-mapa"
+                        >
+                            🎯 Centrar
+                        </button>
 
+                    </div>
 
-                <!-- ==============================================
-                     PANEL DERECHO
-                     
-                     RESUMEN DEL DÍA + ACCIONES
-                =============================================== -->
 
-                <aside class="right-panel">
+                </div>
 
 
-                    <!-- ==========================================
-                         RESUMEN DEL DÍA
-                    =========================================== -->
+                <div
+                    id="map"
+                ></div>
 
-                    <section class="summary-panel">
 
+                <div
+                    id="map-status"
+                    class="map-status"
+                >
 
-                        <div class="panel-header">
+                    <span class="status-dot"></span>
 
-                            <div>
+                    <span id="map-status-text">
+                        GPS operativo · posiciones simuladas
+                    </span>
 
-                                <div class="eyebrow">
-                                    RESUMEN DEL DÍA
-                                </div>
+                </div>
 
-                                <h2>
-                                    Situación actual
-                                </h2>
 
-                            </div>
-
-
-                            <span
-                                id="contador-avisos"
-                                class="counter-badge"
-                            >
-                                0
-                            </span>
-
-                        </div>
-
-
-                        <div class="summary-kpis">
-
-
-                            <div class="summary-kpi danger">
-
-                                <div class="summary-kpi-icon">
-                                    🔴
-                                </div>
-
-                                <div>
-
-                                    <span>
-                                        Pendientes
-                                    </span>
-
-                                    <strong id="kpi-pendientes">
-                                        0
-                                    </strong>
-
-                                </div>
-
-                            </div>
-
-
-                            <div class="summary-kpi warning">
-
-                                <div class="summary-kpi-icon">
-                                    🟠
-                                </div>
-
-                                <div>
-
-                                    <span>
-                                        Asignados
-                                    </span>
-
-                                    <strong id="kpi-asignados">
-                                        0
-                                    </strong>
-
-                                </div>
-
-                            </div>
-
-
-                            <div class="summary-kpi success">
-
-                                <div class="summary-kpi-icon">
-                                    🟢
-                                </div>
-
-                                <div>
-
-                                    <span>
-                                        Recogidos
-                                    </span>
-
-                                    <strong id="kpi-recogidos">
-                                        0
-                                    </strong>
-
-                                </div>
-
-                            </div>
-
-
-                            <div class="summary-kpi primary">
-
-                                <div class="summary-kpi-icon">
-                                    🚐
-                                </div>
-
-                                <div>
-
-                                    <span>
-                                        Vehículos activos
-                                    </span>
-
-                                    <strong id="kpi-vehiculos">
-                                        0
-                                    </strong>
-
-                                </div>
-
-                            </div>
-
-
-                        </div>
-
-
-                    </section>
-
-
-
-                    <div class="panel-divider"></div>
-
-
-
-                    <!-- ==========================================
-                         ACCIONES OPERATIVAS
-                    =========================================== -->
-
-                    <section class="actions-panel dashboard-actions">
-
-
-                        <div class="actions-heading">
-
-                            <div>
-
-                                <div class="eyebrow">
-                                    ACCIONES
-                                </div>
-
-                                <h2>
-                                    Gestión rápida
-                                </h2>
-
-                            </div>
-
-                        </div>
-
-
-                        <div class="actions-grid">
-
-
-                            <button
-                                type="button"
-                                id="btn-confirmar-rutas"
-                                class="action-button primary-action"
-                            >
-
-                                <div class="action-icon">
-                                    ✓
-                                </div>
-
-                                <div>
-
-                                    <strong>
-                                        Confirmar rutas
-                                    </strong>
-
-                                    <small>
-                                        Validar la planificación
-                                    </small>
-
-                                </div>
-
-                            </button>
-
-
-                            <button
-                                type="button"
-                                id="btn-nuevo-aviso"
-                                class="action-button"
-                            >
-
-                                <div class="action-icon">
-                                    +
-                                </div>
-
-                                <div>
-
-                                    <strong>
-                                        Añadir aviso
-                                    </strong>
-
-                                    <small>
-                                        Registrar una recogida
-                                    </small>
-
-                                </div>
-
-                            </button>
-
-
-                            <button
-                                type="button"
-                                id="btn-recalcular"
-                                class="action-button"
-                            >
-
-                                <div class="action-icon">
-                                    ↻
-                                </div>
-
-                                <div>
-
-                                    <strong>
-                                        Recalcular planificación
-                                    </strong>
-
-                                    <small>
-                                        Actualizar recorridos
-                                    </small>
-
-                                </div>
-
-                            </button>
-
-
-                            <button
-                                type="button"
-                                id="btn-exportar"
-                                class="action-button"
-                            >
-
-                                <div class="action-icon">
-                                    🖨
-                                </div>
-
-                                <div>
-
-                                    <strong>
-                                        Imprimir / exportar
-                                    </strong>
-
-                                    <small>
-                                        Preparar la jornada
-                                    </small>
-
-                                </div>
-
-                            </button>
-
-
-                        </div>
-
-
-                    </section>
-
-
-                </aside>
-
-
-            </div>
+            </section>
 
 
 
             <!-- ==================================================
-                 ZONA INFERIOR DEL DASHBOARD
+                 PANEL DERECHO
                  
-                 IZQUIERDA:
-                 Avisos pendientes
-
-                 DERECHA:
-                 Planificación del día
+                 RESUMEN DEL DÍA + ACCIONES
             =================================================== -->
 
-            <div class="workspace-bottom">
+            <aside class="right-panel">
 
 
-                <!-- ==============================================
-                     AVISOS PENDIENTES
-                =============================================== -->
+                <!-- ==================================================
+                     RESUMEN DEL DÍA
+                =================================================== -->
 
-                <section class="dashboard-panel panel-avisos-pendientes">
+                <section class="summary-panel">
 
-
-                    <div class="panel-header dashboard-section-header">
-
+                    <div class="panel-header">
 
                         <div>
 
                             <div class="eyebrow">
-                                OPERATIVA
+                                RESUMEN
                             </div>
 
                             <h2>
-                                Avisos pendientes
+                                Resumen del día
                             </h2>
 
                         </div>
 
+                    </div>
 
-                        <div class="dashboard-header-meta">
+
+                    <div class="daily-summary">
 
 
-                            <span
-                                id="contador-avisos-pendientes"
-                                class="counter-badge"
-                            >
+                        <div class="summary-item">
+
+                            <span class="summary-label">
+                                🔴 Pendientes
+                            </span>
+
+                            <strong id="summary-pendientes">
                                 0
+                            </strong>
+
+                        </div>
+
+
+                        <div class="summary-item">
+
+                            <span class="summary-label">
+                                🟠 Asignados
                             </span>
 
+                            <strong id="summary-asignados">
+                                0
+                            </strong>
+
+                        </div>
+
+
+                        <div class="summary-item">
+
+                            <span class="summary-label">
+                                🟢 Recogidos
+                            </span>
+
+                            <strong id="summary-recogidos">
+                                0
+                            </strong>
+
+                        </div>
+
+
+                        <div class="summary-item">
+
+                            <span class="summary-label">
+                                🚐 Vehículos activos
+                            </span>
+
+                            <strong id="summary-vehiculos">
+                                0
+                            </strong>
 
                         </div>
 
 
                     </div>
-
-
-                    <div
-                        id="avisos-pendientes-planificacion"
-                        class="avisos-pendientes-lista"
-                    >
-
-                        <div class="planning-item">
-
-                            <div class="planning-description">
-                                Cargando avisos pendientes...
-                            </div>
-
-                        </div>
-
-                    </div>
-
 
                 </section>
 
 
 
-                <!-- ==============================================
-                     PLANIFICACIÓN DEL DÍA
-                =============================================== -->
-
-                <section class="dashboard-panel dashboard-planning-panel">
+                <div class="panel-divider"></div>
 
 
-                    <div class="panel-header dashboard-section-header">
 
+                <!-- ==================================================
+                     ACCIONES
+                =================================================== -->
+
+                <section class="quick-actions-panel">
+
+                    <div class="panel-header">
 
                         <div>
 
                             <div class="eyebrow">
-                                ORGANIZACIÓN DE LA JORNADA
+                                ACCIONES
                             </div>
 
                             <h2>
-                                Planificación del día
+                                Gestión rápida
                             </h2>
 
                         </div>
 
-
-                        <div class="dashboard-header-meta">
-
-
-                            <span
-                                id="resumen-planificacion"
-                                class="planning-summary"
-                            >
-                                3 rutas · 0 animales
-                            </span>
-
-
-                            <button
-                                type="button"
-                                id="btn-ver-detalle-planificacion"
-                                class="panel-link-button"
-                            >
-                                Ver detalle
-                            </button>
-
-
-                        </div>
-
-
                     </div>
 
 
-                    <!-- ==========================================
-                         SELECTOR DE VEHÍCULO
-                         
-                         rutas.js controlará cuál está activo.
-                    =========================================== -->
-
-                    <div
-                        id="selector-vehiculos-planificacion"
-                        class="vehicle-plan-selector"
-                    >
+                    <div class="quick-actions-list">
 
 
                         <button
                             type="button"
-                            class="vehicle-plan-tab active"
-                            data-vehiculo-plan="V1"
+                            id="accion-confirmar"
+                            class="quick-action primary"
                         >
 
-                            <strong>
-                                V1
-                            </strong>
+                            <span class="quick-action-icon">
+                                ✓
+                            </span>
 
                             <span>
-                                Tablet 1 · Norte
+
+                                <strong>
+                                    Confirmar rutas
+                                </strong>
+
+                                <small>
+                                    Validar la planificación
+                                </small>
+
                             </span>
 
                         </button>
@@ -950,16 +686,24 @@
 
                         <button
                             type="button"
-                            class="vehicle-plan-tab"
-                            data-vehiculo-plan="V2"
+                            id="accion-modificar"
+                            class="quick-action"
                         >
 
-                            <strong>
-                                V2
-                            </strong>
+                            <span class="quick-action-icon">
+                                ✎
+                            </span>
 
                             <span>
-                                Tablet 4 · Interior
+
+                                <strong>
+                                    Modificar rutas
+                                </strong>
+
+                                <small>
+                                    Ajustar el recorrido del día
+                                </small>
+
                             </span>
 
                         </button>
@@ -967,53 +711,85 @@
 
                         <button
                             type="button"
-                            class="vehicle-plan-tab"
-                            data-vehiculo-plan="V3"
+                            id="accion-aviso"
+                            class="quick-action"
                         >
 
-                            <strong>
-                                V3
-                            </strong>
+                            <span class="quick-action-icon">
+                                +
+                            </span>
 
                             <span>
-                                Tablet 2 · Sur
+
+                                <strong>
+                                    Añadir aviso
+                                </strong>
+
+                                <small>
+                                    Registrar una nueva recogida
+                                </small>
+
+                            </span>
+
+                        </button>
+
+
+                        <button
+                            type="button"
+                            id="accion-recalcular"
+                            class="quick-action"
+                        >
+
+                            <span class="quick-action-icon">
+                                ↻
+                            </span>
+
+                            <span>
+
+                                <strong>
+                                    Recalcular planificación
+                                </strong>
+
+                                <small>
+                                    Actualizar recorridos
+                                </small>
+
+                            </span>
+
+                        </button>
+
+
+                        <button
+                            type="button"
+                            id="accion-exportar"
+                            class="quick-action"
+                        >
+
+                            <span class="quick-action-icon">
+                                🖨
+                            </span>
+
+                            <span>
+
+                                <strong>
+                                    Imprimir / exportar
+                                </strong>
+
+                                <small>
+                                    Preparar información
+                                </small>
+
                             </span>
 
                         </button>
 
 
                     </div>
-
-
-                    <!-- ==========================================
-                         PLANIFICACIÓN DEL VEHÍCULO SELECCIONADO
-                         
-                         ÚNICO CONTENEDOR.
-                         
-                         rutas.js mostrará aquí solamente
-                         el vehículo seleccionado.
-                    =========================================== -->
-
-                    <div
-                        id="planificacion-dashboard"
-                        class="planning-dashboard"
-                    >
-
-                        <div class="planning-item">
-
-                            <div class="planning-description">
-                                Cargando planificación...
-                            </div>
-
-                        </div>
-
-                    </div>
-
 
                 </section>
 
 
-            </div>
+            </aside>
 
 
         </section>
@@ -1021,49 +797,22 @@
 
 
         <!-- ====================================================
-             VISTA INICIO
+             ZONA INFERIOR DEL DASHBOARD
              
-             El dashboard principal ya contiene las acciones
-             operativas. Esta sección se mantiene para conservar
-             la navegación y compatibilidad con app.js.
+             AVISOS + PLANIFICACIÓN
         ===================================================== -->
 
-        <section
-            id="vista-inicio"
-            class="app-view active-view"
-            data-view="inicio"
-        >
-
-            <!--
-                La vista Inicio utiliza el dashboard principal.
-                Se mantiene este contenedor para compatibilidad
-                con la navegación existente.
-            -->
-
-        </section>
+        <section class="dashboard-lower">
 
 
+            <!-- ==================================================
+                 AVISOS PENDIENTES
+            =================================================== -->
 
-        <!-- ====================================================
-             VISTA PLANIFICACIÓN
-        ===================================================== -->
-
-        <section
-            id="vista-planificacion"
-            class="app-view"
-            data-view="planificacion"
-        >
+            <section class="lower-panel panel-avisos-pendientes">
 
 
-            <!-- =================================================
-                 AVISOS PENDIENTES DE ASIGNACIÓN
-            ================================================== -->
-
-            <section class="actions-panel panel-avisos-pendientes">
-
-
-                <div class="actions-heading">
-
+                <div class="panel-header lower-panel-header">
 
                     <div>
 
@@ -1072,25 +821,24 @@
                         </div>
 
                         <h2>
-                            Avisos pendientes de asignar
+                            Avisos pendientes
                         </h2>
 
                     </div>
 
 
-                    <div
-                        id="contador-avisos-pendientes-vista"
-                        class="actions-info"
+                    <span
+                        id="contador-avisos-pendientes"
+                        class="counter-badge"
                     >
-                        0 pendientes
-                    </div>
-
+                        0
+                    </span>
 
                 </div>
 
 
                 <div
-                    id="avisos-pendientes-planificacion-vista"
+                    id="avisos-pendientes-planificacion"
                     class="avisos-pendientes-lista"
                 >
 
@@ -1109,49 +857,73 @@
 
 
 
-            <!-- =================================================
-                 PLANIFICACIÓN DEL SERVICIO
-            ================================================== -->
+            <!-- ==================================================
+                 PLANIFICACIÓN DEL DÍA
+            =================================================== -->
 
-            <section class="actions-panel">
+            <section class="lower-panel panel-planificacion-dia">
 
 
-                <div class="actions-heading">
+                <div class="planning-main-header">
 
 
                     <div>
 
                         <div class="eyebrow">
-                            ORGANIZACIÓN DE LA JORNADA
+                            JORNADA
                         </div>
 
-                        <h2>
-                            Planificación del servicio
-                        </h2>
+                        <div class="planning-title-row">
 
-                    </div>
+                            <h2>
+                                PLANIFICACIÓN DEL DÍA
+                            </h2>
 
+                            <span
+                                id="resumen-planificacion-dia"
+                                class="planning-header-summary"
+                            >
+                                0 rutas · 0 animales
+                            </span>
 
-                    <div
-                        id="fecha-planificacion"
-                        class="actions-info"
-                    >
-                        --
+                            <button
+                                type="button"
+                                id="btn-ver-detalle-planificacion"
+                                class="planning-detail-link"
+                            >
+                                Ver detalle
+                            </button>
+
+                        </div>
+
                     </div>
 
 
                 </div>
 
 
-                <!--
-                    Esta vista tendrá posteriormente su propia
-                    representación completa de planificación.
-                    No comparte ID con la planificación del
-                    dashboard.
-                -->
+
+                <!-- ==================================================
+                     SELECTOR DE VEHÍCULO
+                =================================================== -->
 
                 <div
-                    id="planificacion-vista-completa"
+                    id="selector-vehiculos-planificacion"
+                    class="planning-vehicle-selector"
+                >
+
+                    <!-- Generado por rutas.js -->
+
+                </div>
+
+
+
+                <!-- ==================================================
+                     DETALLE DEL VEHÍCULO SELECCIONADO
+                =================================================== -->
+
+                <div
+                    id="planificacion-dia"
                     class="planning-list"
                 >
 
@@ -1174,9 +946,80 @@
 
 
         <!-- ====================================================
+             VISTA INICIO
+             
+             Se mantiene para navegación futura.
+        ===================================================== -->
+
+        <section
+            id="vista-inicio"
+            class="app-view active-view"
+            data-view="inicio"
+        >
+
+            <!-- El dashboard principal constituye la vista de inicio. -->
+
+        </section>
+
+
+
+        <!-- ====================================================
+             VISTA PLANIFICACIÓN
+             
+             Módulo ampliado para trabajar posteriormente.
+        ===================================================== -->
+
+        <section
+            id="vista-planificacion"
+            class="app-view"
+            data-view="planificacion"
+        >
+
+            <section class="actions-panel">
+
+                <div class="actions-heading">
+
+                    <div>
+
+                        <div class="eyebrow">
+                            PLANIFICACIÓN
+                        </div>
+
+                        <h2>
+                            Planificación detallada
+                        </h2>
+
+                    </div>
+
+                    <div
+                        id="fecha-planificacion"
+                        class="actions-info"
+                    >
+                        --
+                    </div>
+
+                </div>
+
+
+                <div class="planning-item">
+
+                    <div class="planning-description">
+                        La planificación operativa se gestiona desde
+                        el panel principal.
+                    </div>
+
+                </div>
+
+            </section>
+
+        </section>
+
+
+
+        <!-- ====================================================
              VISTA PLACEHOLDER
              
-             Para las secciones que todavía no hemos desarrollado.
+             Para las secciones todavía no desarrolladas.
         ===================================================== -->
 
         <section
@@ -1185,12 +1028,10 @@
             data-view="placeholder"
         >
 
-
             <section class="actions-panel">
 
 
                 <div class="actions-heading">
-
 
                     <div>
 
@@ -1204,29 +1045,23 @@
 
                     </div>
 
-
                 </div>
 
 
                 <div class="planning-item">
 
-
                     <div
                         class="planning-description"
                         id="placeholder-descripcion"
                     >
-
                         Este módulo se desarrollará
                         progresivamente.
-
                     </div>
-
 
                 </div>
 
 
             </section>
-
 
         </section>
 
@@ -1274,8 +1109,6 @@
 
 <!-- ============================================================
      JAVASCRIPT
-     
-     Los archivos están dentro de /js/
 ============================================================= -->
 
 <script src="js/config.js"></script>
