@@ -775,17 +775,17 @@ function centrarValencia() {
 
 function configurarCapasMapa() {
 
-    var elementos = [
+   var elementos = [
 
-        ["layer-vehiculos", "vehiculos"],
+    ["capa-vehiculos", "vehiculos"],
 
-        ["layer-rutas", "rutas"],
+    ["capa-rutas", "rutas"],
 
-        ["layer-puntos", "puntos"],
+    ["capa-puntos", "puntos"],
 
-        ["layer-avisos", "avisos"]
+    ["capa-avisos", "avisos"]
 
-    ];
+];
 
 
     elementos.forEach(
