@@ -288,7 +288,89 @@ button {
     box-shadow: var(--shadow);
 }
 
+/* ============================================================
+   ZONA INFERIOR DEL DASHBOARD
+============================================================ */
 
+.dashboard-lower {
+    display: grid;
+
+    grid-template-columns:
+        minmax(360px, 0.85fr)
+        minmax(600px, 1.45fr);
+
+    gap: 14px;
+
+    margin-top: 14px;
+}
+
+.lower-panel {
+    min-width: 0;
+
+    background: var(--surface);
+
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+
+    box-shadow: var(--shadow);
+
+    padding: 14px;
+
+    overflow: hidden;
+}
+
+.lower-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 10px;
+
+    margin-bottom: 11px;
+}
+
+.lower-panel-title {
+    min-width: 0;
+}
+
+.lower-panel-title h2 {
+    margin: 2px 0 0;
+
+    font-size: 15px;
+    line-height: 1.2;
+}
+
+.lower-panel-subtitle {
+    color: var(--muted);
+
+    font-size: 9px;
+
+    margin-top: 3px;
+}
+
+.lower-panel-actions {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.link-action {
+    border: 0;
+
+    background: transparent;
+
+    color: var(--primary);
+
+    padding: 4px 2px;
+
+    font-size: 9px;
+    font-weight: 700;
+}
+
+.link-action:hover {
+    color: var(--primary-dark);
+    text-decoration: underline;
+}
 /* ============================================================
    KPI — AHORA INTEGRADOS EN RESUMEN DEL DÍA
 ============================================================ */
