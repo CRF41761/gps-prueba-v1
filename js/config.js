@@ -4,7 +4,7 @@
 
 const CONFIG = {
 
-    modo: "mock",
+    modo: "osrm",
 
     mapa: {
         centro: [39.4699, -0.3763],
@@ -15,6 +15,11 @@ const CONFIG = {
 
         url:
             "https://script.google.com/macros/s/AKfycbz9cowY8r7adCxP5eFFMCH9yaXTl1a5g5VpETQBXJuS_IFas--YpWgquuKBk4oiL9qw/exec"
+    },
+
+    osrm: {
+        baseUrl: "https://crf-rutas.crf-granja-saler.workers.dev",
+        rutaEndpoint: "/api/ruta"
     },
 
     refrescoGPS: 5000,
