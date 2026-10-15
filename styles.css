@@ -4,12 +4,14 @@
 ============================================================ */
 
 :root {
-    --bg: #f4f6f8;
-    --surface: #ffffff;
-    --surface-soft: #f8fafb;
-    --border: #dfe4e8;
-    --text: #263238;
-    --muted: #6b7780;
+      --bg: #DDE8DF;
+ --surface: #31435A;
+--surface-soft: #40536A;
+--border: #87929D;
+--border-secondary: #6B7684;
+--border-divider: #55606C;
+    --text: #F1F5F9;
+    --muted: #CBD5E1;
 
     --primary: #467886;
     --primary-dark: #345e6a;
@@ -80,14 +82,14 @@ button {
 ============================================================ */
 
 .topbar {
-    height: 72px;
+    height: 54px;
 
     background: var(--surface);
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--border-divider);
 
     display: flex;
-    align-items: center;
-    justify-content: space-between;
+    align-items: stretch;
+    justify-content: flex-start;
 
     padding: 0 22px;
 
@@ -97,7 +99,10 @@ button {
 .brand {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
+
+    flex: 0 1 auto;
+    min-width: 0;
 }
 
 .brand-mark {
@@ -116,6 +121,17 @@ button {
     font-size: 13px;
     font-weight: 800;
     letter-spacing: 0.5px;
+}
+
+.brand-title {
+    font-size: 14px;
+    letter-spacing: 0.3px;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    min-width: 0;
 }
 
 .brand-text {
@@ -175,6 +191,9 @@ button {
 .top-clock {
     min-width: 65px;
 
+    flex: 0 0 auto;
+    align-self: center;
+
     text-align: right;
 
     font-size: 20px;
@@ -194,9 +213,20 @@ button {
     display: flex;
     align-items: stretch;
 
+    flex: 1 1 0;
+    min-width: 0;
+
     padding: 0 12px;
 
     overflow-x: auto;
+
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.main-nav::-webkit-scrollbar {
+    height: 0;
+    display: none;
 }
 
 .nav-item {
@@ -263,7 +293,7 @@ button {
 
 .dashboard {
     width: 100%;
-    max-width: 1900px;
+    max-width: 2400px;
 
     margin: 0 auto;
 
@@ -280,12 +310,12 @@ button {
 
     grid-template-columns:
         255px
-        minmax(650px, 1fr)
+        minmax(0, 1fr)
         320px;
 
-    height: calc(100vh - 205px);
+    height: calc(100vh - 200px);
 
-    min-height: 650px;
+    min-height: 560px;
 
     background: var(--surface);
 
@@ -299,6 +329,88 @@ button {
 
 
 /* ============================================================
+   PANELES REDIMENSIONABLES · FASE 1 (asideros verticales)
+============================================================ */
+
+.workspace {
+    position: relative;
+}
+
+.resize-handle {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+
+    width: 11px;
+
+    margin-left: -5px;
+
+    cursor: col-resize;
+
+    touch-action: none;
+
+    z-index: 1200;
+
+    background: transparent;
+}
+
+.resize-handle::after {
+    content: "";
+
+    position: absolute;
+
+    top: 0;
+    bottom: 0;
+    left: 50%;
+
+    width: 3px;
+
+    margin-left: -1px;
+
+    border-radius: 2px;
+
+    background: transparent;
+
+    transition: background 0.15s ease;
+}
+
+.resize-handle:hover::after,
+.resize-handle.activo::after {
+    background: var(--border);
+}
+
+
+/* ============================================================
+   PANELES REDIMENSIONABLES · FASE 2 (asidero horizontal)
+============================================================ */
+
+.resize-handle-horizontal {
+    top: auto;
+    bottom: -5px;
+    left: 0;
+
+    width: 100%;
+    height: 11px;
+
+    margin-left: 0;
+
+    cursor: row-resize;
+}
+
+.resize-handle-horizontal::after {
+    top: 50%;
+    bottom: auto;
+    left: 0;
+
+    width: 100%;
+    height: 3px;
+
+    margin-left: 0;
+    margin-top: -1px;
+}
+
+
+/* ============================================================
    ZONA INFERIOR DEL DASHBOARD
 ============================================================ */
 
@@ -306,8 +418,8 @@ button {
     display: grid;
 
     grid-template-columns:
-        minmax(360px, 0.85fr)
-        minmax(600px, 1.45fr);
+        minmax(0, 1.38fr)
+        minmax(0, 1fr);
 
     gap: 14px;
 
@@ -396,7 +508,7 @@ button {
 
     background: var(--surface);
 
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-secondary);
     border-radius: 8px;
 
     padding: 10px;
@@ -440,7 +552,7 @@ button {
     font-size: 14px;
     font-weight: 800;
 
-    background: #edf2f4;
+    background: var(--surface-soft);
 }
 
 .kpi-card.danger .kpi-icon {
@@ -459,7 +571,7 @@ button {
 }
 
 .kpi-card.primary .kpi-icon {
-    background: #eaf3f6;
+    background: var(--surface-soft);
     color: var(--primary);
 }
 
@@ -480,11 +592,11 @@ button {
 }
 
 .left-panel {
-    border-right: 1px solid var(--border);
+    border-right: 1px solid var(--border-divider);
 }
 
 .right-panel {
-    border-left: 1px solid var(--border);
+    border-left: 1px solid var(--border-divider);
 }
 
 .panel-header {
@@ -508,6 +620,80 @@ button {
     line-height: 1.2;
 }
 
+.planning-main-header {
+    margin-bottom: 20px;
+}
+
+.planning-main-header > div {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 12px;
+}
+
+.planning-main-header .planning-title-row {
+    order: 2;
+
+    display: flex;
+    align-items: baseline;
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: 12px;
+}
+
+.planning-main-header .eyebrow {
+    order: 1;
+    flex: 0 0 100%;
+    margin-top: 1px;
+}
+
+.planning-title-row h2 {
+    flex: 0 1 auto;
+    min-width: 0;
+
+    margin: 0;
+
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.2;
+    text-transform: lowercase;
+}
+
+.planning-title-row h2::first-letter {
+    text-transform: uppercase;
+}
+
+.planning-header-summary {
+    flex: 0 1 auto;
+    min-width: 0;
+
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.planning-detail-link {
+    flex: 0 0 auto;
+
+    margin: 0;
+    padding: 0;
+
+    border: 0;
+    background: transparent;
+    color: var(--primary);
+
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.planning-detail-link:hover {
+    color: var(--primary-dark);
+    text-decoration: underline;
+}
+
 .eyebrow {
     color: var(--primary);
 
@@ -521,10 +707,10 @@ button {
     width: 31px;
     height: 31px;
 
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-secondary);
     border-radius: 7px;
 
-    background: white;
+    background: var(--surface);
     color: var(--muted);
 
     font-size: 17px;
@@ -538,9 +724,47 @@ button {
 .panel-divider {
     height: 1px;
 
-    background: var(--border);
+    background: var(--border-divider);
 
     margin: 15px 0;
+}
+
+/* ============================================================
+   BLOQUES DEL LATERAL IZQUIERDO
+============================================================ */
+
+.left-panel > .panel-header:has(+ .vehicle-list),
+.left-panel > .panel-header:has(+ .layer-list),
+.left-panel > .panel-header:has(+ .route-legend) {
+    margin: 0;
+    padding: 11px 12px 8px;
+
+    background: var(--surface-soft);
+
+    border: 1px solid var(--border-secondary);
+    border-bottom: 0;
+    border-radius: 8px 8px 0 0;
+}
+
+.left-panel > .panel-header:has(+ .vehicle-list) + .vehicle-list,
+.left-panel > .panel-header:has(+ .layer-list) + .layer-list,
+.left-panel > .panel-header:has(+ .route-legend) + .route-legend {
+    padding: 8px 12px 12px;
+
+    background: var(--surface-soft);
+
+    border: 1px solid var(--border-secondary);
+    border-top: 0;
+    border-radius: 0 0 8px 8px;
+}
+
+.left-panel > .panel-header:has(+ .vehicle-list) + .vehicle-list {
+    gap: 7px;
+}
+
+.left-panel > .panel-header:has(+ .layer-list) + .layer-list,
+.left-panel > .panel-header:has(+ .route-legend) + .route-legend {
+    gap: 7px;
 }
 
 
@@ -636,7 +860,7 @@ button {
 
     padding: 9px 10px;
 
-    border: 1px solid #d9e0e3;
+    border: 1px solid var(--border-secondary);
     border-radius: 8px;
 
     background: var(--surface);
@@ -657,7 +881,7 @@ button {
 .accion-oficina:hover {
     border-color: #b9cbd0;
 
-    background: white;
+    background: var(--surface);
 
     box-shadow: 0 3px 8px rgba(30, 50, 60, 0.07);
 
@@ -675,15 +899,15 @@ button {
 }
 
 .accion-oficina.accion-principal {
-    border-color: #a9c3ca;
+    border-color: var(--muted);
 
-    background: #f1f7f8;
+    background: var(--surface-soft);
 }
 
 .accion-oficina.accion-principal:hover {
     border-color: var(--primary);
 
-    background: #edf5f7;
+    background: var(--surface-soft);
 }
 
 .accion-oficina-icono {
@@ -698,7 +922,7 @@ button {
 
     border-radius: 7px;
 
-    background: #edf2f4;
+    background: var(--surface-soft);
 
     color: var(--primary);
 
@@ -744,10 +968,10 @@ button {
 }
 
 .vehicle-card {
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-secondary);
     border-radius: 8px;
 
-    background: var(--surface-soft);
+    background: #E7E5DF;
 
     padding: 10px;
 
@@ -765,7 +989,7 @@ button {
 .vehicle-card.active {
     border-color: var(--primary);
 
-    background: #f0f7f8;
+    background: #E7E5DF;
 }
 
 .vehicle-top {
@@ -784,6 +1008,7 @@ button {
 
     font-size: 13px;
     font-weight: 700;
+color: #1E293B;
 }
 
 .vehicle-icon {
@@ -816,14 +1041,22 @@ button {
 .vehicle-meta {
     display: flex;
     justify-content: space-between;
+    align-items: center;
+    gap: 6px;
 
-    color: var(--muted);
+    color: #475569;
 
     font-size: 10px;
 }
 
+.vehicle-tablet {
+    color: #475569;
+    font-size: 9px;
+    white-space: nowrap;
+}
+
 .vehicle-meta strong {
-    color: var(--text);
+    color: #1E293B;
 }
 
 
@@ -895,6 +1128,60 @@ button {
 
 
 /* ============================================================
+   RUTAS · DESPLEGABLE DENTRO DE "CAPAS DEL MAPA"
+============================================================ */
+
+.rutas-desplegable {
+    display: block;
+
+    padding-top: 5px;
+
+    border-top: 1px solid var(--border-divider);
+}
+
+.rutas-summary {
+    list-style: none;
+
+    user-select: none;
+}
+
+.rutas-summary::-webkit-details-marker {
+    display: none;
+}
+
+.rutas-summary::marker {
+    display: none;
+    content: "";
+}
+
+.rutas-summary .flecha-desplegable {
+    margin-left: auto;
+
+    color: var(--muted);
+
+    font-size: 10px;
+
+    transition: transform 0.15s ease;
+}
+
+.rutas-desplegable[open] .flecha-desplegable {
+    transform: rotate(180deg);
+}
+
+.rutas-desplegable .route-legend {
+    padding: 3px 0 2px;
+}
+
+.rutas-desplegable .route-legend .item-leyenda-ruta {
+    padding: 6px 7px;
+}
+
+.rutas-desplegable .route-legend .item-leyenda-ruta input {
+    margin: 0;
+}
+
+
+/* ============================================================
    LEYENDA
 ============================================================ */
 
@@ -903,6 +1190,26 @@ button {
     flex-direction: column;
 
     gap: 7px;
+}
+
+.item-leyenda-ruta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    min-width: 0;
+
+    color: var(--text);
+    font-size: 11px;
+}
+
+.color-leyenda-ruta {
+    width: 25px;
+    height: 5px;
+
+    flex: 0 0 25px;
+
+    border-radius: 4px;
 }
 
 .route-legend-item {
@@ -915,23 +1222,10 @@ button {
 }
 
 .route-line {
-    width: 30px;
-    height: 5px;
-    flex: 0 0 30px;
-    display: inline-block;
-    border-radius: 999px;
-}
+    width: 25px;
+    height: 4px;
 
-.route-legend-item:nth-child(1) .route-line {
-    background: var(--blue);
-}
-
-.route-legend-item:nth-child(2) .route-line {
-    background: var(--green);
-}
-
-.route-legend-item:nth-child(3) .route-line {
-    background: var(--orange);
+    border-radius: 4px;
 }
 
 .route-name {
@@ -957,7 +1251,7 @@ button {
 
     height: 100%;
 
-    background: #e9eef0;
+    background: var(--surface-soft);
 }
 
 .map-toolbar {
@@ -984,7 +1278,7 @@ button {
 .map-title {
     background: rgba(255,255,255,0.96);
 
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-secondary);
     border-radius: 8px;
 
     box-shadow: var(--shadow);
@@ -999,10 +1293,12 @@ button {
 
 .map-title strong {
     font-size: 12px;
+
+    color: #0F172A;
 }
 
 .map-title span {
-    color: var(--muted);
+    color: var(--surface-soft);
 
     font-size: 10px;
 }
@@ -1013,7 +1309,7 @@ button {
 }
 
 .map-tool {
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-secondary);
     border-radius: 7px;
 
     background: rgba(255,255,255,0.96);
@@ -1023,14 +1319,156 @@ button {
     font-size: 10px;
     font-weight: 600;
 
-    color: var(--text);
+    color: #0F172A;
 
     box-shadow: var(--shadow);
 }
 
 .map-tool:hover {
-    background: white;
-    color: var(--primary);
+    background: var(--surface);
+    color: var(--text);
+}
+
+/* ============================================================
+   ACCIONES RÁPIDAS
+============================================================ */
+
+.quick-actions-panel {
+    padding: 12px;
+
+    background: var(--surface-soft);
+
+    border: 1px solid var(--border);
+    border-radius: 9px;
+}
+
+.quick-actions-panel .panel-header {
+    margin-bottom: 11px;
+}
+
+.quick-actions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.quick-action {
+    width: 100%;
+    min-width: 0;
+    min-height: 48px;
+
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    padding: 9px 10px;
+
+    border: 1px solid var(--border-secondary);
+    border-radius: 8px;
+
+    background: #E7E5DF;
+    color: #1E293B;
+
+    text-align: left;
+
+    box-shadow: 0 1px 2px rgba(30, 50, 60, 0.025);
+
+    transition:
+        border-color 0.15s ease,
+        background 0.15s ease,
+        box-shadow 0.15s ease,
+        transform 0.15s ease;
+}
+
+.quick-action:hover {
+    border-color: #b9cbd0;
+    background: #F1F0EB;
+    color: #1E293B;
+    box-shadow: 0 3px 8px rgba(30, 50, 60, 0.07);
+    transform: translateY(-1px);
+}
+
+.quick-action:focus-visible {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(70, 120, 134, 0.12);
+}
+
+.quick-action.primary {
+    border-color: var(--border-secondary);
+    background: #E7E5DF;
+    color: #1E293B;
+}
+
+.quick-action.primary:hover {
+    border-color: var(--primary);
+    background: #F1F0EB;
+    color: #1E293B;
+}
+
+.quick-action-icon {
+    width: 35px;
+    height: 35px;
+
+    flex: 0 0 35px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 8px;
+
+    background: var(--green);
+    color: white;
+
+    font-size: 18px;
+    font-weight: 800;
+
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.quick-action.primary .quick-action-icon {
+    background: var(--green);
+    color: white;
+}
+
+.quick-action:active,
+.quick-action:focus-visible {
+    border-color: var(--blue);
+    background: var(--blue);
+    color: white;
+}
+
+.quick-action:active .quick-action-icon,
+.quick-action:focus-visible .quick-action-icon {
+    background: rgba(255, 255, 255, 0.18);
+    color: white;
+}
+
+.quick-action > span:last-child {
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.quick-action strong,
+.quick-action small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.quick-action strong {
+    font-size: 12px;
+    line-height: 1.25;
+}
+
+.quick-action small {
+    color: #475569;
+    font-size: 10px;
+    line-height: 1.25;
 }
 
 #map {
@@ -1050,7 +1488,7 @@ button {
 
     background: rgba(255,255,255,0.95);
 
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-secondary);
     border-radius: 7px;
 
     padding: 7px 10px;
@@ -1061,6 +1499,8 @@ button {
     gap: 7px;
 
     font-size: 10px;
+
+    color: #0F172A;
 
     box-shadow: var(--shadow);
 }
@@ -1085,7 +1525,7 @@ button {
 
     border-radius: 50%;
 
-    background: white;
+    background: var(--surface);
 
     border: 3px solid var(--primary);
 
@@ -1103,14 +1543,16 @@ button {
 
     transform: translateX(-50%);
 
-    background: rgba(255,255,255,0.95);
+    background: rgba(15, 23, 42, 0.95);
 
-    border: 1px solid var(--border);
+    border: 1px solid #52657A;
     border-radius: 5px;
 
     padding: 2px 5px;
 
     white-space: nowrap;
+
+    color: #F1F5F9;
 
     font-size: 9px;
     font-weight: 700;
@@ -1186,7 +1628,7 @@ button {
 }
 
 .alert-card {
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-secondary);
     border-left: 4px solid var(--danger);
 
     border-radius: 7px;
@@ -1199,7 +1641,7 @@ button {
 }
 
 .alert-card:hover {
-    background: white;
+    background: var(--surface);
 }
 
 .alert-card.assigned {
@@ -1283,366 +1725,926 @@ button {
 
 
 /* ============================================================
-   AVISOS PENDIENTES · PANEL DE TRABAJO
+   AVISOS PENDIENTES · TABLA
 ============================================================ */
 
 .panel-avisos-pendientes {
-    min-width: 0;
     margin-bottom: 12px;
-    overflow: hidden;
 }
 
-/* Controles: se admiten los nombres antiguos y los usados por rutas.js */
-.avisos-pendientes-controles,
-.controles-avisos-pendientes {
+/*
+ * La cabecera de esta sección lleva a la vez .panel-header
+ * (margin-bottom: 12px) y .lower-panel-header (margin-bottom: 11px).
+ * Aquí se fija un único valor para que ambas no compitan.
+ * Regla aislada a esta sección: no afecta a otros paneles.
+ */
+.panel-avisos-pendientes > .panel-header.lower-panel-header {
+    margin-bottom: 11px;
+}
+
+/*
+ * Contador de la sección: se garantiza que "0", "3", "10" y "99"
+ * se vean completos (padding lateral y sin compresión en la
+ * cabecera flex). Aislado a esta sección.
+ */
+.panel-avisos-pendientes .counter-badge {
+    flex: 0 0 auto;
+    padding: 0 6px;
+}
+
+.avisos-pendientes-controles {
     display: grid;
+
     grid-template-columns: minmax(180px, 1fr) auto;
+
     gap: 8px;
+
     margin-bottom: 10px;
 }
 
-.buscador-avisos,
+.cabecera-avisos-pendientes {
+    min-width: 0;
+}
+
+.avisos-pendientes-contenido {
+    min-width: 0;
+}
+
+.controles-avisos-pendientes {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
 .buscador-avisos-pendientes {
     position: relative;
     min-width: 0;
 }
 
-.buscador-avisos input,
 .buscador-avisos-pendientes input {
     width: 100%;
+    min-width: 0;
     min-height: 34px;
+
     padding: 7px 10px 7px 30px;
-    border: 1px solid var(--border);
+
+    border: 1px solid var(--border-secondary);
     border-radius: 7px;
+
     background: var(--surface-soft);
     color: var(--text);
-    font-size: 9px;
-    transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
+    font-size: 10px;
 }
 
-.buscador-avisos::before,
-.buscador-avisos-pendientes::before {
-    content: "🔎";
+.icono-buscador-avisos {
     position: absolute;
     left: 9px;
     top: 50%;
+
     transform: translateY(-50%);
+
     font-size: 11px;
     pointer-events: none;
 }
 
-.buscador-avisos input:focus,
-.buscador-avisos-pendientes input:focus {
-    outline: none;
-    border-color: var(--primary);
-    background: white;
-    box-shadow: 0 0 0 2px rgba(70,120,134,.08);
-}
-
-.filtro-avisos,
-.filtro-avisos-pendientes {
+.filtro-avisos-pendientes select {
     min-width: 118px;
     min-height: 34px;
+
     padding: 6px 8px;
-    border: 1px solid var(--border);
+
+    border: 1px solid var(--border-secondary);
     border-radius: 7px;
-    background: white;
-    color: var(--text);
-    font-size: 9px;
-    cursor: pointer;
-}
 
-.filtro-avisos:focus,
-.filtro-avisos-pendientes:focus {
-    outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 2px rgba(70,120,134,.08);
-}
-
-/*
-   Tarjetas: son la estructura que genera la versión actual de rutas.js.
-   Se mantiene además compatibilidad visual con la antigua tabla.
-*/
-#avisos-pendientes-planificacion {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    min-width: 0;
-}
-
-.tarjeta-aviso-pendiente {
-    min-width: 0;
-    padding: 11px;
-    border: 1px solid var(--border);
-    border-left: 4px solid var(--danger);
-    border-radius: 9px;
-    background: white;
-    box-shadow: 0 1px 3px rgba(30,50,60,.04);
-    overflow: hidden;
-    transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
-}
-
-.tarjeta-aviso-pendiente:hover {
-    box-shadow: var(--shadow);
-    background: #fff;
-}
-
-.cabecera-aviso-pendiente {
-    display: grid;
-    grid-template-columns: 30px minmax(0,1fr) auto;
-    align-items: center;
-    gap: 9px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid #edf1f2;
-}
-
-.icono-aviso-pendiente {
-    width: 30px;
-    height: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 7px;
-    background: var(--danger-soft);
-    color: var(--danger);
-    font-size: 14px;
-    font-weight: 800;
-}
-
-.datos-aviso-pendiente { min-width: 0; }
-
-.titulo-aviso-pendiente {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    background: var(--surface);
     color: var(--text);
     font-size: 10px;
-    font-weight: 800;
 }
 
-.identificador-aviso-pendiente {
-    margin-top: 2px;
-    color: var(--muted);
-    font-size: 8px;
-    font-weight: 700;
-}
+.boton-ver-todos-avisos,
+.boton-asignar-aviso {
+    min-height: 30px;
+    padding: 5px 9px;
 
-.ruta-aviso-pendiente {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    justify-self: end;
-    font-size: 8px;
-    font-weight: 800;
-    white-space: nowrap;
-}
-
-.ruta-aviso-pendiente .punto-ruta {
-    width: 7px;
-    height: 7px;
-    flex: 0 0 7px;
-    border-radius: 50%;
-}
-
-.contenido-aviso-pendiente {
-    display: grid;
-    grid-template-columns: 1.4fr .65fr 1fr;
-    gap: 7px;
-    padding: 9px 0;
-}
-
-.dato-aviso {
-    min-width: 0;
-    padding: 7px 8px;
-    border: 1px solid #edf1f2;
+    border: 1px solid var(--green);
     border-radius: 6px;
+
+    background: var(--green);
+    color: white;
+
+    font-size: 11px;
+    font-weight: 700;
+
+    transition:
+        background 0.15s ease,
+        border-color 0.15s ease,
+        transform 0.15s ease;
+}
+
+.boton-ver-todos-avisos:hover,
+.boton-asignar-aviso:hover {
+    background: #2E7D32;
+    border-color: #2E7D32;
+    color: white;
+    transform: translateY(-1px);
+}
+.boton-ver-todos-avisos:hover,
+.boton-asignar-aviso:hover {
+    border-color: var(--primary);
+    color: var(--blue);
     background: var(--surface-soft);
 }
 
-.etiqueta-dato {
-    display: block;
-    margin-bottom: 3px;
-    color: var(--muted);
-    font-size: 7px;
-    font-weight: 800;
-    letter-spacing: .35px;
-    text-transform: uppercase;
-}
+.buscador-avisos {
+    position: relative;
 
-.dato-aviso strong {
-    display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-size: 9px;
-}
-
-.observaciones-aviso-pendiente {
-    display: flex;
-    align-items: flex-start;
-    gap: 6px;
-    margin-bottom: 8px;
-    padding: 7px 8px;
-    border: 1px solid #eee5d8;
-    border-radius: 6px;
-    background: #fffaf2;
-    color: #62594e;
-    font-size: 8px;
-    line-height: 1.35;
-}
-
-.icono-observaciones { flex: 0 0 auto; }
-
-.pie-aviso-pendiente {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    padding-top: 7px;
-    border-top: 1px solid #edf1f2;
-}
-
-.coordenadas-aviso-pendiente {
     min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    color: var(--muted);
-    font-size: 7px;
 }
 
-.estado-aviso-pendiente {
-    flex: 0 0 auto;
-    padding: 4px 7px;
-    border-radius: 999px;
-    background: var(--danger-soft);
-    color: var(--danger);
-    font-size: 7px;
-    font-weight: 800;
-    white-space: nowrap;
-}
+.buscador-avisos input {
+    width: 100%;
 
-.recomendacion-vehiculo {
-    margin-top: 8px;
-    padding: 7px 8px;
-    border: 1px solid #dbe8eb;
+    min-height: 34px;
+
+    padding: 7px 10px 7px 30px;
+
+    border: 1px solid var(--border-secondary);
     border-radius: 7px;
-    background: #f4f9fa;
-    color: var(--primary);
-    font-size: 8px;
-    line-height: 1.3;
-}
 
-.recomendacion-vehiculo > div:first-child {
-    font-weight: 800;
-}
+    background: var(--surface-soft);
+    color: var(--text);
 
-.nombre-vehiculo-recomendado {
-    margin-top: 2px;
     font-size: 9px;
-    font-weight: 800;
+
+    transition:
+        border-color 0.15s ease,
+        background 0.15s ease,
+        box-shadow 0.15s ease;
 }
 
-.motivo-vehiculo-recomendado {
-    margin-top: 1px;
-    color: var(--muted);
-    font-size: 7px;
+.buscador-avisos::before {
+    content: "🔎";
+
+    position: absolute;
+
+    left: 9px;
+    top: 50%;
+
+    transform: translateY(-50%);
+
+    font-size: 11px;
+
+    pointer-events: none;
 }
 
-.asignacion-aviso {
-    display: grid;
-    grid-template-columns: minmax(0,1fr) auto;
-    gap: 7px;
-    margin-top: 8px;
+.buscador-avisos input::placeholder {
+    color: #8a959c;
 }
 
-.asignacion-aviso .selector-vehiculo-aviso {
-    min-width: 0;
+.buscador-avisos input:focus {
+    outline: none;
+
+    border-color: var(--primary);
+
+    background: var(--surface);
+
+    box-shadow:
+        0 0 0 2px rgba(70,120,134,0.08);
 }
 
-/* Compatibilidad con la tabla si otra versión de rutas.js la utiliza */
+.filtro-avisos {
+    min-width: 118px;
+
+    min-height: 34px;
+
+    padding: 6px 8px;
+
+    border: 1px solid var(--border-secondary);
+    border-radius: 7px;
+
+    background: var(--surface);
+    color: var(--text);
+
+    font-size: 9px;
+
+    cursor: pointer;
+}
+
+.filtro-avisos:focus {
+    outline: none;
+
+    border-color: var(--primary);
+
+    box-shadow:
+        0 0 0 2px rgba(70,120,134,0.08);
+}
+
 .avisos-pendientes-tabla-wrapper {
     width: 100%;
+
     overflow-x: auto;
     overflow-y: hidden;
+
     border: 1px solid var(--border);
     border-radius: 8px;
-    background: white;
+
+    background: var(--surface);
+
     -webkit-overflow-scrolling: touch;
 }
 
-.tabla-avisos,
-.tabla-avisos-pendientes {
+.tabla-avisos {
     width: 100%;
+
     min-width: 760px;
+
     border-collapse: separate;
     border-spacing: 0;
+
     table-layout: fixed;
+
     font-size: 9px;
 }
 
-.tabla-avisos thead th,
-.tabla-avisos-pendientes thead th {
-    height: 34px;
+.tabla-avisos-wrapper {
+    width: 100%;
+    max-width: 100%;
+
+    overflow-x: auto;
+    overflow-y: hidden;
+
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    -webkit-overflow-scrolling: touch;
+}
+
+.tabla-avisos-pendientes {
+    width: 100%;
+    max-width: 100%;
+
+    /*
+     * Evita que la tabla se comprima en exceso: por debajo
+     * de este ancho la tabla se desplaza horizontalmente
+     * dentro de .tabla-avisos-wrapper en lugar de cortarse.
+     */
+    min-width: 776px;
+
+    border-collapse: separate;
+    border-spacing: 0;
+    table-layout: fixed;
+
+    font-size: 10px;
+}
+
+.tabla-avisos-pendientes th {
+    height: 36px;
     padding: 7px 8px;
-    background: #f5f8f9;
-    border-bottom: 1px solid var(--border);
+
+    background: var(--surface-soft);
+    border-bottom: 1px solid var(--border-divider);
+
     color: var(--muted);
-    font-size: 8px;
+    font-size: 10px;
     font-weight: 800;
-    letter-spacing: .45px;
+    letter-spacing: 0.45px;
     text-align: left;
     text-transform: uppercase;
     white-space: nowrap;
 }
 
-.tabla-avisos td,
 .tabla-avisos-pendientes td {
-    height: 50px;
+    height: 58px;
     padding: 7px 8px;
+
+    border-bottom: 1px solid var(--border-divider);
+    color: var(--text);
     vertical-align: middle;
-    border-bottom: 1px solid #edf0f2;
+    overflow: hidden;
 }
 
-.tabla-avisos tbody tr:hover,
-.tabla-avisos-pendientes tbody tr:hover {
-    background: #f8fbfc;
+.tabla-avisos-pendientes tbody tr {
+    background: #33465C;
+
+    transition:
+        background 0.12s ease;
 }
+
+.tabla-avisos-pendientes tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.tabla-avisos-pendientes tbody tr:hover {
+    background: #3B4A5F;
+}
+.tabla-avisos-pendientes .fila-aviso-pendiente[data-ruta="R1"] > td:first-child {
+    border-left: 4px solid #1976D2;
+}
+
+.tabla-avisos-pendientes .fila-aviso-pendiente[data-ruta="R2"] > td:first-child {
+    border-left: 4px solid #388E3C;
+}
+
+.tabla-avisos-pendientes .fila-aviso-pendiente[data-ruta="R3"] > td:first-child {
+    border-left: 4px solid #F57C00;
+}
+
+.tabla-avisos-pendientes th:nth-child(1),
+.tabla-avisos-pendientes td:nth-child(1) {
+    width: 8%;
+}
+
+.tabla-avisos-pendientes th:nth-child(2),
+.tabla-avisos-pendientes td:nth-child(2) {
+    width: 21%;
+}
+
+.tabla-avisos-pendientes th:nth-child(3),
+.tabla-avisos-pendientes td:nth-child(3) {
+    width: 14%;
+}
+
+.tabla-avisos-pendientes th:nth-child(4),
+.tabla-avisos-pendientes td:nth-child(4) {
+    width: 8%;
+    text-align: center;
+
+    /*
+     * Centrado óptico de ANIMALES: MUNICIPIO está alineado a la
+     * izquierda y deja un hueco a la izquierda de esta columna, con
+     * lo que el centrado geométrico quedaba visualmente pegado a
+     * ESTADO (y la cabecera se desbordaba hacia ESTADO). Este
+     * desplazamiento equilibra los dos huecos sin cambiar el ancho
+     * de columna (8 %) ni tocar otras columnas.
+     */
+    text-indent: -32px;
+}
+
+.tabla-avisos-pendientes th:nth-child(5),
+.tabla-avisos-pendientes td:nth-child(5) {
+    width: 16%;
+}
+
+.tabla-avisos-pendientes th:nth-child(6),
+.tabla-avisos-pendientes td:nth-child(6) {
+    width: 13%;
+}
+
+.tabla-avisos-pendientes th:nth-child(7),
+.tabla-avisos-pendientes td:nth-child(7) {
+    width: 20%;
+}
+
+.tabla-avisos-pendientes th:nth-child(8),
+.tabla-avisos-pendientes td:nth-child(8) {
+    width: 56px;
+    text-align: center;
+}
+
+.celda-id-aviso strong,
+.celda-colaborador-aviso strong,
+.celda-municipio-aviso strong,
+.celda-telefono-aviso > span,
+.especie-secundaria-aviso,
+.telefono-no-disponible {
+    display: block;
+    max-width: 100%;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.celda-id-aviso strong {
+    font-size: 12px;
+}
+
+.celda-colaborador-aviso strong,
+.celda-municipio-aviso strong {
+    font-size: 12px;
+}
+
+/*
+ * Padding reducido solo en ID y COLABORADOR: con texto a 12px estas
+ * dos celdas deben seguir cabiendo sin recorte ("…") cuando la tabla
+ * está en su ancho mínimo (720px), sin cambiar el ancho de columna.
+ * La especificidad incluye la tabla para ganar a la regla general
+ * "td" (padding 7px 8px).
+ */
+.tabla-avisos-pendientes .celda-id-aviso,
+.tabla-avisos-pendientes .celda-colaborador-aviso {
+    padding-left: 4px;
+    padding-right: 4px;
+}
+
+.especie-secundaria-aviso {
+    margin-top: 2px;
+    color: var(--muted);
+    font-size: 11px;
+}
+
+.celda-animales-aviso {
+    font-size: 12px;
+    font-weight: 800;
+    text-align: center;
+}
+
+.cantidad-animales-aviso {
+    display: inline-block;
+    min-width: 1.25em;
+}
+
+.celda-estado-aviso {
+    white-space: nowrap;
+}
+
+/*
+ * Badge de estado · definición de la sección.
+ * Se consolida aquí (display, gap, padding, tipografía) para que
+ * la segunda definición del archivo no la contradiga.
+ */
+.estado-aviso-tabla {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    padding: 5px 8px;
+
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+
+    border-radius: 5px;
+
+    font-size: 10px;
+    font-weight: 800;
+
+    white-space: nowrap;
+}
+
+.estado-aviso-pendiente {
+    background: var(--danger-soft);
+    color: var(--danger);
+}
+
+.estado-aviso-asignado {
+    background: var(--warning-soft);
+    color: var(--warning);
+}
+
+.estado-aviso-recogido {
+    background: var(--success-soft);
+    color: var(--success);
+}
+
+.punto-estado-aviso {
+    width: 8px;
+    height: 8px;
+
+    display: inline-block;
+    flex: 0 0 8px;
+    border-radius: 50%;
+}
+
+.estado-aviso-pendiente .punto-estado-aviso {
+    background: var(--danger);
+}
+
+.estado-aviso-asignado .punto-estado-aviso {
+    background: var(--warning);
+}
+
+.estado-aviso-recogido .punto-estado-aviso {
+    background: var(--success);
+}
+
+.celda-telefono-aviso {
+    color: var(--muted);
+    font-size: 11px;
+}
+
+.celda-vehiculo-aviso {
+    min-width: 0;
+}
+
+/*
+ * Vehículo cuando el aviso ya está RECOGIDO: se muestra como
+ * texto normal integrado en la celda, sin selectores ni botones.
+ */
+.vehiculo-sin-accion {
+    display: block;
+    max-width: 100%;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    color: var(--muted);
+    font-size: 11px;
+}
+
+.asignacion-aviso-tabla {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+}
+
+.asignacion-aviso-tabla .selector-vehiculo-aviso {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.asignacion-aviso-tabla .boton-asignar-aviso {
+    flex: 0 0 auto;
+}
+
+.tabla-avisos thead th {
+    position: sticky;
+    top: 0;
+
+    z-index: 2;
+
+    height: 34px;
+
+    padding: 7px 8px;
+
+    background: var(--surface-soft);
+
+    border-bottom: 1px solid var(--border-divider);
+
+    color: var(--muted);
+
+    font-size: 8px;
+    font-weight: 800;
+
+    letter-spacing: 0.45px;
+
+    text-align: left;
+    text-transform: uppercase;
+
+    white-space: nowrap;
+}
+
+.tabla-avisos thead th:first-child {
+    padding-left: 10px;
+}
+
+.tabla-avisos tbody tr {
+    background: var(--surface);
+
+    transition:
+        background 0.12s ease;
+}
+
+.tabla-avisos tbody tr:hover {
+    background: var(--surface-soft);
+}
+
+.tabla-avisos tbody tr:not(:last-child) td {
+    border-bottom: 1px solid var(--border-divider);
+}
+
+.tabla-avisos td {
+    height: 50px;
+
+    padding: 7px 8px;
+
+    vertical-align: middle;
+
+    color: var(--text);
+
+    overflow: hidden;
+}
+
+.tabla-avisos td:first-child {
+    padding-left: 10px;
+}
+
+
+/* Anchos de columnas */
+
+.tabla-avisos th:nth-child(1),
+.tabla-avisos td:nth-child(1) {
+    width: 64px;
+}
+
+.tabla-avisos th:nth-child(2),
+.tabla-avisos td:nth-child(2) {
+    width: 28%;
+}
+
+.tabla-avisos th:nth-child(3),
+.tabla-avisos td:nth-child(3) {
+    width: 16%;
+}
+
+.tabla-avisos th:nth-child(4),
+.tabla-avisos td:nth-child(4) {
+    width: 70px;
+
+    text-align: center;
+}
+
+.tabla-avisos th:nth-child(5),
+.tabla-avisos td:nth-child(5) {
+    width: 105px;
+}
+
+.tabla-avisos th:nth-child(6),
+.tabla-avisos td:nth-child(6) {
+    width: 105px;
+}
+
+.tabla-avisos th:nth-child(7),
+.tabla-avisos td:nth-child(7) {
+    width: 115px;
+}
+
+
+/* ID */
+
+.aviso-id {
+    color: var(--text);
+
+    font-size: 9px;
+    font-weight: 800;
+
+    white-space: nowrap;
+}
+
+
+/* Colaborador */
+
+.aviso-colaborador {
+    min-width: 0;
+}
+
+.aviso-colaborador-principal {
+    display: block;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    font-size: 9px;
+    font-weight: 700;
+}
+
+.aviso-colaborador-secundario {
+    display: block;
+
+    margin-top: 2px;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    color: var(--muted);
+
+    font-size: 8px;
+    font-style: italic;
+}
+
+
+/* Municipio */
+
+.aviso-municipio {
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    font-size: 9px;
+    font-weight: 700;
+}
+
+
+/* Animales */
+
+.aviso-animales {
+    text-align: center;
+
+    font-size: 9px;
+    font-weight: 800;
+}
+
+.aviso-animales::before {
+    content: "🦌";
+
+    margin-right: 3px;
+
+    font-size: 9px;
+}
+
+
+/* Estado */
+
+.aviso-estado {
+    white-space: nowrap;
+}
+
+/*
+ * Badge de estado · segunda definición del archivo.
+ * Se mantiene (no se elimina CSS en esta fase) pero se alinea
+ * con la definición de la sección para que no la contradiga.
+ */
+.estado-aviso-tabla {
+    display: inline-flex;
+    align-items: center;
+
+    gap: 6px;
+
+    padding: 5px 8px;
+
+    border-radius: 5px;
+
+    font-size: 10px;
+    font-weight: 800;
+
+    white-space: nowrap;
+}
+
+.estado-dot-tabla {
+    width: 6px;
+    height: 6px;
+
+    flex-shrink: 0;
+
+    border-radius: 50%;
+}
+
+.estado-aviso-tabla.pendiente {
+    background: var(--danger-soft);
+    color: var(--danger);
+}
+
+.estado-aviso-tabla.pendiente .estado-dot-tabla {
+    background: var(--danger);
+}
+
+.estado-aviso-tabla.asignado {
+    background: var(--warning-soft);
+    color: var(--warning);
+}
+
+.estado-aviso-tabla.asignado .estado-dot-tabla {
+    background: var(--warning);
+}
+
+.estado-aviso-tabla.recogido {
+    background: var(--success-soft);
+    color: var(--success);
+}
+
+.estado-aviso-tabla.recogido .estado-dot-tabla {
+    background: var(--success);
+}
+
+
+/* Teléfono */
+
+.aviso-telefono {
+    color: var(--muted);
+
+    font-size: 8px;
+
+    white-space: nowrap;
+}
+
+.aviso-telefono a {
+    color: inherit;
+
+    text-decoration: none;
+}
+
+.aviso-telefono a:hover {
+    color: var(--primary);
+
+    text-decoration: underline;
+}
+
+
+/* Vehículo */
+
+.aviso-vehiculo {
+    min-width: 0;
+}
+
+.selector-vehiculo-aviso {
+    width: 100%;
+
+    min-height: 30px;
+
+    padding: 5px 6px;
+
+    border: 1px solid var(--border-secondary);
+    border-radius: 6px;
+
+    background: var(--surface);
+    color: var(--text);
+
+    font-size: 11px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        border-color 0.15s ease,
+        box-shadow 0.15s ease,
+        background 0.15s ease;
+}
+
+.selector-vehiculo-aviso:hover {
+    border-color: #b7c9ce;
+
+    background: var(--surface-soft);
+}
+
+.selector-vehiculo-aviso:focus {
+    outline: none;
+
+    border-color: var(--primary);
+
+    box-shadow:
+        0 0 0 2px rgba(70,120,134,0.08);
+}
+
+.selector-vehiculo-aviso.recomendado {
+    border-color: var(--muted);
+
+    background: var(--surface-soft);
+}
+
+
+/* Texto de recomendación */
+
+.recomendacion-vehiculo {
+    display: block;
+
+    margin-top: 2px;
+
+    color: var(--primary);
+
+    font-size: 7px;
+    font-weight: 700;
+
+    white-space: nowrap;
+}
+
 
 /* Aviso sin resultados */
+
 .sin-avisos-pendientes {
     display: flex;
     align-items: center;
+
     gap: 9px;
+
     padding: 14px;
-    border: 1px dashed var(--border);
+
+    border: 1px dashed var(--border-secondary);
     border-radius: 8px;
+
     background: var(--surface-soft);
 }
 
 .icono-sin-avisos {
     width: 28px;
     height: 28px;
+
     display: flex;
     align-items: center;
     justify-content: center;
-    flex: 0 0 28px;
+
+    flex-shrink: 0;
+
     border-radius: 50%;
+
     background: #edf7ed;
-    color: var(--success);
+
     font-weight: 800;
 }
 
 .sin-avisos-pendientes strong {
     display: block;
+
     font-size: 10px;
+    color: var(--text);
 }
 
 .sin-avisos-pendientes div div {
     margin-top: 2px;
-    color: var(--muted);
+
     font-size: 9px;
+    color: var(--muted);
 }
+
 
 /* ============================================================
    PLANIFICACIÓN
@@ -1656,7 +2658,7 @@ button {
 }
 
 .planning-item {
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-secondary);
     border-radius: 7px;
 
     padding: 9px;
@@ -1697,7 +2699,7 @@ button {
 .planning-description {
     color: var(--muted);
 
-    font-size: 9px;
+    font-size: 11px;
 
     line-height: 1.4;
 }
@@ -1714,21 +2716,21 @@ button {
 
     gap: 7px;
 
-    margin-bottom: 10px;
+    margin-bottom: 12px;
 }
 
 .boton-vehiculo-plan {
     min-width: 0;
 
-    min-height: 42px;
+    min-height: 46px;
 
     padding: 7px 9px;
 
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-secondary);
     border-radius: 7px;
 
-    background: white;
-
+    background: #E7E5DF;
+    color: #1E293B;
     text-align: left;
 
     transition:
@@ -1740,22 +2742,27 @@ button {
 .boton-vehiculo-plan:hover {
     border-color: var(--primary);
 
-    background: var(--surface-soft);
+    background: #F1F0EB;
 }
 
 .boton-vehiculo-plan.active {
     border-color: var(--primary);
 
-    background: #eef6f8;
+    background: var(--blue);
+    color: white;
 
     box-shadow:
         0 0 0 1px rgba(70,120,134,0.08);
 }
 
+.boton-vehiculo-plan.active span {
+    color: rgba(255, 255, 255, 0.82);
+}
+
 .boton-vehiculo-plan strong {
     display: block;
 
-    font-size: 10px;
+    font-size: 12px;
 }
 
 .boton-vehiculo-plan span {
@@ -1763,9 +2770,9 @@ button {
 
     margin-top: 2px;
 
-    color: var(--muted);
+    color: #475569;
 
-    font-size: 8px;
+    font-size: 11px;
 
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1779,6 +2786,7 @@ button {
 
 .plan-vehiculo-seleccionado {
     min-width: 0;
+    padding: 14px;
 }
 
 .plan-vehiculo-columnas {
@@ -1798,9 +2806,316 @@ button {
 }
 
 .plan-columna + .plan-columna {
-    border-left: 1px solid var(--border);
+    border-left: 1px solid var(--border-divider);
 
     padding-left: 12px;
+}
+
+.plan-vehiculo-seleccionado {
+    padding: 12px;
+
+    border: 1px solid var(--border-secondary);
+    border-radius: 9px;
+
+    background: var(--surface-soft);
+}
+
+.cabecera-plan-vehiculo,
+.ruta-propuesta-header,
+.cabecera-ruta-propuesta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.cabecera-plan-vehiculo h3,
+.ruta-propuesta-header h3,
+.cabecera-ruta-propuesta h3 {
+    margin: 2px 0 0;
+    font-size: 15px;
+    line-height: 1.2;
+}
+
+.etiqueta-plan,
+.titulo-bloque-plan span,
+.etiqueta-campo-plan {
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.boton-centro-plan {
+    width: 30px;
+    height: 30px;
+
+    flex: 0 0 30px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid var(--border-secondary);
+    border-radius: 6px;
+
+    background: var(--surface);
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.boton-centro-plan:hover {
+    border-color: var(--primary);
+    background: var(--surface-soft);
+    color: var(--primary);
+}
+
+.datos-vehiculo-plan {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.datos-vehiculo-plan > div,
+.resumen-plan-datos > div {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.datos-vehiculo-plan span,
+.resumen-plan-datos span,
+.ruta-propuesta-info,
+.contador-paradas-ruta {
+    color: var(--muted);
+    font-size: 11px;
+}
+
+.datos-vehiculo-plan strong,
+.resumen-plan-datos strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12px;
+}
+
+.titulo-bloque-plan {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.selector-ruta-plan,
+.campo-hora-plan input {
+    width: 100%;
+    min-width: 0;
+    min-height: 31px;
+
+    padding: 5px 7px;
+
+    border: 1px solid var(--border-secondary);
+    border-radius: 5px;
+
+    background: var(--surface);
+    color: var(--text);
+    font-size: 12px;
+}
+
+.selector-ruta-plan:focus,
+.campo-hora-plan input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(70, 120, 134, 0.1);
+}
+
+.ruta-activa-indicador {
+    margin-top: 8px;
+    padding: 6px 8px;
+
+    border-left: 3px solid var(--primary);
+    background: var(--surface);
+
+    color: var(--muted);
+    font-size: 11px;
+}
+
+.ruta-activa-indicador strong {
+    color: var(--text);
+}
+
+.horarios-plan {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.campo-hora-plan {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.campo-hora-plan label {
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.resumen-plan-vehiculo {
+    display: block;
+}
+
+.resumen-plan-datos {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 24px;
+    row-gap: 8px;
+}
+
+/* ============================================================
+   FASE 3F.2.4 · M1 · CONTRASTE WCAG AA (≥ 4.5:1)
+   Solo color de texto de los selectores auditados.
+   Medidas sobre el fondo real de cada elemento:
+   - badge inactivo sobre #E7E5DF (4.66 / 4.98 / 8.01)
+   - badge activo sobre --blue #1976d2 (4.60)
+   - .plan-modificado sobre --warning-soft (5.38)
+   ============================================================ */
+
+.plan-modificado {
+    margin-top: 9px;
+    padding: 5px 7px;
+    border-radius: 5px;
+    background: var(--warning-soft);
+    color: #9A5200; /* era var(--warning) → 2.3:1 */
+    font-size: 11px;
+    font-weight: 700;
+}
+
+/* ===== FASE 3F.1 · BOTÓN DE GUARDADO ===== */
+
+.boton-guardar-planificacion {
+    display: block;
+
+    width: 100%;
+    margin-top: 9px;
+
+    padding: 8px 10px;
+
+    border: 1px solid var(--primary);
+    border-radius: 6px;
+
+    background: var(--primary);
+    color: #F1F5F9;
+
+    font-size: 12px;
+    font-weight: 700;
+
+    text-align: center;
+
+    cursor: pointer;
+
+    transition:
+        background 0.15s ease,
+        border-color 0.15s ease;
+}
+
+.boton-guardar-planificacion:hover {
+    background: var(--primary-dark);
+    border-color: var(--primary-dark);
+}
+
+.boton-guardar-planificacion.pendiente {
+    background: var(--warning);
+    border-color: var(--warning);
+    color: #1E293B;
+}
+
+.boton-guardar-planificacion.guardado {
+    background: var(--success-soft);
+    border-color: var(--success);
+    color: var(--success);
+}
+
+.boton-guardar-planificacion.error {
+    background: var(--danger-soft);
+    border-color: var(--danger);
+    color: var(--danger);
+}
+
+.boton-guardar-planificacion.guardando {
+    background: var(--surface-soft);
+    border-color: var(--border-secondary);
+    color: var(--muted);
+}
+
+.boton-guardar-planificacion:disabled {
+    cursor: not-allowed;
+    opacity: 0.9;
+}
+
+/* ===== FASE 3F.1 · BADGE DE ESTADO POR VEHÍCULO ===== */
+
+.badge-estado-plan {
+    display: block;
+
+    margin-top: 4px;
+
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.badge-estado-plan.pendiente {
+    color: #9A5200; /* era var(--warning) → 2.0:1 */
+}
+
+.badge-estado-plan.guardado {
+    color: #276E2B; /* era var(--success) → 4.1:1 */
+}
+
+/* FASE 3F.2.4 · I3 · estado nuevo "guardando…" (POST en vuelo) */
+.badge-estado-plan.guardando {
+    color: var(--surface); /* 8.0:1 sobre el badge inactivo */
+}
+
+/*
+ * FASE 3F.2.4 · M1 · badge activo: sobre --blue #1976d2 solo
+ * el blanco llega a 4.5:1 (4.60); los tonos anteriores daban
+ * 3.6:1 / 3.7:1. Los estados siguen distinguiéndose por el
+ * texto ("cambios pendientes" / "guardado" / "guardando…").
+ */
+.boton-vehiculo-plan.active .badge-estado-plan.pendiente {
+    color: #FFFFFF;
+}
+
+.boton-vehiculo-plan.active .badge-estado-plan.guardado {
+    color: #FFFFFF;
+}
+
+.boton-vehiculo-plan.active .badge-estado-plan.guardando {
+    color: #FFFFFF;
+}
+
+.ruta-propuesta-header {
+    margin-bottom: 9px;
+}
+
+.indicador-color-ruta {
+    width: 12px;
+    height: 28px;
+
+    flex: 0 0 12px;
+
+    border-radius: 4px;
+}
+
+.ruta-propuesta {
+    min-width: 0;
 }
 
 .plan-bloque {
@@ -1844,7 +3159,7 @@ button {
 ============================================================ */
 
 .tarjeta-plan-vehiculo {
-    border: 2px solid var(--border);
+    border: 2px solid var(--border-secondary);
     border-radius: 9px;
 
     background: #f1f6fb;
@@ -1923,7 +3238,7 @@ button {
 
     border-radius: 7px;
 
-    background: #edf2f4;
+    background: var(--surface-soft);
 
     font-size: 15px;
 }
@@ -1987,10 +3302,10 @@ button {
 
     flex-shrink: 0;
 
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-secondary);
     border-radius: 6px;
 
-    background: white;
+    background: var(--surface);
     color: var(--muted);
 
     display: flex;
@@ -2061,10 +3376,10 @@ button {
 
     padding: 5px 7px;
 
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-secondary);
     border-radius: 5px;
 
-    background: white;
+    background: var(--surface);
     color: var(--text);
 
     font-family: inherit;
@@ -2158,7 +3473,7 @@ button {
 .sin-paradas {
     padding: 9px;
 
-    border: 1px dashed var(--border);
+    border: 1px dashed var(--border-secondary);
     border-radius: 6px;
 
     color: var(--muted);
@@ -2189,10 +3504,10 @@ button {
 
     padding: 6px 7px;
 
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-secondary);
     border-radius: 6px;
 
-    background: white;
+    background: var(--surface);
 }
 
 .parada-plan:hover {
@@ -2209,7 +3524,7 @@ button {
 
     border-radius: 50%;
 
-    background: #edf2f4;
+    background: var(--surface-soft);
     color: var(--text);
 
     font-size: 9px;
@@ -2234,7 +3549,7 @@ button {
     text-overflow: ellipsis;
     white-space: nowrap;
 
-    font-size: 10px;
+    font-size: 12px;
 }
 
 .detalles-parada {
@@ -2246,13 +3561,13 @@ button {
 
     color: var(--muted);
 
-    font-size: 8px;
+    font-size: 11px;
 }
 
 .estado-parada {
     white-space: nowrap;
 
-    font-size: 8px;
+    font-size: 11px;
     font-weight: 700;
 }
 
@@ -2281,6 +3596,14 @@ button {
     display: flex;
 
     gap: 3px;
+
+    flex-shrink: 0;
+
+    padding: 2px 3px;
+
+    border-radius: 5px;
+
+    background: var(--surface-soft);
 }
 
 .acciones-parada button {
@@ -2289,10 +3612,10 @@ button {
 
     padding: 0;
 
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-secondary);
     border-radius: 5px;
 
-    background: white;
+    background: var(--surface);
     color: var(--muted);
 
     font-size: 11px;
@@ -2333,13 +3656,13 @@ button {
 
     padding: 8px 12px;
 
-    border: 1px solid var(--primary);
+    border: 1px solid var(--green);
     border-radius: 7px;
 
-    background: var(--primary);
+    background: var(--green);
     color: white;
 
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 700;
 
     cursor: pointer;
@@ -2348,7 +3671,8 @@ button {
 }
 
 .boton-anadir-parada-principal:hover {
-    background: var(--primary-dark);
+    background: #2e7d32;
+    border-color: #2e7d32;
 }
 
 .opciones-anadir-parada {
@@ -2373,7 +3697,7 @@ button {
 
     padding: 7px 8px;
 
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-secondary);
     border-radius: 6px;
 
     background: var(--surface-soft);
@@ -2390,7 +3714,7 @@ button {
 .opcion-anadir-parada:hover {
     border-color: var(--primary);
 
-    background: white;
+    background: var(--surface);
 }
 
 .opcion-anadir-parada .icono {
@@ -2421,10 +3745,10 @@ button {
 
     padding: 5px 7px;
 
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-secondary);
     border-radius: 5px;
 
-    background: white;
+    background: var(--surface);
 
     font-size: 9px;
 }
@@ -2460,7 +3784,7 @@ button {
 
     color: var(--muted);
 
-    font-size: 8px;
+    font-size: 11px;
 
     font-style: italic;
 }
@@ -2483,13 +3807,13 @@ button {
 
     padding: 5px 9px;
 
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-secondary);
     border-radius: 5px;
 
-    background: white;
+    background: var(--surface);
     color: var(--text);
 
-    font-size: 9px;
+    font-size: 11px;
     font-weight: 600;
 }
 
@@ -2562,10 +3886,10 @@ button {
 }
 
 .action-button {
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-secondary);
     border-radius: 8px;
 
-    background: white;
+    background: var(--surface);
 
     min-height: 65px;
 
@@ -2592,7 +3916,7 @@ button {
 .action-button.primary-action {
     border-color: var(--primary);
 
-    background: #f0f7f8;
+    background: var(--surface-soft);
 }
 
 .action-icon {
@@ -2607,7 +3931,7 @@ button {
 
     border-radius: 7px;
 
-    background: #edf2f4;
+    background: var(--surface-soft);
     color: var(--primary);
 
     font-size: 16px;
@@ -2637,7 +3961,7 @@ button {
 ============================================================ */
 
 .footer {
-    max-width: 1900px;
+    max-width: 2400px;
 
     margin: 0 auto;
 
@@ -2651,8 +3975,12 @@ button {
     font-size: 9px;
 }
 
+.footer span {
+    color: #475569;
+}
+
 .footer strong {
-    color: var(--warning);
+    color: #92400E;
 }
 
 
@@ -2674,205 +4002,316 @@ button {
 
 
 /* ============================================================
-   RESPONSIVE
+   RESPONSIVE · 1350
 ============================================================ */
 
 @media (max-width: 1350px) {
+
     .workspace {
-        grid-template-columns: 225px minmax(520px,1fr) 290px;
+        grid-template-columns:
+            225px
+            minmax(0, 1fr)
+            290px;
     }
+
     .dashboard-lower {
-        grid-template-columns: minmax(320px,.8fr) minmax(520px,1.2fr);
+        grid-template-columns:
+            minmax(0, 1.38fr)
+            minmax(0, 1fr);
     }
 }
 
+
+/* ============================================================
+   RESPONSIVE · 1150
+============================================================ */
+
 @media (max-width: 1150px) {
+
     .workspace {
-        grid-template-columns: 210px minmax(450px,1fr) 270px;
+        grid-template-columns:
+            210px
+            minmax(0, 1fr)
+            270px;
     }
+
     .plan-vehiculo-columnas {
         grid-template-columns: 1fr;
     }
+
     .plan-columna + .plan-columna {
         border-left: 0;
-        border-top: 1px solid var(--border);
+
+        border-top: 1px solid var(--border-divider);
+
         padding-left: 0;
         padding-top: 10px;
     }
+
     .dashboard-lower {
         grid-template-columns: 1fr;
     }
-    .acciones-oficina-lista {
-        gap: 8px;
+
+    .acciones-oficina {
+        padding: 11px;
     }
 }
+
+
+/* ============================================================
+   RESPONSIVE · 900
+============================================================ */
 
 @media (max-width: 900px) {
+
     .workspace {
         display: flex;
+
         flex-direction: column;
+
         height: auto;
+
         min-height: 0;
     }
+
     .left-panel {
         border-right: 0;
-        border-bottom: 1px solid var(--border);
+
+        border-bottom: 1px solid var(--border-divider);
+
         max-height: 260px;
     }
+
     .map-panel {
-        height: 620px;
-        min-height: 620px;
+        height: 540px;
+
+        min-height: 540px;
     }
+
     .right-panel {
         border-left: 0;
-        border-top: 1px solid var(--border);
+
+        border-top: 1px solid var(--border-divider);
+
         max-height: none;
     }
+
     .dashboard-lower {
         grid-template-columns: 1fr;
     }
+
     .resumen-kpis {
-        grid-template-columns: repeat(4,1fr);
+        grid-template-columns: repeat(4, 1fr);
     }
+
     .acciones-oficina-lista {
         gap: 8px;
     }
-    .controles-avisos-pendientes,
-    .avisos-pendientes-controles {
-        grid-template-columns: minmax(0,1fr) 118px;
-    }
 }
 
+
+/* ============================================================
+   RESPONSIVE · 800
+============================================================ */
+
 @media (max-width: 800px) {
+
     .datos-configuracion-plan {
         grid-template-columns: 1fr;
     }
+
+    .parada-plan {
+        grid-template-columns:
+            22px
+            24px
+            minmax(0, 1fr);
+    }
+
+    .estado-parada {
+        grid-column: 3;
+    }
+
+    .acciones-parada {
+        grid-column: 3;
+
+        justify-content: flex-end;
+    }
+
     .acciones-plan {
         flex-wrap: wrap;
     }
-    .acciones-oficina-lista {
+
+    .controles-avisos-pendientes {
         grid-template-columns: 1fr;
     }
-    .controles-avisos-pendientes,
-    .avisos-pendientes-controles {
-        grid-template-columns: 1fr;
+
+    .filtro-avisos-pendientes,
+    .boton-ver-todos-avisos {
+        width: 100%;
     }
-    .plan-vehiculo-columnas {
-        grid-template-columns: 1fr;
-    }
-    .tabla-avisos,
-    .tabla-avisos-pendientes {
-        min-width: 720px;
-    }
-    .contenido-aviso-pendiente {
-        grid-template-columns: 1fr 1fr;
-    }
-    .dato-aviso:first-child {
-        grid-column: 1 / -1;
+
+    .filtro-avisos-pendientes select {
+        width: 100%;
     }
 }
 
+
+/* ============================================================
+   RESPONSIVE · 700
+============================================================ */
+
 @media (max-width: 700px) {
+
     .topbar {
-        height: auto;
-        min-height: 68px;
-        padding: 10px 14px;
+        height: 54px;
+
+        padding: 0 12px;
     }
+
     .system-status {
         display: none;
     }
+
     .dashboard {
         padding: 8px;
     }
+
     .map-panel {
-        height: 500px;
-        min-height: 500px;
+        height: 440px;
+
+        min-height: 440px;
     }
+
     .resumen-kpis {
         grid-template-columns: 1fr 1fr;
     }
+
     .selector-vehiculos-plan {
         grid-template-columns: 1fr;
     }
+
+    .planning-main-header .planning-title-row {
+        flex-wrap: wrap;
+        gap: 5px 10px;
+    }
+
+    .planning-header-summary {
+        white-space: normal;
+    }
+
     .opciones-anadir-parada {
         grid-template-columns: 1fr 1fr;
     }
+
     .acciones-oficina {
         margin-top: 14px;
+
         padding: 10px;
     }
+
     .accion-oficina {
         min-height: 46px;
     }
-    .cabecera-aviso-pendiente {
-        grid-template-columns: 30px minmax(0,1fr);
-    }
-    .ruta-aviso-pendiente {
-        grid-column: 2;
-        justify-self: start;
+
+    .tabla-avisos-wrapper {
+        margin-left: -1px;
+        margin-right: -1px;
+
+        width: calc(100% + 2px);
     }
 }
 
+
+/* ============================================================
+   RESPONSIVE · 560
+============================================================ */
+
 @media (max-width: 560px) {
-    .brand-text span {
-        display: none;
-    }
-    .brand-text strong {
+
+    .brand-title {
         font-size: 12px;
     }
+
     .top-clock {
         font-size: 16px;
     }
+
     .lower-panel {
         padding: 10px;
     }
+
     .lower-panel-header {
         align-items: flex-start;
     }
+
     .plan-vehiculo-columnas {
         grid-template-columns: 1fr;
     }
+
     .parada-plan {
-        grid-template-columns: 22px 24px minmax(0,1fr);
+        grid-template-columns:
+            22px
+            24px
+            minmax(0, 1fr);
     }
-    .estado-parada,
-    .acciones-parada {
+
+    .estado-parada {
         grid-column: 3;
     }
+
     .acciones-parada {
+        grid-column: 3;
+
         justify-content: flex-end;
     }
-    .tabla-avisos,
-    .tabla-avisos-pendientes {
-        min-width: 700px;
+
+    .tabla-avisos-pendientes td {
+        height: 48px;
     }
-    .contenido-aviso-pendiente {
+
+    .tabla-avisos-pendientes thead th {
+        height: 32px;
+    }
+
+    .controles-avisos-pendientes {
+        gap: 6px;
+    }
+
+    .datos-vehiculo-plan,
+    .horarios-plan,
+    .resumen-plan-datos {
         grid-template-columns: 1fr;
     }
-    .dato-aviso:first-child {
-        grid-column: auto;
-    }
-    .pie-aviso-pendiente,
-    .asignacion-aviso {
-        grid-template-columns: 1fr;
-    }
-    .pie-aviso-pendiente {
-        display: grid;
-    }
-    .estado-aviso-pendiente {
-        justify-self: start;
-    }
-    .asignacion-aviso {
-        display: grid;
-    }
+
     .accion-oficina-texto strong {
         font-size: 10px;
     }
+
     .accion-oficina-texto small {
         font-size: 8px;
     }
 }
-
 /* ============================================================
-   FIN · STYLES.CSS
+UTILIDAD · ELEMENTOS OCULTOS
 ============================================================ */
+.oculto {
+    display: none !important;
+}
+
+/*
+ * Etiqueta accesible: oculta visualmente pero disponible para
+ * lectores de pantalla. Usada por los <label> de la sección
+ * "Avisos pendientes" (buscador, filtro y selector de vehículo).
+ * No usar display: none: rompería la accesibilidad.
+ */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
