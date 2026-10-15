@@ -44,49 +44,9 @@
                 CRF
             </div>
 
-            <div class="brand-text">
-
-                <strong>
-                    COORDINACIÓN DE RECOGIDAS
-                </strong>
-
-                <span>
-                    Centro de Recuperación de Fauna La Granja de El Saler
-                </span>
-
-            </div>
+            <strong class="brand-title">· COORDINACIÓN DE RECOGIDAS</strong>
 
         </div>
-
-
-        <div class="system-status">
-
-            <span class="status-dot"></span>
-
-            <div>
-
-                <strong>
-                    Sistema operativo
-                </strong>
-
-                <small>
-                    GPS y comunicaciones activos
-                </small>
-
-            </div>
-
-        </div>
-
-
-        <div
-            id="reloj"
-            class="top-clock"
-        >
-            --:--:--
-        </div>
-
-    </header>
-
 
 
     <!-- ========================================================
@@ -194,6 +154,17 @@
 
 
     </nav>
+
+
+
+        <div
+            id="reloj"
+            class="top-clock"
+        >
+            --:--:--
+        </div>
+
+    </header>
 
 
 
@@ -365,16 +336,16 @@
 
                         <input
                             type="checkbox"
-                            id="capa-rutas"
+                            id="capa-vehiculos"
                             checked
                         >
 
-                        <span class="layer-symbol route-symbol">
-                            ━
+                        <span class="layer-symbol">
+                            🚐
                         </span>
 
                         <span>
-                            Rutas
+                            Vehículos
                         </span>
 
                     </label>
@@ -393,7 +364,7 @@
                         </span>
 
                         <span>
-                            Puntos colaboradores
+                            Puntos de recogida
                         </span>
 
                     </label>
@@ -418,53 +389,38 @@
                     </label>
 
 
-                    <label class="layer-option">
+                    <details class="rutas-desplegable" open>
 
-                        <input
-                            type="checkbox"
-                            id="capa-vehiculos"
-                            checked
+                        <summary class="layer-option rutas-summary">
+
+                            <span class="layer-symbol route-symbol">
+                                ━
+                            </span>
+
+                            <span>
+                                RUTAS
+                            </span>
+
+                            <span
+                                class="flecha-desplegable"
+                                aria-hidden="true"
+                            >
+                                ▾
+                            </span>
+
+                        </summary>
+
+
+                        <div
+                            id="leyenda-rutas"
+                            class="route-legend"
                         >
-
-                        <span class="layer-symbol">
-                            🚐
-                        </span>
-
-                        <span>
-                            Vehículos
-                        </span>
-
-                    </label>
-
-
-                </div>
-
-
-                <div class="panel-divider"></div>
-
-
-                <div class="panel-header">
-
-                    <div>
-
-                        <div class="eyebrow">
-                            ZONAS DE TRABAJO
+                            <!-- Generado por rutas.js -->
                         </div>
 
-                        <h2>
-                            Rutas
-                        </h2>
-
-                    </div>
-
-                </div>
+                    </details>
 
 
-                <div
-                    id="leyenda-rutas"
-                    class="route-legend"
-                >
-                    <!-- Generado por rutas.js -->
                 </div>
 
 
@@ -503,6 +459,15 @@
                             id="btn-centrar-mapa"
                         >
                             🎯 Centrar
+                        </button>
+
+                        <button
+                            type="button"
+                            class="map-tool"
+                            id="btn-distribucion"
+                            title="Restaurar la distribución original de paneles"
+                        >
+                            ↺ Distribución
                         </button>
 
                     </div>
@@ -888,14 +853,6 @@
                                 0 rutas · 0 animales
                             </span>
 
-                            <button
-                                type="button"
-                                id="btn-ver-detalle-planificacion"
-                                class="planning-detail-link"
-                            >
-                                Ver detalle
-                            </button>
-
                         </div>
 
                     </div>
@@ -1073,7 +1030,7 @@
     <footer class="footer">
 
         <span>
-            CRF La Granja de El Saler
+            Centro de Recuperación de Fauna La Granja de El Saler
         </span>
 
         <span>
@@ -1082,7 +1039,7 @@
 
         <span>
             <strong>
-                GPS operativo
+                Sistema operativo · GPS y comunicaciones activos
             </strong>
         </span>
 
@@ -1110,6 +1067,7 @@
 <script src="js/config.js"></script>
 <script src="js/mock-data.js"></script>
 <script src="js/api.js"></script>
+<script src="js/servicio-osrm.js"></script>
 <script src="js/mapa.js"></script>
 <script src="js/vehiculos.js"></script>
 <script src="js/avisos.js"></script>
