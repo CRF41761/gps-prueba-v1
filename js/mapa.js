@@ -15,7 +15,21 @@ var capas = {
 var marcadoresVehiculos = {};
 var posicionesVehiculos = {};
 
+var marcadoresAvisos = {};
+
 var CENTRO_VALENCIA = [39.4699, -0.3763];
+
+/* Modo selección de punto en mapa (una sola parada por clic) */
+var vehiculoSeleccionNuevoPunto = null;
+var modoSeleccionNuevoPunto = false;
+var intervaloIndicacionSeleccionPunto = null;
+var seleccionPuntoConfigurada = false;
+
+var TEXTO_SELECCION_PUNTO =
+    "SELECCIÓN DE PUNTO · Haz clic en el mapa (Escape para cancelar)";
+
+var TEXTO_ESTADO_MAPA_NORMAL =
+    "GPS operativo · posiciones simuladas";
 
 
 /* ============================================================
@@ -117,6 +131,8 @@ function inicializarMapa() {
     dibujarVehiculos();
 
     configurarCapasMapa();
+
+    configurarSeleccionPuntoEnMapa();
 }
 
 
@@ -145,6 +161,12 @@ function dibujarRutas() {
     var rutas = obtenerRutasGeometricasMock();
 
     rutas.forEach(function(ruta) {
+
+        var casilla = document.getElementById(
+            "capa-ruta-" + String(ruta.ruta_id).toUpperCase()
+        );
+
+        if (casilla && !casilla.checked) return;
 
         var linea = L.polyline(
             ruta.coordenadas,
@@ -303,6 +325,8 @@ function dibujarAvisos() {
 
     capas.avisos.clearLayers();
 
+    marcadoresAvisos = {};
+
     var avisos = [];
 
     if (
@@ -369,6 +393,20 @@ function dibujarAvisos() {
             aviso.aviso_id ||
             aviso.id ||
             "Aviso";
+
+
+        var idAvisoIndice =
+            typeof obtenerIdAviso === "function"
+                ? obtenerIdAviso(aviso)
+                : id;
+
+
+        if (
+            idAvisoIndice !== null &&
+            idAvisoIndice !== undefined
+        ) {
+            marcadoresAvisos[String(idAvisoIndice)] = marker;
+        }
 
 
         var especie =
@@ -548,6 +586,13 @@ function dibujarVehiculos() {
                 );
 
 
+            var tablet =
+                vehiculo.tablet ||
+                vehiculo.tablet_id ||
+                vehiculo.id_tablet ||
+                "";
+
+
             var icono =
                 L.divIcon({
 
@@ -562,6 +607,7 @@ function dibujarVehiculos() {
 
                         '<div class="vehicle-marker-label">' +
                         escaparHTML(id) +
+                        (tablet ? " · " + escaparHTML(tablet) : "") +
                         "</div>",
 
                     iconSize: [38, 38],
@@ -699,7 +745,7 @@ function centrarVehiculo(idVehiculo) {
         ),
 
         {
-            animate: true
+            animate: false
         }
     );
 
@@ -707,6 +753,105 @@ function centrarVehiculo(idVehiculo) {
     marcadoresVehiculos[
         idVehiculo
     ].openPopup();
+}
+
+
+/* ============================================================
+   VER AVISO EN MAPA
+============================================================ */
+
+function verAvisoEnMapa(avisoId) {
+
+    var aviso =
+        typeof encontrarAvisoPorId === "function"
+            ? encontrarAvisoPorId(avisoId)
+            : null;
+
+
+    if (!aviso) {
+
+        alert("No se ha encontrado el aviso.");
+
+        return;
+    }
+
+
+    var lat = obtenerLat(aviso);
+    var lng = obtenerLng(aviso);
+
+
+    if (!coordenadasValidas(lat, lng)) {
+
+        alert("Este aviso no tiene ubicación disponible.");
+
+        return;
+    }
+
+
+    var marker =
+        marcadoresAvisos[String(avisoId)];
+
+
+    if (!marker) {
+
+        alert("No se ha encontrado la ubicación del aviso.");
+
+        return;
+    }
+
+
+    var casilla =
+        document.getElementById(
+            "capa-avisos"
+        );
+
+
+    if (
+        casilla &&
+        !casilla.checked
+    ) {
+
+        casilla.checked = true;
+
+        if (
+            typeof cambiarVisibilidadCapa ===
+                "function"
+        ) {
+            cambiarVisibilidadCapa(
+                "avisos",
+                true
+            );
+        }
+    }
+
+
+    if (!mapa) {
+        return;
+    }
+
+
+    mapa.setView(
+        marker.getLatLng(),
+        Math.max(
+            mapa.getZoom(),
+            13
+        ),
+        {
+            animate: false
+        }
+    );
+
+
+    marker.openPopup();
+}
+
+
+if (typeof window !== "undefined") {
+    window.verAvisoEnMapa = verAvisoEnMapa;
+}
+
+if (typeof globalThis !== "undefined") {
+    globalThis.verAvisoEnMapa = verAvisoEnMapa;
 }
 
 
@@ -779,8 +924,6 @@ function configurarCapasMapa() {
 
     ["capa-vehiculos", "vehiculos"],
 
-    ["capa-rutas", "rutas"],
-
     ["capa-puntos", "puntos"],
 
     ["capa-avisos", "avisos"]
@@ -841,6 +984,22 @@ function configurarCapasMapa() {
     if (btnValencia) {
 
         btnValencia.addEventListener(
+            "click",
+            centrarValencia
+        );
+
+    }
+
+
+    var btnCentrarMapa =
+        document.getElementById(
+            "btn-centrar-mapa"
+        );
+
+
+    if (btnCentrarMapa) {
+
+        btnCentrarMapa.addEventListener(
             "click",
             centrarValencia
         );
@@ -909,3 +1068,328 @@ function normalizarEstadoAviso(
 
     return "PENDIENTE";
 }
+
+
+/* ============================================================
+   SELECCIÓN DE PUNTO EN MAPA
+============================================================ */
+
+function configurarSeleccionPuntoEnMapa() {
+
+    if (seleccionPuntoConfigurada) {
+        return;
+    }
+
+    seleccionPuntoConfigurada = true;
+
+
+    /* Único listener de clic del mapa. Comprueba al principio
+       si el modo está activo, así el comportamiento normal
+       del mapa permanece intacto. */
+
+    if (mapa) {
+
+        mapa.on(
+            "click",
+            manejarClicMapaSeleccionPunto
+        );
+    }
+
+
+    /* Único listener de teclado. Escape solo actúa si el
+       modo de selección está activo. */
+
+    document.addEventListener(
+        "keydown",
+        manejarTeclaSeleccionPunto
+    );
+}
+
+
+function mostrarIndicacionSeleccionPunto() {
+
+    var elemento =
+        document.getElementById(
+            "map-status-text"
+        );
+
+
+    var indicador =
+        document.getElementById(
+            "map-status"
+        );
+
+
+    var punto =
+        document.querySelector(
+            "#map-status .status-dot"
+        );
+
+
+    /* Anula el temporizador de 2500 ms de actualizarEstadoMapa()
+       para que la indicación no se restaure sola. */
+
+    window.clearTimeout(
+        window._estadoMapaTimeout
+    );
+
+
+    if (elemento) {
+
+        elemento.textContent =
+            TEXTO_SELECCION_PUNTO;
+    }
+
+
+    if (punto) {
+
+        punto.style.background =
+            "#D97706";
+    }
+
+
+    /* El indicador no debe interceptar el clic de selección. */
+
+    if (indicador) {
+
+        indicador.style.pointerEvents =
+            "none";
+    }
+
+
+    /* Reafirma la indicación mientras el modo siga activo,
+       por si otra parte de la app vuelve a escribir el estado. */
+
+    window.clearInterval(
+        intervaloIndicacionSeleccionPunto
+    );
+
+
+    intervaloIndicacionSeleccionPunto =
+        window.setInterval(
+            function() {
+
+                if (!modoSeleccionNuevoPunto) {
+                    return;
+                }
+
+                window.clearTimeout(
+                    window._estadoMapaTimeout
+                );
+
+                var texto =
+                    document.getElementById(
+                        "map-status-text"
+                    );
+
+                if (texto) {
+
+                    texto.textContent =
+                        TEXTO_SELECCION_PUNTO;
+                }
+            },
+            1000
+        );
+}
+
+
+function ocultarIndicacionSeleccionPunto() {
+
+    window.clearInterval(
+        intervaloIndicacionSeleccionPunto
+    );
+
+    intervaloIndicacionSeleccionPunto = null;
+
+
+    window.clearTimeout(
+        window._estadoMapaTimeout
+    );
+
+
+    var indicador =
+        document.getElementById(
+            "map-status"
+        );
+
+
+    if (indicador) {
+
+        indicador.style.pointerEvents =
+            "";
+    }
+
+
+    var punto =
+        document.querySelector(
+            "#map-status .status-dot"
+        );
+
+
+    if (punto) {
+
+        punto.style.background =
+            "";
+    }
+
+
+    var elemento =
+        document.getElementById(
+            "map-status-text"
+        );
+
+
+    if (elemento) {
+
+        elemento.textContent =
+            TEXTO_ESTADO_MAPA_NORMAL;
+    }
+}
+
+
+function activarSeleccionPuntoMapa(
+    vehiculoId
+) {
+
+    if (
+        vehiculoId === null ||
+        vehiculoId === undefined ||
+        String(vehiculoId) === ""
+    ) {
+        return false;
+    }
+
+
+    vehiculoSeleccionNuevoPunto =
+        String(vehiculoId);
+
+
+    modoSeleccionNuevoPunto = true;
+
+
+    if (mapa && mapa.getContainer()) {
+
+        mapa.getContainer().style.cursor =
+            "crosshair";
+    }
+
+
+    mostrarIndicacionSeleccionPunto();
+
+
+    return true;
+}
+
+
+function desactivarSeleccionPuntoMapa() {
+
+    modoSeleccionNuevoPunto = false;
+
+    vehiculoSeleccionNuevoPunto = null;
+
+
+    if (mapa && mapa.getContainer()) {
+
+        mapa.getContainer().style.cursor =
+            "";
+    }
+
+
+    ocultarIndicacionSeleccionPunto();
+}
+
+
+function manejarClicMapaSeleccionPunto(
+    evento
+) {
+
+    if (!modoSeleccionNuevoPunto) {
+        return;
+    }
+
+
+    if (!evento || !evento.latlng) {
+        return;
+    }
+
+
+    var lat =
+        Number(evento.latlng.lat);
+
+
+    var lng =
+        Number(evento.latlng.lng);
+
+
+    /* Validación explícita: null, undefined, NaN o valores
+       fuera de rango nunca se aceptan. */
+
+    if (
+        !Number.isFinite(lat) ||
+        !Number.isFinite(lng) ||
+        lat < -90 ||
+        lat > 90 ||
+        lng < -180 ||
+        lng > 180
+    ) {
+        return;
+    }
+
+
+    var vehiculoId =
+        vehiculoSeleccionNuevoPunto;
+
+
+    /* Un solo clic: se desactiva antes de crear la parada
+       para que un segundo clic no añada otra. */
+
+    desactivarSeleccionPuntoMapa();
+
+
+    if (!vehiculoId) {
+        return;
+    }
+
+
+    if (
+        typeof window.crearParadaDesdeMapa ===
+            "function"
+    ) {
+
+        window.crearParadaDesdeMapa(
+            vehiculoId,
+            lat,
+            lng
+        );
+    }
+}
+
+
+function manejarTeclaSeleccionPunto(
+    evento
+) {
+
+    if (!modoSeleccionNuevoPunto) {
+        return;
+    }
+
+
+    if (!evento) {
+        return;
+    }
+
+
+    if (
+        evento.key !== "Escape" &&
+        evento.key !== "Esc"
+    ) {
+        return;
+    }
+
+
+    desactivarSeleccionPuntoMapa();
+}
+
+
+window.activarSeleccionPuntoMapa =
+    activarSeleccionPuntoMapa;
