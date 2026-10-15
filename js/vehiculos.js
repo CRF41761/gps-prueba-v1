@@ -57,6 +57,13 @@ function renderizarVehiculos() {
                 "R" + (indice + 1);
 
 
+            var tablet =
+                vehiculo.tablet ||
+                vehiculo.tablet_id ||
+                vehiculo.id_tablet ||
+                "";
+
+
             var activo =
                 vehiculo.activo !== false;
 
@@ -102,6 +109,10 @@ function renderizarVehiculos() {
 
                     '<span>Vehículo <strong>' +
                     escaparHTML(id) +
+                    '</strong></span>' +
+
+                    '<span class="vehicle-tablet">Tablet <strong>' +
+                    escaparHTML(tablet || "—") +
                     '</strong></span>' +
 
                     '<span>Ruta <strong>' +
