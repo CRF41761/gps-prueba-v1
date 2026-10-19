@@ -110,6 +110,13 @@ async function iniciarAplicacion() {
 
 
         /* --------------------------------------------
+           FECHA DE PLANIFICACIÓN · INDICADOR DE JORNADA
+        -------------------------------------------- */
+
+        actualizarFechaPlanificacion();
+
+
+        /* --------------------------------------------
            ACCIONES
         -------------------------------------------- */
 
@@ -1185,15 +1192,6 @@ function formatearFechaLargaServidor(valor) {
 
 function actualizarFechaPlanificacion() {
 
-    var elemento =
-        document.getElementById(
-            "fecha-planificacion"
-        );
-
-
-    if (!elemento) return;
-
-
     var info = null;
 
     try {
@@ -1244,7 +1242,35 @@ function actualizarFechaPlanificacion() {
     }
 
 
-    elemento.textContent = texto;
+    /*
+     * Indicador original (vista «Planificación») y nuevo
+     * indicador de «Planificación del día». Si algún elemento
+     * no existe en la vista actual, simplemente no se escribe
+     * en él: nunca provoca errores.
+     */
+
+    var elementosFecha = [
+        "fecha-planificacion",
+        "fecha-planificacion-dia"
+    ];
+
+
+    elementosFecha.forEach(
+        function(idElemento) {
+
+            var elemento =
+                document.getElementById(
+                    idElemento
+                );
+
+
+            if (elemento) {
+
+                elemento.textContent = texto;
+            }
+
+        }
+    );
 
 }
 
