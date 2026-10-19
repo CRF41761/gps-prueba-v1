@@ -176,7 +176,88 @@ function obtenerTodosAvisos() {
 
 
 /**
+ * FASE AVISOS · F3: un plan pertenece a la fecha seleccionada
+ * (fecha de pertenencia cargada en esta sesión). Los planes de
+ * otras fechas no deben bloquear traslados ni ocultar avisos.
+ */
+function planPerteneceAFechaSeleccionada(plan) {
+
+    if (!plan) {
+        return false;
+    }
+
+    const fechaPlan =
+        fechaServidorValidaRutas(plan.fecha);
+
+    const fechaActual =
+        fechaServidorValidaRutas(fechaServidor);
+
+    /*
+     * Sin fecha (servidor desconocido o plan sin fecha) no se
+     * puede distinguir el día: se mantiene la protección para
+     * no duplicar avisos dentro de la sesión.
+     */
+    if (!fechaPlan || !fechaActual) {
+        return true;
+    }
+
+    return fechaPlan === fechaActual;
+}
+
+
+function encontrarVehiculoConAvisoEnFechaSeleccionada(avisoId) {
+
+    for (
+        const vehiculoId
+        in planificacionDia
+    ) {
+
+        const plan =
+            planificacionDia[vehiculoId];
+
+        if (!planPerteneceAFechaSeleccionada(plan)) {
+            continue;
+        }
+
+        if (
+            plan.paradas &&
+            plan.paradas.some(
+                parada => {
+                    return (
+                        String(parada.tipo).toUpperCase() === "AVISO" &&
+                        String(
+                            parada.avisoId ||
+                            parada.id_aviso ||
+                            parada.id
+                        ) === String(avisoId)
+                    );
+                }
+            )
+        ) {
+            return vehiculoId;
+        }
+    }
+
+    return null;
+}
+
+
+function avisoEstaPlanificadoEnFechaSeleccionada(avisoId) {
+
+    return (
+        encontrarVehiculoConAvisoEnFechaSeleccionada(avisoId) !== null
+    );
+}
+
+
+/**
  * Devuelve únicamente los avisos pendientes.
+ *
+ * FASE AVISOS · F3: además excluye los avisos que ya están
+ * incorporados a una parada de la planificación de la fecha
+ * seleccionada, aunque su estado en la hoja AVISOS siga siendo
+ * PENDIENTE. Los avisos planificados solo en otras fechas no
+ * se excluyen.
  */
 function obtenerAvisosPendientes() {
 
@@ -186,8 +267,15 @@ function obtenerAvisosPendientes() {
                 normalizarEstado(
                     aviso.estado
                 ) === "PENDIENTE"
+        )
+        .filter(
+            aviso =>
+                !avisoEstaPlanificadoEnFechaSeleccionada(
+                    obtenerIdAviso(aviso)
+                )
         );
 }
+
 
 
 /**
@@ -457,6 +545,19 @@ function obtenerAvisosFiltrados() {
                 }
             }
 
+            /*
+             * FASE AVISOS · F3: con el filtro PENDIENTE no se
+             * muestran avisos ya incorporados a la planificación
+             * de la fecha seleccionada. El filtro no cambia.
+             */
+            if (
+                normalizarEstado(filtroAvisosEstado) === "PENDIENTE" &&
+                avisoEstaPlanificadoEnFechaSeleccionada(
+                    obtenerIdAviso(aviso)
+                )
+            ) {
+                return false;
+            }
 
             /* --------------------------------------------
                Filtro de texto
@@ -1623,208 +1724,16 @@ function asignarAvisoAVehiculo(
     }
 
 
-    const aviso =
-        encontrarAvisoPorId(
-            avisoId
-        );
-
-
-    if (!aviso) {
-
-        alert(
-            "No se ha encontrado el aviso."
-        );
-
-        return;
-    }
-
-
-    const plan =
-        planificacionDia[
-            vehiculoId
-        ];
-
-
-    if (!plan) {
-
-        alert(
-            "No se ha encontrado la planificación del vehículo."
-        );
-
-        return;
-    }
-
-
-    const vehiculoAnterior =
-        encontrarVehiculoConAviso(
-            avisoId
-        );
-
-
-    if (
-        vehiculoAnterior &&
-        vehiculoAnterior !==
-            vehiculoId
-    ) {
-
-        const nombreAnterior =
-            obtenerNombreVehiculo(
-                vehiculoAnterior
-            );
-
-
-        const nombreNuevo =
-            obtenerNombreVehiculo(
-                vehiculoId
-            );
-
-
-        const confirmar =
-            confirm(
-                `El aviso ya está asignado a ${nombreAnterior}.\n\n` +
-                `¿Quieres moverlo a ${nombreNuevo}?`
-            );
-
-
-        if (!confirmar) {
-            return;
-        }
-
-
-        quitarAvisoDePlanSinPerderAviso(
-            avisoId,
-            vehiculoAnterior
-        );
-    }
-
-
-    const yaExiste =
-        (
-            plan.paradas ||
-            []
-        ).some(
-            parada => {
-
-                return (
-                    String(
-                        parada.tipo
-                    ).toUpperCase() ===
-                        "AVISO" &&
-                    String(
-                        parada.avisoId ||
-                        parada.id_aviso ||
-                        parada.id
-                    ) ===
-                        String(avisoId)
-                );
-            }
-        );
-
-
-    if (!yaExiste) {
-
-        plan.paradas.push({
-
-            id:
-                `AVISO-${avisoId}`,
-
-            avisoId:
-                avisoId,
-
-            tipo:
-                "AVISO",
-
-            nombre:
-                obtenerPuntoAviso(
-                    aviso
-                ),
-
-            especie:
-                obtenerEspecieAviso(
-                    aviso
-                ),
-
-            cantidad:
-                obtenerCantidadAviso(
-                    aviso
-                ),
-
-            lat:
-                obtenerLat(
-                    aviso
-                ),
-
-            lng:
-                obtenerLng(
-                    aviso
-                ),
-
-            municipio:
-                obtenerMunicipioAviso(
-                    aviso
-                ),
-
-            estado:
-                "ASIGNADO",
-
-            origen:
-                "AVISO"
-        });
-    }
-
-
-    aviso.estado =
-        "ASIGNADO";
-
-
-    aviso.vehiculo_id =
-        vehiculoId;
-
-
-    aviso.vehiculo =
-        vehiculoId;
-
-
-    actualizarOrdenes(
-        plan
+    /*
+     * FASE AVISOS · F1: una única vía de alta/traslado,
+     * compartida con el menú «+ Añadir parada → Aviso
+     * pendiente». La validación, el traslado y los efectos
+     * posteriores viven en incorporarAvisoAPlan().
+     */
+    incorporarAvisoAPlan(
+        vehiculoId,
+        avisoId
     );
-
-
-    marcarPlanificacionModificada(
-        plan
-    );
-
-
-    renderizarAvisosPendientes();
-
-    renderizarPlanificacion();
-
-
-    if (
-        typeof renderizarAvisos ===
-        "function"
-    ) {
-
-        renderizarAvisos();
-    }
-
-
-    if (
-        typeof renderizarMapa ===
-        "function"
-    ) {
-
-        renderizarMapa();
-    }
-
-
-    if (
-        typeof dibujarRutas ===
-        "function"
-    ) {
-
-        dibujarRutas();
-    }
 }
 
 
@@ -1954,6 +1863,455 @@ function quitarAvisoDePlanSinPerderAviso(
     marcarPlanificacionModificada(
         plan
     );
+}
+
+
+/* ============================================================
+   FASE AVISOS · INCORPORACIÓN ÚNICA DE UN AVISO
+============================================================ */
+
+/**
+ * Busca un punto de recogida por identificador.
+ * No modifica datos; devuelve null si no existe.
+ */
+function buscarPuntoRecogidaPorId(puntoId) {
+
+    if (
+        puntoId === null ||
+        puntoId === undefined ||
+        String(puntoId).trim() === ""
+    ) {
+        return null;
+    }
+
+    const datos =
+        obtenerDatosAplicacion();
+
+    const puntos =
+        Array.isArray(datos.PUNTOS_RECOGIDA)
+            ? datos.PUNTOS_RECOGIDA
+            : [];
+
+    return (
+        puntos.find(
+            function(punto) {
+
+                const id =
+                    punto.id_punto ||
+                    punto.id ||
+                    punto.ID_PUNTO;
+
+                return String(id) === String(puntoId);
+            }
+        ) ||
+        null
+    );
+}
+
+
+/**
+ * FASE AVISOS · F4: coordenadas de un aviso.
+ *
+ * 1. Usa las del propio aviso si son válidas.
+ * 2. Si faltan, usa las del punto de recogida asociado.
+ * 3. Si tampoco hay, devuelve null (el alta se bloquea).
+ *
+ * Nunca inventa coordenadas ni toca otros tipos de parada.
+ */
+function resolverCoordenadasAviso(aviso) {
+
+    if (!aviso) {
+        return null;
+    }
+
+    const latAviso =
+        obtenerLat(aviso);
+
+    const lngAviso =
+        obtenerLng(aviso);
+
+    if (coordenadasValidas(latAviso, lngAviso)) {
+        return {
+            lat: Number(latAviso),
+            lng: Number(lngAviso),
+            origen: "AVISO"
+        };
+    }
+
+    const puntoId =
+        aviso.puntoId ||
+        aviso.id_punto ||
+        aviso.punto_id ||
+        aviso.PUNTO_ID ||
+        null;
+
+    if (!puntoId) {
+        return null;
+    }
+
+    const punto =
+        buscarPuntoRecogidaPorId(puntoId);
+
+    if (!punto) {
+        return null;
+    }
+
+    const latPunto =
+        obtenerLat(punto);
+
+    const lngPunto =
+        obtenerLng(punto);
+
+    if (!coordenadasValidas(latPunto, lngPunto)) {
+        return null;
+    }
+
+    return {
+        lat: Number(latPunto),
+        lng: Number(lngPunto),
+        origen: "PUNTO"
+    };
+}
+
+
+/**
+ * FASE AVISOS · F1: única vía de alta/traslado de un aviso,
+ * compartida por el menú «+ Añadir parada → Aviso pendiente»
+ * y por el panel «Avisos pendientes → Asignar/Cambiar».
+ *
+ * Reglas:
+ *  - valida destino, aviso, duplicado y coordenadas ANTES de
+ *    modificar ningún plan;
+ *  - si el aviso está en otro vehículo de la misma fecha, pide
+ *    confirmación y solo entonces lo retira del plan de origen;
+ *  - un traslado exige que AMBOS planes puedan guardarse; si
+ *    alguno está bloqueado no se toca nada;
+ *  - no crea persistencia nueva: usa el autosave existente y
+ *    no declara el guardado como confirmado.
+ */
+function incorporarAvisoAPlan(vehiculoId, avisoId) {
+
+    const planDestino =
+        planificacionDia[vehiculoId];
+
+    if (!planDestino) {
+
+        alert(
+            "No se ha encontrado la planificación del vehículo."
+        );
+
+        return {
+            ok: false,
+            motivo: "SIN_PLAN"
+        };
+    }
+
+    if (!avisoId) {
+
+        alert(
+            "Selecciona un aviso."
+        );
+
+        return {
+            ok: false,
+            motivo: "SIN_AVISO"
+        };
+    }
+
+    const aviso =
+        encontrarAvisoPorId(avisoId);
+
+    if (!aviso) {
+
+        alert(
+            "No se ha encontrado el aviso."
+        );
+
+        return {
+            ok: false,
+            motivo: "AVISO_INEXISTENTE"
+        };
+    }
+
+    const idAviso =
+        obtenerIdAviso(aviso);
+
+    if (
+        idAviso === null ||
+        idAviso === undefined ||
+        String(idAviso).trim() === ""
+    ) {
+
+        alert(
+            "El aviso no tiene identificador."
+        );
+
+        return {
+            ok: false,
+            motivo: "AVISO_SIN_ID"
+        };
+    }
+
+
+    /* --------------------------------------------------------
+       Duplicado dentro del plan de destino
+    -------------------------------------------------------- */
+
+    const yaEnDestino =
+        (planDestino.paradas || []).some(
+            function(parada) {
+
+                return (
+                    String(parada.tipo).toUpperCase() === "AVISO" &&
+                    String(
+                        parada.avisoId ||
+                        parada.id_aviso ||
+                        parada.id
+                    ) === String(idAviso)
+                );
+            }
+        );
+
+    if (yaEnDestino) {
+
+        alert(
+            "Este aviso ya está incluido en la ruta."
+        );
+
+        return {
+            ok: false,
+            motivo: "DUPLICADO"
+        };
+    }
+
+
+    /* --------------------------------------------------------
+       F4 · coordenadas obligatorias para una parada AVISO
+    -------------------------------------------------------- */
+
+    const coordenadas =
+        resolverCoordenadasAviso(aviso);
+
+    if (!coordenadas) {
+
+        alert(
+            "No se puede añadir el aviso: no tiene coordenadas " +
+            "válidas y su punto de recogida tampoco.\n\n" +
+            "Corrige la ubicación del aviso o añade el punto " +
+            "correspondiente."
+        );
+
+        return {
+            ok: false,
+            motivo: "SIN_COORDENADAS"
+        };
+    }
+
+
+    /* --------------------------------------------------------
+       Traslado desde otro vehículo de la misma fecha
+    -------------------------------------------------------- */
+
+    const vehiculoOrigen =
+        encontrarVehiculoConAvisoEnFechaSeleccionada(idAviso);
+
+    const esTraslado =
+        vehiculoOrigen !== null &&
+        String(vehiculoOrigen) !== String(vehiculoId);
+
+    if (esTraslado) {
+
+        const planOrigen =
+            planificacionDia[vehiculoOrigen];
+
+        if (!planOrigen) {
+
+            alert(
+                "No se ha encontrado la planificación del " +
+                "vehículo de origen."
+            );
+
+            return {
+                ok: false,
+                motivo: "SIN_PLAN_ORIGEN"
+            };
+        }
+
+        const motivoOrigen =
+            motivoBloqueoGuardado(planOrigen);
+
+        const motivoDestino =
+            motivoBloqueoGuardado(planDestino);
+
+        if (motivoOrigen || motivoDestino) {
+
+            alert(
+                "No se ha trasladado el aviso: el cambio no se " +
+                "podría guardar.\n\n" +
+                (motivoOrigen || motivoDestino)
+            );
+
+            return {
+                ok: false,
+                motivo: "GUARDADO_BLOQUEADO"
+            };
+        }
+
+        const nombreOrigen =
+            obtenerNombreVehiculo(vehiculoOrigen);
+
+        const nombreDestino =
+            obtenerNombreVehiculo(vehiculoId);
+
+        const confirmar =
+            confirm(
+                "El aviso ya está asignado a " + nombreOrigen + ".\n\n" +
+                "¿Quieres moverlo a " + nombreDestino + "?"
+            );
+
+        if (!confirmar) {
+            return {
+                ok: false,
+                motivo: "CANCELADO"
+            };
+        }
+    }
+
+
+    /* --------------------------------------------------------
+       Alta (y retirada del origen) tras validar todo.
+       Ambas mutaciones son síncronas: no hay await entre ellas.
+    -------------------------------------------------------- */
+
+    if (esTraslado) {
+
+        quitarAvisoDePlanSinPerderAviso(
+            idAviso,
+            vehiculoOrigen
+        );
+
+        invalidarCalculosPlanificacion(
+            planificacionDia[vehiculoOrigen]
+        );
+    }
+
+    planDestino.paradas.push({
+        id:
+            `AVISO-${idAviso}`,
+        avisoId:
+            idAviso,
+        tipo:
+            "AVISO",
+        nombre:
+            obtenerPuntoAviso(aviso),
+        especie:
+            obtenerEspecieAviso(aviso),
+        cantidad:
+            obtenerCantidadAviso(aviso),
+        lat:
+            coordenadas.lat,
+        lng:
+            coordenadas.lng,
+        municipio:
+            obtenerMunicipioAviso(aviso),
+        estado:
+            "ASIGNADO",
+        origen:
+            "AVISO"
+    });
+
+    aviso.estado =
+        "ASIGNADO";
+
+    aviso.vehiculo_id =
+        vehiculoId;
+
+    aviso.vehiculo =
+        vehiculoId;
+
+    actualizarOrdenes(
+        planDestino
+    );
+
+    marcarPlanificacionModificada(
+        planDestino
+    );
+
+    invalidarCalculosPlanificacion(
+        planDestino
+    );
+
+
+    /* --------------------------------------------------------
+       F2 · efectos homogéneos en las dos vías
+    -------------------------------------------------------- */
+
+    cerrarMenusAnadirParada();
+
+    renderizarAvisosPendientes();
+
+    if (
+        typeof renderizarAvisos ===
+        "function"
+    ) {
+        renderizarAvisos();
+    }
+
+    if (
+        typeof actualizarRutaEnMapa ===
+        "function"
+    ) {
+        actualizarRutaEnMapa(
+            planDestino
+        );
+    }
+
+    if (
+        typeof dibujarRutas ===
+        "function"
+    ) {
+        dibujarRutas();
+    }
+
+    recalcularYActualizarPlanificacionVehiculo(
+        vehiculoId
+    );
+
+    if (esTraslado) {
+        recalcularYActualizarPlanificacionVehiculo(
+            vehiculoOrigen
+        );
+    }
+
+
+    /* --------------------------------------------------------
+       Honestidad de guardado: el autosave existente enviará
+       cada plan. Si el destino está bloqueado se informa; el
+       cambio queda pendiente y visible, nunca "guardado".
+    -------------------------------------------------------- */
+
+    const motivoDestinoFinal =
+        motivoBloqueoGuardado(planDestino);
+
+    if (motivoDestinoFinal) {
+
+        establecerFeedbackGuardadoPlanificacion(
+            vehiculoId,
+            "error"
+        );
+
+        alert(
+            "El aviso se ha incorporado, pero el cambio NO se ha " +
+            "guardado:\n\n" +
+            motivoDestinoFinal
+        );
+    }
+
+    return {
+        ok: true,
+        traslado: esTraslado,
+        vehiculoOrigen: esTraslado ? vehiculoOrigen : null
+    };
 }
 
 
@@ -5546,7 +5904,7 @@ const plan =
      return;
  }
  /* --------------------------------------------------------
-    AVISO
+    AVISO · F1: lógica única compartida con el panel
  -------------------------------------------------------- */
  if (
      String(
@@ -5554,85 +5912,11 @@ const plan =
      ).toUpperCase() ===
      "AVISO"
  ) {
-     const aviso =
-         encontrarAvisoPorId(
-             elementoId
-         );
-     if (!aviso) {
-         alert(
-             "No se ha encontrado el aviso."
-         );
-         return;
-     }
-     const avisoId =
-         obtenerIdAviso(
-             aviso
-         );
-     const existe =
-         plan.paradas.some(
-             parada => {
-                 return (
-                     String(
-                         parada.tipo
-                     ).toUpperCase() ===
-                         "AVISO" &&
-                     String(
-                         parada.avisoId
-                     ) ===
-                         String(
-                             avisoId
-                         )
-                 );
-             }
-         );
-     if (existe) {
-         alert(
-             "Este aviso ya está incluido en la ruta."
-         );
-         return;
-     }
-     plan.paradas.push({
-         id:
-             `AVISO-${avisoId}`,
-         avisoId:
-             avisoId,
-         tipo:
-             "AVISO",
-         nombre:
-             obtenerPuntoAviso(
-                 aviso
-             ),
-         especie:
-             obtenerEspecieAviso(
-                 aviso
-             ),
-         cantidad:
-             obtenerCantidadAviso(
-                 aviso
-             ),
-         lat:
-             obtenerLat(
-                 aviso
-             ),
-         lng:
-             obtenerLng(
-                 aviso
-             ),
-         municipio:
-             obtenerMunicipioAviso(
-                 aviso
-             ),
-         estado:
-             "ASIGNADO",
-         origen:
-             "AVISO"
-     });
-     aviso.estado =
-         "ASIGNADO";
-     aviso.vehiculo_id =
-         vehiculoId;
-     aviso.vehiculo =
-         vehiculoId;
+     incorporarAvisoAPlan(
+         vehiculoId,
+         elementoId
+     );
+     return;
  }
  /* --------------------------------------------------------
     PUNTO HABITUAL
