@@ -2300,6 +2300,13 @@ function incorporarAvisoAPlan(vehiculoId, avisoId) {
     }
 
     if (
+        typeof dibujarAvisos ===
+        "function"
+    ) {
+        dibujarAvisos();
+    }
+
+    if (
         typeof actualizarRutaEnMapa ===
         "function"
     ) {
@@ -2776,6 +2783,20 @@ function cargarPlanificacionDesdeDatos() {
             );
         }
     );
+
+
+    /*
+     * La planificación cargada es la referencia de asignación:
+     * se redibujan los marcadores para reflejar avisos que solo
+     * constan en el plan y no en el estado de la hoja AVISOS.
+     */
+    if (
+        typeof dibujarAvisos ===
+        "function"
+    ) {
+
+        dibujarAvisos();
+    }
 }
 
 
@@ -7015,6 +7036,15 @@ function eliminarParada(
     ) {
 
         renderizarAvisos();
+    }
+
+
+    if (
+        typeof dibujarAvisos ===
+        "function"
+    ) {
+
+        dibujarAvisos();
     }
 
 
@@ -11375,6 +11405,15 @@ function limpiarEstadoLocalTrasBorrado(id, conservarEdiciones) {
 function refrescarTrasBorrado() {
 
     renderizarPlanificacion();
+
+
+    if (
+        typeof dibujarAvisos ===
+        "function"
+    ) {
+
+        dibujarAvisos();
+    }
 
 
     if (
