@@ -1220,16 +1220,58 @@ function crearFilaAvisoPendiente(
                     idAviso !== null &&
                     idAviso !== undefined
                         ? `
-                            <button
-                                type="button"
-                                class="boton-asignar-aviso"
-                                title="Ver aviso en el mapa"
-                                onclick="event.stopPropagation(); verAvisoEnMapa('${escaparHTML(
-                                    String(idAviso)
-                                )}')"
+                            <div
+                                class="acciones-aviso-tabla"
                             >
-                                📍
-                            </button>
+
+                                <button
+                                    type="button"
+                                    class="boton-asignar-aviso boton-accion-aviso"
+                                    title="Ver aviso en el mapa"
+                                    aria-label="Ver aviso ${escaparHTML(
+                                        String(idAviso)
+                                    )} en el mapa"
+                                    data-aviso-id="${escaparHTML(
+                                        String(idAviso)
+                                    )}"
+                                    onclick="event.stopPropagation(); verAvisoEnMapa(this.dataset.avisoId)"
+                                >
+                                    📍
+                                </button>
+
+
+                                <button
+                                    type="button"
+                                    class="boton-editar-aviso boton-accion-aviso"
+                                    title="Editar aviso"
+                                    aria-label="Editar aviso ${escaparHTML(
+                                        String(idAviso)
+                                    )}"
+                                    data-aviso-id="${escaparHTML(
+                                        String(idAviso)
+                                    )}"
+                                    onclick="event.stopPropagation(); abrirFormularioEdicionAviso(this.dataset.avisoId)"
+                                >
+                                    ✏️
+                                </button>
+
+
+                                <button
+                                    type="button"
+                                    class="boton-eliminar-aviso boton-accion-aviso"
+                                    title="Eliminar aviso"
+                                    aria-label="Eliminar aviso ${escaparHTML(
+                                        String(idAviso)
+                                    )}"
+                                    data-aviso-id="${escaparHTML(
+                                        String(idAviso)
+                                    )}"
+                                    onclick="event.stopPropagation(); eliminarAvisoAplicacion(this.dataset.avisoId)"
+                                >
+                                    🗑️
+                                </button>
+
+                            </div>
                         `
                         : ""
                 }
@@ -1918,7 +1960,7 @@ function buscarPuntoRecogidaPorId(puntoId) {
  *
  * Nunca inventa coordenadas ni toca otros tipos de parada.
  */
-function resolverCoordenadasAviso(aviso) {
+function resolverCoordenadasAvisoRutas(aviso) {
 
     if (!aviso) {
         return null;
@@ -2090,7 +2132,7 @@ function incorporarAvisoAPlan(vehiculoId, avisoId) {
     -------------------------------------------------------- */
 
     const coordenadas =
-        resolverCoordenadasAviso(aviso);
+        resolverCoordenadasAvisoRutas(aviso);
 
     if (!coordenadas) {
 
@@ -7533,6 +7575,20 @@ function obtenerLat(
         null;
 
 
+    if (
+        valor === null ||
+        valor === undefined ||
+        (
+            typeof valor === "string" &&
+            valor.trim() === ""
+        )
+    ) {
+
+        return null;
+
+    }
+
+
     const numero =
         Number(
             String(
@@ -7571,6 +7627,20 @@ function obtenerLng(
         elemento.LONGITUD ??
         elemento.LNG ??
         null;
+
+
+    if (
+        valor === null ||
+        valor === undefined ||
+        (
+            typeof valor === "string" &&
+            valor.trim() === ""
+        )
+    ) {
+
+        return null;
+
+    }
 
 
     const numero =
