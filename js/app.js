@@ -485,6 +485,34 @@ function normalizarDatosAplicacion(
                               );
 
 
+                var puntoId =
+                    aviso.puntoId ||
+                    aviso.id_punto ||
+                    aviso.punto_id ||
+                    "";
+
+
+                var puntoAsociado =
+                    puntoId
+                        ? puntos.find(
+                            function(punto) {
+
+                                var idPunto =
+                                    punto.id_punto ||
+                                    punto.id ||
+                                    punto.ID_PUNTO;
+
+
+                                return (
+                                    String(idPunto) ===
+                                    String(puntoId)
+                                );
+
+                            }
+                        )
+                        : null;
+
+
                 return {
 
                     id_aviso:
@@ -494,23 +522,27 @@ function normalizarDatosAplicacion(
                         id,
 
                     puntoId:
-                        aviso.puntoId ||
-                        aviso.id_punto ||
-                        "",
+                        puntoId,
 
                     punto:
                         aviso.punto ||
                         aviso.nombre_punto ||
-                        "",
+                        (
+                            puntoAsociado
+                                ? puntoAsociado.nombre
+                                : ""
+                        ),
 
                     especie:
                         aviso.especie ||
                         aviso.especie_reportada ||
+                        aviso.especie_indicada ||
                         "Especie no determinada",
 
                     especie_reportada:
                         aviso.especie_reportada ||
                         aviso.especie ||
+                        aviso.especie_indicada ||
                         "Especie no determinada",
 
                     cantidad:
@@ -518,10 +550,24 @@ function normalizarDatosAplicacion(
                             ? Number(
                                 aviso.cantidad
                             )
-                            : 1,
+                            : aviso.numero_animales !== undefined
+                                ? Number(
+                                    aviso.numero_animales
+                                )
+                                : 1,
 
                     telefono:
                         aviso.telefono ||
+                        aviso.telefono_contacto ||
+                        "",
+
+                    /*
+                     * informacion_colaborador no es necesariamente
+                     * un teléfono. Se conserva como campo propio y
+                     * no se presenta bajo la columna TELÉFONO.
+                     */
+                    informacion_colaborador:
+                        aviso.informacion_colaborador ||
                         "",
 
                     observaciones:
@@ -551,6 +597,10 @@ function normalizarDatosAplicacion(
                     estado:
                         aviso.estado ||
                         "PENDIENTE",
+
+                    fecha_hora_aviso:
+                        aviso.fecha_hora_aviso ||
+                        "",
 
                     latitud:
                         Number(
@@ -1578,14 +1628,15 @@ function configurarBotonesAcciones() {
             "click",
             function() {
 
-                alert(
-                    "El formulario de nuevo aviso se implementará en la siguiente fase."
-                );
+                abrirFormularioAviso();
 
             }
         );
 
     }
+
+
+    configurarFormularioAviso();
 
 
     var recalcular =
@@ -1661,6 +1712,2561 @@ function configurarBotonesAcciones() {
                 actualizarHoraActualizacion();
 
             }
+        );
+
+    }
+
+}
+
+
+/* ============================================================
+   ALTA DE AVISOS
+============================================================ */
+
+var avisoEnvioEnCurso = false;
+
+var avisoComprobacionEnCurso = false;
+
+var avisoResultadoPendiente = false;
+
+var avisoUltimoIntento = null;
+
+var avisoHoraIntento = null;
+
+
+/*
+ * Margen temporal usado para no confundir un aviso histórico
+ * idéntico con el alta que acaba de intentarse.
+ */
+var MARGEN_RELOJ_AVISO_INCIERTO_MS =
+    5 * 60 * 1000;
+
+
+function configurarFormularioAviso() {
+
+    var formulario =
+        document.getElementById(
+            "formulario-aviso"
+        );
+
+
+    if (!formulario) {
+        return;
+    }
+
+
+    formulario.addEventListener(
+        "submit",
+        enviarFormularioAviso
+    );
+
+
+    var cancelar =
+        document.getElementById(
+            "cancelar-aviso"
+        );
+
+
+    if (cancelar) {
+
+        cancelar.addEventListener(
+            "click",
+            function() {
+
+                cerrarFormularioAviso();
+
+            }
+        );
+
+    }
+
+
+    var cerrar =
+        document.getElementById(
+            "cerrar-modal-aviso"
+        );
+
+
+    if (cerrar) {
+
+        cerrar.addEventListener(
+            "click",
+            function() {
+
+                cerrarFormularioAviso();
+
+            }
+        );
+
+    }
+
+
+    var fondo =
+        document.querySelector(
+            "[data-cerrar-aviso='true']"
+        );
+
+
+    if (fondo) {
+
+        fondo.addEventListener(
+            "click",
+            function() {
+
+                cerrarFormularioAviso();
+
+            }
+        );
+
+    }
+
+
+    var comprobar =
+        document.getElementById(
+            "aviso-comprobar"
+        );
+
+
+    if (comprobar) {
+
+        comprobar.addEventListener(
+            "click",
+            comprobarAvisoIncierto
+        );
+
+    }
+
+
+    var punto =
+        document.getElementById(
+            "aviso-punto"
+        );
+
+
+    if (punto) {
+
+        punto.addEventListener(
+            "change",
+            function() {
+
+                actualizarInfoPuntoAviso();
+
+                ocultarMensajeAviso();
+
+            }
+        );
+
+    }
+
+
+    var campos =
+        [
+            "aviso-especie",
+            "aviso-cantidad",
+            "aviso-colaborador",
+            "aviso-observaciones"
+        ];
+
+
+    campos.forEach(
+        function(id) {
+
+            var campo =
+                document.getElementById(
+                    id
+                );
+
+
+            if (campo) {
+
+                campo.addEventListener(
+                    "input",
+                    function() {
+
+                        ocultarMensajeAviso();
+
+                    }
+                );
+
+            }
+
+        }
+    );
+
+
+    document.addEventListener(
+        "keydown",
+        function(evento) {
+
+            if (evento.key !== "Escape") {
+                return;
+            }
+
+
+            var modal =
+                document.getElementById(
+                    "modal-aviso"
+                );
+
+
+            if (
+                modal &&
+                !modal.classList.contains(
+                    "oculto"
+                )
+            ) {
+
+                cerrarFormularioAviso();
+
+            }
+
+        }
+    );
+
+}
+
+
+function abrirFormularioAviso() {
+
+    var modal =
+        document.getElementById(
+            "modal-aviso"
+        );
+
+
+    if (!modal) {
+        return;
+    }
+
+
+    var formulario =
+        document.getElementById(
+            "formulario-aviso"
+        );
+
+
+    if (formulario) {
+
+        formulario.reset();
+
+    }
+
+
+    avisoEnvioEnCurso = false;
+
+    avisoComprobacionEnCurso = false;
+
+
+    /*
+     * Un resultado incierto debe sobrevivir al cierre y a la
+     * reapertura del modal. No se borran avisoResultadoPendiente,
+     * avisoUltimoIntento ni avisoHoraIntento.
+     */
+    if (avisoResultadoPendiente) {
+
+        mostrarMensajeAviso(
+            "incierto",
+            "Hay un alta pendiente de comprobación. Pulsa " +
+            "«Comprobar aviso» para consultar si llegó a guardarse."
+        );
+
+
+        if (avisoUltimoIntento) {
+
+            mostrarBotonComprobarAviso();
+
+        } else {
+
+            ocultarBotonComprobarAviso();
+
+        }
+
+    } else {
+
+        ocultarMensajeAviso();
+
+        ocultarBotonComprobarAviso();
+
+    }
+
+
+    poblarPuntosAviso();
+
+    restaurarIntentoAvisoPendiente();
+
+    actualizarInfoPuntoAviso();
+
+
+    modal.classList.remove(
+        "oculto"
+    );
+
+    modal.setAttribute(
+        "aria-hidden",
+        "false"
+    );
+
+
+    document.body.classList.add(
+        "modal-aviso-abierto"
+    );
+
+
+    var punto =
+        document.getElementById(
+            "aviso-punto"
+        );
+
+
+    if (
+        punto &&
+        !punto.disabled
+    ) {
+
+        punto.focus();
+
+    }
+
+}
+
+
+function cerrarFormularioAviso() {
+
+    if (
+        avisoEnvioEnCurso ||
+        avisoComprobacionEnCurso
+    ) {
+        return;
+    }
+
+
+    var modal =
+        document.getElementById(
+            "modal-aviso"
+        );
+
+
+    if (!modal) {
+        return;
+    }
+
+
+    modal.classList.add(
+        "oculto"
+    );
+
+    modal.setAttribute(
+        "aria-hidden",
+        "true"
+    );
+
+
+    document.body.classList.remove(
+        "modal-aviso-abierto"
+    );
+
+
+    var formulario =
+        document.getElementById(
+            "formulario-aviso"
+        );
+
+
+    if (formulario) {
+
+        formulario.reset();
+
+    }
+
+
+    /*
+     * No se borran avisoResultadoPendiente, avisoUltimoIntento ni
+     * avisoHoraIntento: el intento incierto debe seguir disponible
+     * al reabrir el modal. Es estado en memoria y no se persiste.
+     */
+    ocultarMensajeAviso();
+
+    ocultarBotonComprobarAviso();
+
+    actualizarInfoPuntoAviso();
+
+    actualizarBotonGuardarAviso();
+
+}
+
+
+function obtenerIdPuntoParaAviso(punto) {
+
+    if (!punto) {
+        return "";
+    }
+
+
+    if (punto.id_punto !== undefined) {
+        return punto.id_punto;
+    }
+
+
+    if (punto.id !== undefined) {
+        return punto.id;
+    }
+
+
+    if (punto.ID_PUNTO !== undefined) {
+        return punto.ID_PUNTO;
+    }
+
+
+    return "";
+}
+
+
+function obtenerTodosPuntosAviso() {
+
+    var datos =
+        window.DATOS_MOCK || {};
+
+
+    return Array.isArray(
+        datos.PUNTOS_RECOGIDA
+    )
+        ? datos.PUNTOS_RECOGIDA
+        : [];
+
+}
+
+
+function puntoAvisoEstaActivo(punto) {
+
+    if (!punto) {
+        return false;
+    }
+
+
+    var activo =
+        punto.activo;
+
+
+    if (activo === false || activo === 0) {
+        return false;
+    }
+
+
+    if (typeof activo === "string") {
+
+        var valor =
+            activo.trim().toLowerCase();
+
+
+        if (
+            [
+                "false",
+                "0",
+                "no",
+                "n",
+                "inactivo",
+                "inactiva"
+            ].indexOf(valor) !== -1
+        ) {
+
+            return false;
+
+        }
+
+    }
+
+
+    return true;
+
+}
+
+
+function obtenerPuntosDisponiblesAviso() {
+
+    return obtenerTodosPuntosAviso()
+        .filter(
+            function(punto) {
+
+                var id =
+                    String(
+                        obtenerIdPuntoParaAviso(
+                            punto
+                        )
+                    ).trim();
+
+
+                if (!id) {
+                    return false;
+                }
+
+
+                return puntoAvisoEstaActivo(
+                    punto
+                );
+
+            }
+        )
+        .sort(
+            function(a, b) {
+
+                var nombreA =
+                    String(
+                        a.nombre ||
+                        a.nombre_punto ||
+                        ""
+                    );
+
+
+                var nombreB =
+                    String(
+                        b.nombre ||
+                        b.nombre_punto ||
+                        ""
+                    );
+
+
+                return nombreA.localeCompare(
+                    nombreB,
+                    "es"
+                );
+
+            }
+        );
+
+}
+
+
+function buscarPuntoAvisoPorId(puntoId) {
+
+    if (
+        puntoId === null ||
+        puntoId === undefined ||
+        String(puntoId).trim() === ""
+    ) {
+
+        return null;
+
+    }
+
+
+    return (
+        obtenerTodosPuntosAviso()
+            .find(
+                function(punto) {
+
+                    return (
+                        String(
+                            obtenerIdPuntoParaAviso(
+                                punto
+                            )
+                        ) ===
+                        String(puntoId)
+                    );
+
+                }
+            ) ||
+        null
+    );
+
+}
+
+
+function tieneCoordenadasPuntoAviso(punto) {
+
+    if (!punto) {
+        return false;
+    }
+
+
+    var latitud =
+        punto.latitud !== undefined
+            ? punto.latitud
+            : punto.lat;
+
+
+    var longitud =
+        punto.longitud !== undefined
+            ? punto.longitud
+            : punto.lng !== undefined
+                ? punto.lng
+                : punto.lon;
+
+
+    if (
+        latitud === null ||
+        latitud === undefined ||
+        longitud === null ||
+        longitud === undefined
+    ) {
+
+        return false;
+
+    }
+
+
+    var lat =
+        Number(
+            String(latitud)
+                .replace(",", ".")
+                .trim()
+        );
+
+
+    var lng =
+        Number(
+            String(longitud)
+                .replace(",", ".")
+                .trim()
+        );
+
+
+    return (
+        Number.isFinite(lat) &&
+        Number.isFinite(lng) &&
+        lat >= -90 &&
+        lat <= 90 &&
+        lng >= -180 &&
+        lng <= 180
+    );
+
+}
+
+
+function poblarPuntosAviso() {
+
+    var select =
+        document.getElementById(
+            "aviso-punto"
+        );
+
+
+    var guardar =
+        document.getElementById(
+            "guardar-aviso"
+        );
+
+
+    if (!select) {
+        return;
+    }
+
+
+    select.innerHTML = "";
+
+
+    var marcador =
+        document.createElement(
+            "option"
+        );
+
+
+    marcador.value = "";
+
+    marcador.textContent =
+        "Seleccionar punto...";
+
+
+    select.appendChild(
+        marcador
+    );
+
+
+    var puntos =
+        obtenerPuntosDisponiblesAviso();
+
+
+    if (puntos.length === 0) {
+
+        var sinPuntos =
+            document.createElement(
+                "option"
+            );
+
+
+        sinPuntos.value = "";
+
+        sinPuntos.textContent =
+            "No hay puntos disponibles";
+
+
+        select.appendChild(
+            sinPuntos
+        );
+
+
+        select.disabled = true;
+
+
+        if (guardar) {
+
+            guardar.disabled = true;
+
+        }
+
+
+        mostrarMensajeAviso(
+            "error",
+            "No hay puntos de recogida disponibles. No se puede crear un aviso."
+        );
+
+
+        return;
+
+    }
+
+
+    puntos.forEach(
+        function(punto) {
+
+            var opcion =
+                document.createElement(
+                    "option"
+                );
+
+
+            var id =
+                String(
+                    obtenerIdPuntoParaAviso(
+                        punto
+                    )
+                );
+
+
+            var nombre =
+                String(
+                    punto.nombre ||
+                    punto.nombre_punto ||
+                    id
+                ).trim();
+
+
+            var municipio =
+                String(
+                    punto.municipio ||
+                    ""
+                ).trim();
+
+
+            var texto =
+                nombre;
+
+
+            if (municipio) {
+
+                texto +=
+                    " · " +
+                    municipio;
+
+            }
+
+
+            if (!tieneCoordenadasPuntoAviso(punto)) {
+
+                texto +=
+                    " (sin coordenadas)";
+
+            }
+
+
+            opcion.value = id;
+
+            opcion.textContent = texto;
+
+
+            select.appendChild(
+                opcion
+            );
+
+        }
+    );
+
+
+    select.disabled = false;
+
+
+    actualizarBotonGuardarAviso();
+
+}
+
+
+function actualizarBotonGuardarAviso() {
+
+    var guardar =
+        document.getElementById(
+            "guardar-aviso"
+        );
+
+
+    if (!guardar) {
+        return;
+    }
+
+
+    var sinPuntos =
+        obtenerPuntosDisponiblesAviso()
+            .length === 0;
+
+
+    guardar.disabled =
+        avisoEnvioEnCurso ||
+        avisoComprobacionEnCurso ||
+        avisoResultadoPendiente ||
+        sinPuntos;
+
+
+    actualizarIndicadorAvisoPendiente();
+
+}
+
+
+/*
+ * Refleja en la acción rápida si existe un alta pendiente de
+ * comprobación. El estado sigue viviendo solo en memoria.
+ */
+function actualizarIndicadorAvisoPendiente() {
+
+    var boton =
+        document.getElementById(
+            "accion-aviso"
+        );
+
+
+    if (!boton) {
+        return;
+    }
+
+
+    var texto =
+        boton.querySelector(
+            "small"
+        );
+
+
+    if (!texto) {
+        return;
+    }
+
+
+    texto.textContent =
+        avisoResultadoPendiente
+            ? "Revisar alta pendiente"
+            : "Registrar una nueva recogida";
+
+}
+
+
+/*
+ * Restaura en el formulario los datos del intento incierto para
+ * que el operador pueda revisarlos al reabrir el modal.
+ */
+function restaurarIntentoAvisoPendiente() {
+
+    if (
+        !avisoResultadoPendiente ||
+        !avisoUltimoIntento
+    ) {
+
+        return;
+
+    }
+
+
+    var punto =
+        document.getElementById(
+            "aviso-punto"
+        );
+
+
+    if (
+        punto &&
+        avisoUltimoIntento.punto_id !== undefined
+    ) {
+
+        punto.value =
+            String(
+                avisoUltimoIntento.punto_id
+            );
+
+    }
+
+
+    var especie =
+        document.getElementById(
+            "aviso-especie"
+        );
+
+
+    if (especie) {
+
+        especie.value =
+            avisoUltimoIntento.especie_indicada ||
+            "";
+
+    }
+
+
+    var cantidad =
+        document.getElementById(
+            "aviso-cantidad"
+        );
+
+
+    if (
+        cantidad &&
+        avisoUltimoIntento.numero_animales !== undefined
+    ) {
+
+        cantidad.value =
+            String(
+                avisoUltimoIntento.numero_animales
+            );
+
+    }
+
+
+    var colaborador =
+        document.getElementById(
+            "aviso-colaborador"
+        );
+
+
+    if (colaborador) {
+
+        colaborador.value =
+            avisoUltimoIntento.informacion_colaborador ||
+            "";
+
+    }
+
+
+    var observaciones =
+        document.getElementById(
+            "aviso-observaciones"
+        );
+
+
+    if (observaciones) {
+
+        observaciones.value =
+            avisoUltimoIntento.observaciones ||
+            "";
+
+    }
+
+}
+
+
+function obtenerPuntoSeleccionadoAviso() {
+
+    var select =
+        document.getElementById(
+            "aviso-punto"
+        );
+
+
+    if (
+        !select ||
+        !select.value
+    ) {
+
+        return null;
+
+    }
+
+
+    return buscarPuntoAvisoPorId(
+        select.value
+    );
+
+}
+
+
+function actualizarInfoPuntoAviso() {
+
+    var info =
+        document.getElementById(
+            "aviso-punto-info"
+        );
+
+
+    if (!info) {
+        return;
+    }
+
+
+    var punto =
+        obtenerPuntoSeleccionadoAviso();
+
+
+    if (!punto) {
+
+        info.textContent =
+            "Selecciona un punto existente.";
+
+        return;
+
+    }
+
+
+    var partes = [];
+
+
+    var municipio =
+        String(
+            punto.municipio ||
+            ""
+        ).trim();
+
+
+    if (municipio) {
+
+        partes.push(
+            municipio
+        );
+
+    }
+
+
+    if (tieneCoordenadasPuntoAviso(punto)) {
+
+        var latitud =
+            Number(
+                String(
+                    punto.latitud !== undefined
+                        ? punto.latitud
+                        : punto.lat
+                )
+                    .replace(",", ".")
+                    .trim()
+            );
+
+
+        var longitud =
+            Number(
+                String(
+                    punto.longitud !== undefined
+                        ? punto.longitud
+                        : punto.lng !== undefined
+                            ? punto.lng
+                            : punto.lon
+                )
+                    .replace(",", ".")
+                    .trim()
+            );
+
+
+        partes.push(
+            "Coordenadas: " +
+            latitud +
+            ", " +
+            longitud
+        );
+
+    } else {
+
+        partes.push(
+            "Sin coordenadas registradas"
+        );
+
+    }
+
+
+    info.textContent =
+        partes.join(
+            " · "
+        );
+
+}
+
+
+function validarFormularioAviso() {
+
+    var select =
+        document.getElementById(
+            "aviso-punto"
+        );
+
+
+    var especie =
+        document.getElementById(
+            "aviso-especie"
+        );
+
+
+    var cantidad =
+        document.getElementById(
+            "aviso-cantidad"
+        );
+
+
+    var puntoId =
+        select
+            ? String(
+                select.value
+            ).trim()
+            : "";
+
+
+    if (!puntoId) {
+
+        return {
+            ok: false,
+            campo: select,
+            error:
+                "Selecciona un punto de recogida."
+        };
+
+    }
+
+
+    var punto =
+        buscarPuntoAvisoPorId(
+            puntoId
+        );
+
+
+    if (!punto) {
+
+        return {
+            ok: false,
+            campo: select,
+            error:
+                "El punto de recogida seleccionado no es válido."
+        };
+
+    }
+
+
+    var especieIndicada =
+        especie
+            ? String(
+                especie.value
+            ).trim()
+            : "";
+
+
+    if (!especieIndicada) {
+
+        return {
+            ok: false,
+            campo: especie,
+            error:
+                "Indica la especie."
+        };
+
+    }
+
+
+    var numeroAnimales =
+        cantidad
+            ? Number(
+                cantidad.value
+            )
+            : NaN;
+
+
+    if (
+        !Number.isInteger(
+            numeroAnimales
+        ) ||
+        numeroAnimales <= 0
+    ) {
+
+        return {
+            ok: false,
+            campo: cantidad,
+            error:
+                "El número de animales debe ser un entero positivo."
+        };
+
+    }
+
+
+    var colaborador =
+        document.getElementById(
+            "aviso-colaborador"
+        );
+
+
+    var observaciones =
+        document.getElementById(
+            "aviso-observaciones"
+        );
+
+
+    return {
+        ok: true,
+        punto: punto,
+        datos: {
+            punto_id:
+                puntoId,
+            especie_indicada:
+                especieIndicada,
+            numero_animales:
+                numeroAnimales,
+            informacion_colaborador:
+                colaborador
+                    ? String(
+                        colaborador.value
+                    ).trim()
+                    : "",
+            observaciones:
+                observaciones
+                    ? String(
+                        observaciones.value
+                    ).trim()
+                    : ""
+        }
+    };
+
+}
+
+
+async function enviarFormularioAviso(evento) {
+
+    evento.preventDefault();
+
+
+    /*
+     * Mientras se comprueba un resultado incierto no se permite
+     * reenviar la misma operación de forma inadvertida.
+     */
+    if (
+        avisoEnvioEnCurso ||
+        avisoComprobacionEnCurso ||
+        avisoResultadoPendiente
+    ) {
+
+        return;
+
+    }
+
+
+    var validacion =
+        validarFormularioAviso();
+
+
+    if (!validacion.ok) {
+
+        mostrarMensajeAviso(
+            "error",
+            validacion.error
+        );
+
+
+        if (
+            validacion.campo &&
+            typeof validacion.campo.focus ===
+            "function"
+        ) {
+
+            validacion.campo.focus();
+
+        }
+
+
+        return;
+
+    }
+
+
+    avisoEnvioEnCurso = true;
+
+    avisoResultadoPendiente = false;
+
+    avisoUltimoIntento = validacion.datos;
+
+    avisoHoraIntento = Date.now();
+
+
+    ocultarBotonComprobarAviso();
+
+
+    var guardar =
+        document.getElementById(
+            "guardar-aviso"
+        );
+
+
+    var cancelar =
+        document.getElementById(
+            "cancelar-aviso"
+        );
+
+
+    var cerrar =
+        document.getElementById(
+            "cerrar-modal-aviso"
+        );
+
+
+    if (guardar) {
+
+        guardar.disabled = true;
+
+        guardar.textContent =
+            "Guardando...";
+
+    }
+
+
+    if (cancelar) {
+
+        cancelar.disabled = true;
+
+    }
+
+
+    if (cerrar) {
+
+        cerrar.disabled = true;
+
+    }
+
+
+    mostrarMensajeAviso(
+        "info",
+        "Guardando aviso..."
+    );
+
+
+    try {
+
+        var respuesta =
+            await API.crearAviso(
+                validacion.datos
+            );
+
+
+        if (
+            respuesta &&
+            respuesta.ok &&
+            respuesta.aviso &&
+            respuesta.aviso.id_aviso
+        ) {
+
+            var aviso =
+                respuesta.aviso;
+
+
+            registrarAvisoCreado(
+                aviso,
+                validacion.punto
+            );
+
+
+            var formulario =
+                document.getElementById(
+                    "formulario-aviso"
+                );
+
+
+            if (formulario) {
+
+                formulario.reset();
+
+            }
+
+
+            poblarPuntosAviso();
+
+            actualizarInfoPuntoAviso();
+
+
+            mostrarMensajeAviso(
+                "exito",
+                "Aviso " +
+                aviso.id_aviso +
+                " creado correctamente."
+            );
+
+
+            avisoResultadoPendiente = false;
+
+            avisoUltimoIntento = null;
+
+            avisoHoraIntento = null;
+
+            ocultarBotonComprobarAviso();
+
+
+        } else if (
+            respuesta &&
+            respuesta.incierto
+        ) {
+
+            /*
+             * Si el backend confirma que la fila se escribió y
+             * devuelve el identificador, se incorpora a la lista
+             * en memoria, pero el mensaje sigue indicando que la
+             * respuesta no llegó completa.
+             */
+            var mensajeIncierto =
+                respuesta.error ||
+                "No se ha podido confirmar si el aviso se guardó.";
+
+
+            if (
+                respuesta.guardado === true &&
+                respuesta.aviso &&
+                respuesta.aviso.id_aviso
+            ) {
+
+                registrarAvisoCreado(
+                    respuesta.aviso,
+                    validacion.punto
+                );
+
+
+                mensajeIncierto =
+                    "El aviso " +
+                    respuesta.aviso.id_aviso +
+                    " se ha guardado, pero la respuesta no llegó " +
+                    "completa. Comprueba que aparece en la lista " +
+                    "antes de crear otro aviso.";
+
+            } else {
+
+                mensajeIncierto +=
+                    " Comprueba si ya existe antes de volver a " +
+                    "intentarlo.";
+
+            }
+
+
+            avisoResultadoPendiente = true;
+
+
+            mostrarMensajeAviso(
+                "incierto",
+                mensajeIncierto
+            );
+
+
+            mostrarBotonComprobarAviso();
+
+
+        } else if (
+            respuesta &&
+            respuesta.ok
+        ) {
+
+            avisoResultadoPendiente = true;
+
+
+            mostrarMensajeAviso(
+                "incierto",
+                "El servidor no ha confirmado el identificador del aviso. " +
+                "Comprueba si ya existe antes de volver a intentarlo."
+            );
+
+
+            mostrarBotonComprobarAviso();
+
+
+        } else {
+
+            mostrarMensajeAviso(
+                "error",
+                (
+                    respuesta &&
+                    respuesta.error
+                ) ||
+                "No se ha podido crear el aviso."
+            );
+
+
+            avisoResultadoPendiente = false;
+
+            avisoUltimoIntento = null;
+
+            avisoHoraIntento = null;
+
+            ocultarBotonComprobarAviso();
+
+        }
+
+    } catch (error) {
+
+        avisoResultadoPendiente = true;
+
+
+        mostrarMensajeAviso(
+            "incierto",
+            "No se ha podido confirmar si el aviso se guardó. " +
+            "Comprueba si ya existe antes de volver a intentarlo."
+        );
+
+
+        mostrarBotonComprobarAviso();
+
+    } finally {
+
+        avisoEnvioEnCurso = false;
+
+
+        if (guardar) {
+
+            guardar.textContent =
+                "Guardar aviso";
+
+        }
+
+
+        if (cancelar) {
+
+            cancelar.disabled = false;
+
+        }
+
+
+        if (cerrar) {
+
+            cerrar.disabled = false;
+
+        }
+
+
+        actualizarBotonGuardarAviso();
+
+    }
+
+}
+
+
+function crearAvisoParaMemoria(aviso, punto) {
+
+    var id =
+        aviso.id_aviso !== undefined
+            ? String(
+                aviso.id_aviso
+            )
+            : String(
+                aviso.id || ""
+            );
+
+
+    var puntoId =
+        aviso.punto_id ||
+        aviso.puntoId ||
+        aviso.id_punto ||
+        "";
+
+
+    var latitud = null;
+
+    var longitud = null;
+
+
+    if (tieneCoordenadasPuntoAviso(punto)) {
+
+        latitud =
+            Number(
+                String(
+                    punto.latitud !== undefined
+                        ? punto.latitud
+                        : punto.lat
+                )
+                    .replace(",", ".")
+                    .trim()
+            );
+
+
+        longitud =
+            Number(
+                String(
+                    punto.longitud !== undefined
+                        ? punto.longitud
+                        : punto.lng !== undefined
+                            ? punto.lng
+                            : punto.lon
+                )
+                    .replace(",", ".")
+                    .trim()
+            );
+
+    }
+
+
+    var cantidad =
+        aviso.numero_animales !== undefined
+            ? Number(
+                aviso.numero_animales
+            )
+            : Number(
+                aviso.cantidad
+            );
+
+
+    if (
+        !Number.isFinite(
+            cantidad
+        ) ||
+        cantidad <= 0
+    ) {
+
+        cantidad = 1;
+
+    }
+
+
+    return {
+
+        id_aviso:
+            id,
+
+        id:
+            id,
+
+        puntoId:
+            puntoId,
+
+        punto:
+            punto
+                ? String(
+                    punto.nombre ||
+                    punto.nombre_punto ||
+                    puntoId
+                )
+                : "",
+
+        especie:
+            aviso.especie_indicada ||
+            aviso.especie ||
+            aviso.especie_reportada ||
+            "Especie no determinada",
+
+        especie_reportada:
+            aviso.especie_indicada ||
+            aviso.especie_reportada ||
+            aviso.especie ||
+            "Especie no determinada",
+
+        cantidad:
+            cantidad,
+
+        telefono:
+            aviso.telefono ||
+            aviso.telefono_contacto ||
+            "",
+
+        informacion_colaborador:
+            aviso.informacion_colaborador ||
+            "",
+
+        observaciones:
+            aviso.observaciones ||
+            "",
+
+        ruta:
+            "",
+
+        ruta_id:
+            "",
+
+        vehiculo:
+            "",
+
+        vehiculo_id:
+            "",
+
+        estado:
+            String(
+                aviso.estado ||
+                "PENDIENTE"
+            ).trim().toUpperCase(),
+
+        fecha_hora_aviso:
+            aviso.fecha_hora_aviso ||
+            "",
+
+        latitud:
+            latitud,
+
+        longitud:
+            longitud
+
+    };
+
+}
+
+
+function registrarAvisoCreado(aviso, punto) {
+
+    if (
+        !aviso ||
+        !aviso.id_aviso
+    ) {
+
+        return;
+
+    }
+
+
+    var datos =
+        window.DATOS_MOCK;
+
+
+    if (!datos) {
+        return;
+    }
+
+
+    if (!Array.isArray(datos.AVISOS)) {
+
+        datos.AVISOS = [];
+
+    }
+
+
+    var normalizado =
+        crearAvisoParaMemoria(
+            aviso,
+            punto
+        );
+
+
+    var indice =
+        datos.AVISOS.findIndex(
+            function(elemento) {
+
+                return (
+                    String(
+                        elemento.id_aviso ||
+                        elemento.id
+                    ) ===
+                    String(
+                        normalizado.id_aviso
+                    )
+                );
+
+            }
+        );
+
+
+    if (indice >= 0) {
+
+        datos.AVISOS[indice] =
+            normalizado;
+
+    } else {
+
+        datos.AVISOS.push(
+            normalizado
+        );
+
+    }
+
+
+    if (
+        typeof renderizarAvisos ===
+        "function"
+    ) {
+
+        renderizarAvisos();
+
+    }
+
+
+    if (
+        typeof renderizarAvisosPendientes ===
+        "function"
+    ) {
+
+        renderizarAvisosPendientes();
+
+    }
+
+}
+
+
+function normalizarTextoCotejoAviso(valor) {
+
+    if (
+        valor === null ||
+        valor === undefined
+    ) {
+
+        return "";
+
+    }
+
+
+    return String(
+        valor
+    )
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
+
+}
+
+
+/*
+ * Lee un campo de un aviso tolerando diferencias de mayúsculas y
+ * minúsculas en las claves, además de alias conocidos.
+ */
+function obtenerCampoAviso(aviso, claves) {
+
+    if (
+        !aviso ||
+        typeof aviso !== "object"
+    ) {
+
+        return undefined;
+
+    }
+
+
+    var clavesAviso =
+        Object.keys(aviso);
+
+
+    for (
+        var indice = 0;
+        indice < claves.length;
+        indice += 1
+    ) {
+
+        var claveBuscada =
+            String(
+                claves[indice]
+            ).toLowerCase();
+
+
+        for (
+            var indiceAviso = 0;
+            indiceAviso < clavesAviso.length;
+            indiceAviso += 1
+        ) {
+
+            var claveAviso =
+                clavesAviso[indiceAviso];
+
+
+            if (
+                String(claveAviso)
+                    .toLowerCase() !==
+                claveBuscada
+            ) {
+
+                continue;
+
+            }
+
+
+            if (
+                aviso[claveAviso] !== undefined &&
+                aviso[claveAviso] !== null
+            ) {
+
+                return aviso[claveAviso];
+
+            }
+
+        }
+
+    }
+
+
+    return undefined;
+
+}
+
+
+function horaAvisoEnMs(valor) {
+
+    if (
+        valor === null ||
+        valor === undefined ||
+        valor === ""
+    ) {
+
+        return null;
+
+    }
+
+
+    if (valor instanceof Date) {
+
+        var tiempoFecha =
+            valor.getTime();
+
+
+        return Number.isFinite(tiempoFecha)
+            ? tiempoFecha
+            : null;
+
+    }
+
+
+    if (typeof valor === "number") {
+
+        /*
+         * Un número pequeño puede ser una fecha serial de Google
+         * Sheets. Un número grande se interpreta como milisegundos.
+         */
+        if (
+            Number.isFinite(valor) &&
+            valor > 0 &&
+            valor < 100000
+        ) {
+
+            return Math.round(
+                (valor - 25569) *
+                86400 *
+                1000
+            );
+
+        }
+
+
+        return Number.isFinite(valor)
+            ? valor
+            : null;
+
+    }
+
+
+    var texto =
+        String(valor).trim();
+
+
+    if (!texto) {
+        return null;
+    }
+
+
+    if (/^\d+$/.test(texto)) {
+
+        return horaAvisoEnMs(
+            Number(texto)
+        );
+
+    }
+
+
+    var fecha =
+        new Date(texto);
+
+    var tiempo =
+        fecha.getTime();
+
+
+    if (Number.isFinite(tiempo)) {
+        return tiempo;
+    }
+
+
+    var partes =
+        texto.match(
+            /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?/
+        );
+
+
+    if (!partes) {
+        return null;
+    }
+
+
+    fecha =
+        new Date(
+            Number(partes[3]),
+            Number(partes[2]) - 1,
+            Number(partes[1]),
+            Number(partes[4] || 0),
+            Number(partes[5] || 0),
+            Number(partes[6] || 0)
+        );
+
+
+    tiempo =
+        fecha.getTime();
+
+
+    return Number.isFinite(tiempo)
+        ? tiempo
+        : null;
+
+}
+
+
+function horaAvisoInciertoMs(aviso) {
+
+    return horaAvisoEnMs(
+        obtenerCampoAviso(
+            aviso,
+            [
+                "fecha_hora_aviso",
+                "fecha_hora",
+                "fecha"
+            ]
+        )
+    );
+
+}
+
+
+function coincideAvisoIncierto(aviso, intento) {
+
+    if (!aviso || !intento) {
+        return false;
+    }
+
+
+    /*
+     * Sin un id_aviso válido el registro no se considera un aviso
+     * existente identificable.
+     */
+    var idAviso =
+        obtenerCampoAviso(
+            aviso,
+            [
+                "id_aviso",
+                "id"
+            ]
+        );
+
+
+    if (
+        normalizarTextoCotejoAviso(
+            idAviso
+        ) === ""
+    ) {
+
+        return false;
+
+    }
+
+
+    var puntoAviso =
+        obtenerCampoAviso(
+            aviso,
+            [
+                "punto_id",
+                "puntoId",
+                "id_punto"
+            ]
+        );
+
+
+    var especieAviso =
+        obtenerCampoAviso(
+            aviso,
+            [
+                "especie_indicada",
+                "especie",
+                "especie_reportada"
+            ]
+        );
+
+
+    var numeroAviso =
+        obtenerCampoAviso(
+            aviso,
+            [
+                "numero_animales",
+                "cantidad"
+            ]
+        );
+
+
+    var numeroIntento =
+        Number(
+            intento.numero_animales
+        );
+
+
+    if (!Number.isFinite(numeroIntento)) {
+        return false;
+    }
+
+
+    return (
+        normalizarTextoCotejoAviso(
+            puntoAviso
+        ) ===
+        normalizarTextoCotejoAviso(
+            intento.punto_id
+        ) &&
+
+        normalizarTextoCotejoAviso(
+            especieAviso
+        ) ===
+        normalizarTextoCotejoAviso(
+            intento.especie_indicada
+        ) &&
+
+        Number(numeroAviso) ===
+        numeroIntento &&
+
+        normalizarTextoCotejoAviso(
+            obtenerCampoAviso(
+                aviso,
+                [
+                    "informacion_colaborador"
+                ]
+            )
+        ) ===
+        normalizarTextoCotejoAviso(
+            intento.informacion_colaborador
+        ) &&
+
+        normalizarTextoCotejoAviso(
+            obtenerCampoAviso(
+                aviso,
+                [
+                    "observaciones"
+                ]
+            )
+        ) ===
+        normalizarTextoCotejoAviso(
+            intento.observaciones
+        )
+    );
+
+}
+
+
+/*
+ * Separa las coincidencias en confirmadas dentro de la ventana
+ * temporal del intento, coincidencias sin fecha fiable y
+ * coincidencias históricas fuera de la ventana.
+ */
+function clasificarCoincidenciasAvisoIncierto(
+    avisos,
+    intento,
+    horaIntentoMs
+) {
+
+    var clasificacion = {
+
+        confirmadas: [],
+
+        sinFecha: [],
+
+        fueraVentana: []
+
+    };
+
+
+    if (!Array.isArray(avisos)) {
+        return clasificacion;
+    }
+
+
+    avisos.forEach(
+        function(aviso) {
+
+            if (
+                !coincideAvisoIncierto(
+                    aviso,
+                    intento
+                )
+            ) {
+
+                return;
+
+            }
+
+
+            var horaAvisoMs =
+                horaAvisoInciertoMs(
+                    aviso
+                );
+
+
+            if (
+                horaAvisoMs === null ||
+                !Number.isFinite(horaIntentoMs)
+            ) {
+
+                clasificacion.sinFecha.push(
+                    aviso
+                );
+
+                return;
+
+            }
+
+
+            var limiteInferior =
+                horaIntentoMs -
+                MARGEN_RELOJ_AVISO_INCIERTO_MS;
+
+
+            /*
+             * El límite superior se ancla al instante original del
+             * intento y no a la hora de la consulta. Un aviso creado
+             * después de la ventana no confirma el alta.
+             */
+            var limiteSuperior =
+                horaIntentoMs +
+                MARGEN_RELOJ_AVISO_INCIERTO_MS;
+
+
+            if (
+                horaAvisoMs >= limiteInferior &&
+                horaAvisoMs <= limiteSuperior
+            ) {
+
+                clasificacion.confirmadas.push(
+                    aviso
+                );
+
+            } else {
+
+                clasificacion.fueraVentana.push(
+                    aviso
+                );
+
+            }
+
+        }
+    );
+
+
+    return clasificacion;
+
+}
+
+
+async function comprobarAvisoIncierto() {
+
+    if (
+        !avisoUltimoIntento ||
+        avisoComprobacionEnCurso
+    ) {
+
+        return;
+
+    }
+
+
+    var boton =
+        document.getElementById(
+            "aviso-comprobar"
+        );
+
+
+    if (!boton) {
+        return;
+    }
+
+
+    avisoComprobacionEnCurso = true;
+
+
+    var textoOriginal =
+        boton.textContent;
+
+
+    boton.disabled = true;
+
+    boton.textContent =
+        "Comprobando...";
+
+
+    actualizarBotonGuardarAviso();
+
+
+    try {
+
+        var resultado =
+            await API.obtenerAvisos();
+
+
+        if (
+            !resultado ||
+            !resultado.ok
+        ) {
+
+            avisoResultadoPendiente = true;
+
+
+            mostrarMensajeAviso(
+                "incierto",
+                (
+                    resultado &&
+                    resultado.error
+                ) ||
+                "No se han podido consultar los avisos. " +
+                "El resultado sigue siendo incierto."
+            );
+
+
+            mostrarBotonComprobarAviso();
+
+            return;
+
+        }
+
+
+        if (!Array.isArray(resultado.avisos)) {
+
+            avisoResultadoPendiente = true;
+
+
+            mostrarMensajeAviso(
+                "incierto",
+                "La consulta no ha devuelto una lista válida de avisos. " +
+                "El resultado sigue siendo incierto. Consulta la lista " +
+                "de avisos antes de crear otro."
+            );
+
+
+            mostrarBotonComprobarAviso();
+
+            return;
+
+        }
+
+
+        var clasificacion =
+            clasificarCoincidenciasAvisoIncierto(
+                resultado.avisos,
+                avisoUltimoIntento,
+                avisoHoraIntento
+            );
+
+
+        /*
+         * Una coincidencia sin fecha fiable puede representar el aviso
+         * buscado. Mientras exista, no se confirma el alta aunque haya
+         * una única coincidencia fechada dentro de la ventana.
+         */
+        if (
+            clasificacion.confirmadas.length === 1 &&
+            clasificacion.sinFecha.length === 0
+        ) {
+
+            var encontrado =
+                clasificacion.confirmadas[0];
+
+
+            registrarAvisoCreado(
+                encontrado,
+                buscarPuntoAvisoPorId(
+                    avisoUltimoIntento.punto_id
+                )
+            );
+
+
+            mostrarMensajeAviso(
+                "exito",
+                "El aviso ya existe: " +
+                (
+                    encontrado.id_aviso ||
+                    encontrado.id
+                ) +
+                ". Se ha añadido a la lista."
+            );
+
+
+            avisoResultadoPendiente = false;
+
+            avisoUltimoIntento = null;
+
+            avisoHoraIntento = null;
+
+            ocultarBotonComprobarAviso();
+
+            return;
+
+        }
+
+
+        if (
+            clasificacion.confirmadas.length > 1
+        ) {
+
+            avisoResultadoPendiente = true;
+
+
+            mostrarMensajeAviso(
+                "incierto",
+                "Se han encontrado varios avisos compatibles con el " +
+                "intento. No se puede determinar cuál corresponde al " +
+                "alta actual. El resultado sigue siendo incierto. " +
+                "Consulta la lista de avisos antes de crear otro."
+            );
+
+
+            mostrarBotonComprobarAviso();
+
+            return;
+
+        }
+
+
+        if (clasificacion.sinFecha.length > 0) {
+
+            avisoResultadoPendiente = true;
+
+
+            mostrarMensajeAviso(
+                "incierto",
+                "Se han encontrado avisos con esos datos, pero sin una " +
+                "fecha fiable para confirmar que corresponden al intento " +
+                "actual. No se ha podido determinar si el aviso se guardó. " +
+                "El resultado sigue siendo incierto. Consulta la lista de " +
+                "avisos antes de crear otro."
+            );
+
+
+            mostrarBotonComprobarAviso();
+
+            return;
+
+        }
+
+
+        if (clasificacion.fueraVentana.length > 0) {
+
+            avisoResultadoPendiente = true;
+
+
+            mostrarMensajeAviso(
+                "incierto",
+                "Existe al menos un aviso histórico con esos datos, " +
+                "anterior al intento actual. No se puede confirmar que " +
+                "el alta se haya guardado. Consulta la lista de avisos " +
+                "antes de crear otro."
+            );
+
+
+            mostrarBotonComprobarAviso();
+
+            return;
+
+        }
+
+
+        avisoResultadoPendiente = true;
+
+
+        mostrarMensajeAviso(
+            "incierto",
+            "No se ha encontrado ningún aviso con esos datos. La " +
+            "consulta no confirma que el alta se haya guardado ni " +
+            "que haya fallado. El intento sigue pendiente. Comprueba " +
+            "manualmente la hoja AVISOS o repite la consulta de solo " +
+            "lectura más tarde."
+        );
+
+
+        mostrarBotonComprobarAviso();
+
+    } catch (error) {
+
+        avisoResultadoPendiente = true;
+
+
+        mostrarMensajeAviso(
+            "incierto",
+            "No se han podido consultar los avisos. El resultado sigue " +
+            "siendo incierto. Comprueba si el aviso ya existe antes de " +
+            "volver a intentarlo."
+        );
+
+
+        mostrarBotonComprobarAviso();
+
+    } finally {
+
+        avisoComprobacionEnCurso = false;
+
+
+        boton.disabled = false;
+
+        boton.textContent =
+            textoOriginal;
+
+
+        actualizarBotonGuardarAviso();
+
+    }
+
+}
+
+
+function mostrarMensajeAviso(tipo, texto) {
+
+    var mensaje =
+        document.getElementById(
+            "aviso-mensaje"
+        );
+
+
+    if (!mensaje) {
+        return;
+    }
+
+
+    mensaje.className =
+        "aviso-mensaje " +
+        tipo;
+
+
+    mensaje.textContent =
+        texto;
+
+}
+
+
+function ocultarMensajeAviso() {
+
+    var mensaje =
+        document.getElementById(
+            "aviso-mensaje"
+        );
+
+
+    if (!mensaje) {
+        return;
+    }
+
+
+    mensaje.className =
+        "aviso-mensaje oculto";
+
+    mensaje.textContent =
+        "";
+
+}
+
+
+function mostrarBotonComprobarAviso() {
+
+    var boton =
+        document.getElementById(
+            "aviso-comprobar"
+        );
+
+
+    if (boton) {
+
+        boton.classList.remove(
+            "oculto"
+        );
+
+    }
+
+}
+
+
+function ocultarBotonComprobarAviso() {
+
+    var boton =
+        document.getElementById(
+            "aviso-comprobar"
+        );
+
+
+    if (boton) {
+
+        boton.classList.add(
+            "oculto"
         );
 
     }
