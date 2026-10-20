@@ -36,32 +36,93 @@ var TEXTO_ESTADO_MAPA_NORMAL =
    UTILIDADES
 ============================================================ */
 
-function obtenerLat(obj) {
+function normalizarCoordenadaMapa(valor) {
+
+    if (
+        valor === null ||
+        valor === undefined
+    ) {
+        return NaN;
+    }
+
+
+    if (
+        typeof valor === "string" &&
+        valor.trim() === ""
+    ) {
+        return NaN;
+    }
+
+
+    var numero =
+        Number(
+            String(valor)
+                .replace(",", ".")
+                .trim()
+        );
+
+
+    return Number.isFinite(numero)
+        ? numero
+        : NaN;
+
+}
+
+
+function primeraCoordenadaValidaMapa(candidatos) {
+
+    for (
+        var indice = 0;
+        indice < candidatos.length;
+        indice += 1
+    ) {
+
+        var valor =
+            normalizarCoordenadaMapa(
+                candidatos[indice]
+            );
+
+
+        if (Number.isFinite(valor)) {
+
+            return valor;
+
+        }
+
+    }
+
+
+    return NaN;
+
+}
+
+
+function obtenerLatMapa(obj) {
     if (!obj) return NaN;
 
-    return Number(
-        obj.lat !== undefined ? obj.lat :
-        obj.latitud !== undefined ? obj.latitud :
-        obj.latitude !== undefined ? obj.latitude :
+    return primeraCoordenadaValidaMapa([
+        obj.lat,
+        obj.latitud,
+        obj.latitude,
         obj.y
-    );
+    ]);
 }
 
 
-function obtenerLng(obj) {
+function obtenerLngMapa(obj) {
     if (!obj) return NaN;
 
-    return Number(
-        obj.lng !== undefined ? obj.lng :
-        obj.longitud !== undefined ? obj.longitud :
-        obj.longitude !== undefined ? obj.longitude :
-        obj.lon !== undefined ? obj.lon :
+    return primeraCoordenadaValidaMapa([
+        obj.lng,
+        obj.longitud,
+        obj.longitude,
+        obj.lon,
         obj.x
-    );
+    ]);
 }
 
 
-function coordenadasValidas(lat, lng) {
+function coordenadasValidasMapa(lat, lng) {
     return Number.isFinite(lat) &&
            Number.isFinite(lng) &&
            lat >= -90 &&
@@ -261,10 +322,10 @@ function dibujarPuntos() {
 
     puntos.forEach(function(punto) {
 
-        var lat = obtenerLat(punto);
-        var lng = obtenerLng(punto);
+        var lat = obtenerLatMapa(punto);
+        var lng = obtenerLngMapa(punto);
 
-        if (!coordenadasValidas(lat, lng)) {
+        if (!coordenadasValidasMapa(lat, lng)) {
             return;
         }
 
@@ -319,6 +380,385 @@ function dibujarPuntos() {
    AVISOS
 ============================================================ */
 
+function obtenerIdAvisoMapa(aviso) {
+
+    if (!aviso) {
+        return null;
+    }
+
+
+    if (typeof obtenerIdAviso === "function") {
+
+        var id =
+            obtenerIdAviso(aviso);
+
+
+        if (
+            id !== null &&
+            id !== undefined &&
+            String(id).trim() !== ""
+        ) {
+
+            return id;
+
+        }
+
+    }
+
+
+    return (
+        aviso.id_aviso ||
+        aviso.aviso_id ||
+        aviso.id ||
+        aviso.ID_AVISO ||
+        aviso.AVISO_ID ||
+        null
+    );
+
+}
+
+
+function buscarPuntoAvisoMapa(aviso) {
+
+    if (!aviso) {
+        return null;
+    }
+
+
+    if (
+        aviso.punto &&
+        typeof aviso.punto === "object" &&
+        coordenadasValidasMapa(
+            obtenerLatMapa(aviso.punto),
+            obtenerLngMapa(aviso.punto)
+        )
+    ) {
+
+        return aviso.punto;
+
+    }
+
+
+    if (
+        aviso.punto_recogida &&
+        typeof aviso.punto_recogida === "object" &&
+        coordenadasValidasMapa(
+            obtenerLatMapa(aviso.punto_recogida),
+            obtenerLngMapa(aviso.punto_recogida)
+        )
+    ) {
+
+        return aviso.punto_recogida;
+
+    }
+
+
+    var datos =
+        window.DATOS_MOCK || {};
+
+
+    var puntos =
+        Array.isArray(datos.PUNTOS_RECOGIDA)
+            ? datos.PUNTOS_RECOGIDA
+            : [];
+
+
+    var candidatos = [
+        aviso.punto_id,
+        aviso.puntoId,
+        aviso.id_punto,
+        aviso.PUNTO_ID
+    ];
+
+
+    if (
+        typeof aviso.punto === "string" ||
+        typeof aviso.punto === "number"
+    ) {
+
+        candidatos.push(
+            aviso.punto
+        );
+
+    }
+
+
+    var ids =
+        candidatos
+            .filter(
+                function(valor) {
+
+                    return (
+                        valor !== null &&
+                        valor !== undefined &&
+                        String(valor).trim() !== ""
+                    );
+
+                }
+            )
+            .map(
+                function(valor) {
+
+                    return String(valor).trim();
+
+                }
+            );
+
+
+    if (ids.length === 0) {
+        return null;
+    }
+
+
+    return (
+        puntos.find(
+            function(punto) {
+
+                var idsPunto = [
+                    punto.punto_id,
+                    punto.id_punto,
+                    punto.id,
+                    punto.PUNTO_ID,
+                    punto.ID_PUNTO
+                ];
+
+
+                return idsPunto.some(
+                    function(valor) {
+
+                        return (
+                            valor !== null &&
+                            valor !== undefined &&
+                            ids.indexOf(
+                                String(valor).trim()
+                            ) !== -1
+                        );
+
+                    }
+                );
+
+            }
+        ) ||
+        null
+    );
+
+}
+
+
+function resolverCoordenadasAviso(aviso) {
+
+    var lat =
+        obtenerLatMapa(aviso);
+
+    var lng =
+        obtenerLngMapa(aviso);
+
+
+    if (!coordenadasValidasMapa(lat, lng)) {
+
+        lat =
+            primeraCoordenadaValidaMapa([
+                aviso && aviso.lat_aviso,
+                aviso && aviso.latitud_aviso
+            ]);
+
+
+        lng =
+            primeraCoordenadaValidaMapa([
+                aviso && aviso.lng_aviso,
+                aviso && aviso.longitud_aviso
+            ]);
+
+    }
+
+
+    if (
+        !coordenadasValidasMapa(lat, lng) &&
+        aviso &&
+        aviso.coordenadas
+    ) {
+
+        if (Array.isArray(aviso.coordenadas)) {
+
+            lat =
+                normalizarCoordenadaMapa(
+                    aviso.coordenadas[0]
+                );
+
+            lng =
+                normalizarCoordenadaMapa(
+                    aviso.coordenadas[1]
+                );
+
+        } else if (
+            typeof aviso.coordenadas === "object"
+        ) {
+
+            lat =
+                obtenerLatMapa(
+                    aviso.coordenadas
+                );
+
+            lng =
+                obtenerLngMapa(
+                    aviso.coordenadas
+                );
+
+        }
+
+    }
+
+
+    if (!coordenadasValidasMapa(lat, lng)) {
+
+        var punto =
+            buscarPuntoAvisoMapa(
+                aviso
+            );
+
+
+        if (punto) {
+
+            lat =
+                obtenerLatMapa(punto);
+
+            lng =
+                obtenerLngMapa(punto);
+
+        }
+
+    }
+
+
+    if (!coordenadasValidasMapa(lat, lng)) {
+
+        return {
+            lat: NaN,
+            lng: NaN,
+            valido: false
+        };
+
+    }
+
+
+    return {
+        lat: lat,
+        lng: lng,
+        valido: true
+    };
+
+}
+
+
+function crearMarcadorAvisoMapa(aviso) {
+
+    var coordenadas =
+        resolverCoordenadasAviso(
+            aviso
+        );
+
+
+    if (!coordenadas.valido) {
+        return null;
+    }
+
+
+    var estado =
+        normalizarEstadoAviso(
+            aviso.estado
+        );
+
+
+    var clase =
+        "alert-pending";
+
+
+    if (estado === "ASIGNADO") {
+        clase = "alert-assigned";
+    }
+
+    if (estado === "RECOGIDO") {
+        clase = "alert-collected";
+    }
+
+
+    var icono = L.divIcon({
+
+        className:
+            "alert-map-marker-wrapper",
+
+        html:
+            '<div class="alert-map-marker ' +
+            clase +
+            '">!</div>',
+
+        iconSize: [25, 25],
+        iconAnchor: [12, 12]
+
+    });
+
+
+    var marker = L.marker(
+        [
+            coordenadas.lat,
+            coordenadas.lng
+        ],
+        { icon: icono }
+    );
+
+
+    var id =
+        obtenerIdAvisoMapa(
+            aviso
+        );
+
+
+    var especie =
+        aviso.especie ||
+        aviso.especie_indicada ||
+        aviso.especie_reportada ||
+        "Especie no determinada";
+
+
+    marker.bindPopup(
+        "<strong>" +
+        escaparHTML(
+            id !== null && id !== undefined
+                ? id
+                : "Aviso"
+        ) +
+        "</strong><br>" +
+        "<b>" +
+        escaparHTML(especie) +
+        "</b><br>" +
+        "Estado: " +
+        escaparHTML(estado)
+    );
+
+
+    marker.on(
+        "click",
+        function() {
+
+            if (
+                typeof seleccionarAviso ===
+                "function"
+            ) {
+                seleccionarAviso(aviso);
+            }
+
+        }
+    );
+
+
+    return {
+        marker: marker,
+        id: id
+    };
+
+}
+
+
 function dibujarAvisos() {
 
     if (!capas.avisos) return;
@@ -339,110 +779,33 @@ function dibujarAvisos() {
 
     avisos.forEach(function(aviso) {
 
-        var lat = obtenerLat(aviso);
-        var lng = obtenerLng(aviso);
+        var creado =
+            crearMarcadorAvisoMapa(
+                aviso
+            );
 
-        if (!coordenadasValidas(lat, lng)) {
+
+        if (!creado) {
             return;
         }
 
 
-        var estado =
-            normalizarEstadoAviso(
-                aviso.estado
-            );
-
-
-        var clase =
-            "alert-pending";
-
-
-        if (estado === "ASIGNADO") {
-            clase = "alert-assigned";
-        }
-
-        if (estado === "RECOGIDO") {
-            clase = "alert-collected";
-        }
-
-
-        var icono = L.divIcon({
-
-            className:
-                "alert-map-marker-wrapper",
-
-            html:
-                '<div class="alert-map-marker ' +
-                clase +
-                '">!</div>',
-
-            iconSize: [25, 25],
-            iconAnchor: [12, 12]
-
-        });
-
-
-        var marker = L.marker(
-            [lat, lng],
-            { icon: icono }
-        );
-
-
-        var id =
-            aviso.id_aviso ||
-            aviso.aviso_id ||
-            aviso.id ||
-            "Aviso";
-
-
-        var idAvisoIndice =
-            typeof obtenerIdAviso === "function"
-                ? obtenerIdAviso(aviso)
-                : id;
-
-
         if (
-            idAvisoIndice !== null &&
-            idAvisoIndice !== undefined
+            creado.id !== null &&
+            creado.id !== undefined
         ) {
-            marcadoresAvisos[String(idAvisoIndice)] = marker;
+
+            marcadoresAvisos[
+                String(creado.id)
+            ] = creado.marker;
+
         }
 
 
-        var especie =
-            aviso.especie ||
-            aviso.especie_reportada ||
-            "Especie no determinada";
-
-
-        marker.bindPopup(
-            "<strong>" +
-            escaparHTML(id) +
-            "</strong><br>" +
-            "<b>" +
-            escaparHTML(especie) +
-            "</b><br>" +
-            "Estado: " +
-            escaparHTML(estado)
+        creado.marker.addTo(
+            capas.avisos
         );
 
-
-        marker.on(
-            "click",
-            function() {
-
-                if (
-                    typeof seleccionarAviso ===
-                    "function"
-                ) {
-                    seleccionarAviso(aviso);
-                }
-
-            }
-        );
-
-
-        marker.addTo(capas.avisos);
     });
 }
 
@@ -535,19 +898,19 @@ function dibujarVehiculos() {
 
 
             var lat =
-                obtenerLat(
+                obtenerLatMapa(
                     posicionEncontrada
                 );
 
 
             var lng =
-                obtenerLng(
+                obtenerLngMapa(
                     posicionEncontrada
                 );
 
 
             if (
-                !coordenadasValidas(
+                !coordenadasValidasMapa(
                     lat,
                     lng
                 )
@@ -688,7 +1051,7 @@ function actualizarPosicionVehiculo(
 ) {
 
     if (
-        !coordenadasValidas(
+        !coordenadasValidasMapa(
             lat,
             lng
         )
@@ -768,6 +1131,20 @@ function verAvisoEnMapa(avisoId) {
             : null;
 
 
+    if (
+        !aviso &&
+        typeof buscarAvisoAplicacionPorId ===
+            "function"
+    ) {
+
+        aviso =
+            buscarAvisoAplicacionPorId(
+                avisoId
+            );
+
+    }
+
+
     if (!aviso) {
 
         alert("No se ha encontrado el aviso.");
@@ -776,25 +1153,43 @@ function verAvisoEnMapa(avisoId) {
     }
 
 
-    var lat = obtenerLat(aviso);
-    var lng = obtenerLng(aviso);
+    var coordenadas =
+        resolverCoordenadasAviso(
+            aviso
+        );
 
 
-    if (!coordenadasValidas(lat, lng)) {
+    if (!coordenadas.valido) {
 
-        alert("Este aviso no tiene ubicación disponible.");
+        alert(
+            "Este aviso no tiene ubicación disponible. " +
+            "Revisa las coordenadas del punto de recogida asociado."
+        );
 
         return;
     }
 
 
-    var marker =
-        marcadoresAvisos[String(avisoId)];
+    if (!mapa) {
+
+        alert(
+            "El mapa todavía no está disponible. " +
+            "Inténtalo de nuevo cuando termine de cargar."
+        );
+
+        return;
+    }
 
 
-    if (!marker) {
+    if (
+        !capas ||
+        !capas.avisos
+    ) {
 
-        alert("No se ha encontrado la ubicación del aviso.");
+        alert(
+            "La capa de avisos del mapa todavía no está disponible. " +
+            "Inténtalo de nuevo cuando termine de cargar."
+        );
 
         return;
     }
@@ -825,7 +1220,79 @@ function verAvisoEnMapa(avisoId) {
     }
 
 
-    if (!mapa) {
+    /*
+     * Redibujar antes de buscar el marcador evita depender de una
+     * caché antigua tras crear, editar o eliminar un aviso.
+     */
+    if (
+        typeof dibujarAvisos ===
+        "function"
+    ) {
+
+        dibujarAvisos();
+
+    }
+
+
+    var id =
+        obtenerIdAvisoMapa(
+            aviso
+        );
+
+
+    var marker =
+        marcadoresAvisos[String(id)] ||
+        marcadoresAvisos[String(avisoId)];
+
+
+    if (!marker) {
+
+        var creado =
+            crearMarcadorAvisoMapa(
+                aviso
+            );
+
+
+        if (
+            creado &&
+            creado.marker
+        ) {
+
+            marker =
+                creado.marker;
+
+
+            if (capas.avisos) {
+
+                marker.addTo(
+                    capas.avisos
+                );
+
+            }
+
+
+            if (
+                creado.id !== null &&
+                creado.id !== undefined
+            ) {
+
+                marcadoresAvisos[
+                    String(creado.id)
+                ] = marker;
+
+            }
+
+        }
+
+    }
+
+
+    if (!marker) {
+
+        alert(
+            "No se ha podido representar la ubicación del aviso en el mapa."
+        );
+
         return;
     }
 
