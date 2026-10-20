@@ -1857,6 +1857,51 @@ color: #1E293B;
     background: var(--surface-soft);
 }
 
+.acciones-aviso-tabla {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 4px;
+
+    white-space: nowrap;
+}
+
+.boton-accion-aviso {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-width: 30px;
+    min-height: 30px;
+
+    padding: 4px 6px;
+
+    font-size: 13px;
+    line-height: 1;
+}
+
+.boton-editar-aviso,
+.boton-eliminar-aviso {
+    border: 1px solid var(--border-secondary);
+    border-radius: 6px;
+
+    background: #FFFFFF;
+    color: #334155;
+}
+
+.boton-editar-aviso:hover {
+    border-color: var(--primary);
+    background: var(--surface-soft);
+    color: var(--blue);
+}
+
+.boton-eliminar-aviso:hover {
+    border-color: var(--danger);
+    background: var(--danger-soft);
+    color: var(--danger);
+}
+
 .buscador-avisos {
     position: relative;
 
@@ -2099,7 +2144,7 @@ color: #1E293B;
 
 .tabla-avisos-pendientes th:nth-child(8),
 .tabla-avisos-pendientes td:nth-child(8) {
-    width: 56px;
+    width: 116px;
     text-align: center;
 }
 
@@ -4593,4 +4638,57 @@ UTILIDAD · ELEMENTOS OCULTOS
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
     border: 0;
+}
+
+
+/* ============================================================
+   NOTIFICACIÓN DE AVISOS
+============================================================ */
+
+.notificacion-aviso {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+
+    z-index: 4000;
+
+    max-width: min(420px, calc(100vw - 36px));
+
+    padding: 11px 14px;
+
+    border: 1px solid transparent;
+    border-radius: 8px;
+
+    background: #FFFFFF;
+    color: #1E293B;
+
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.24);
+
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.notificacion-aviso.exito {
+    border-color: #B7DDB9;
+    background: var(--success-soft);
+    color: var(--success);
+}
+
+.notificacion-aviso.error {
+    border-color: #EFB4B4;
+    background: var(--danger-soft);
+    color: var(--danger);
+}
+
+.notificacion-aviso.incierto {
+    border-color: #F0C98A;
+    background: var(--warning-soft);
+    color: #7A4A00;
+}
+
+.notificacion-aviso.info {
+    border-color: #B9D3DA;
+    background: #E8F1F4;
+    color: #345E6A;
 }
