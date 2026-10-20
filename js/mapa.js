@@ -654,7 +654,7 @@ function resolverCoordenadasAviso(aviso) {
  * Un aviso está asignado cuando el modelo lo confirma mediante
  * su pertenencia al plan vigente o mediante el estado ASIGNADO
  * junto con un vehículo. Un estado ASIGNADO aislado, sin plan ni
- * vehículo, es ambiguo y no recibe la marca verde.
+ * vehículo, es ambiguo y no recibe la marca de asignación.
  */
 function avisoEstaAsignadoMapa(aviso) {
 
@@ -754,6 +754,9 @@ function crearMarcadorAvisoMapa(aviso) {
 
         clase =
             "alert-collected";
+
+        contenido =
+            '<span class="alert-map-check" aria-hidden="true">✓</span>';
 
     } else if (
         avisoEstaAsignadoMapa(
