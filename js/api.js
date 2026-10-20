@@ -29,6 +29,16 @@ const TIMEOUT_OBTENER_AVISOS_MS = 10000;
 
 
 /*
+ * Edición y eliminación de avisos: son operaciones POST con
+ * respuesta verificable. Si se pierde la respuesta, el resultado
+ * es incierto y no se reintenta automáticamente.
+ */
+const TIMEOUT_ACTUALIZAR_AVISO_MS = 15000;
+
+const TIMEOUT_ELIMINAR_AVISO_MS = 15000;
+
+
+/*
  * Normaliza las claves de un aviso recibido por GET para que
  * la comprobación tolere diferencias de mayúsculas/minúsculas
  * en las cabeceras de la hoja.
@@ -128,6 +138,180 @@ function normalizarClavesAviso(aviso) {
 
 
     return normalizado;
+}
+
+
+/*
+ * Envía una acción de gestión de avisos y clasifica la respuesta.
+ *
+ * - Un fallo de red, timeout, HTTP no 2xx o JSON inválido es
+ *   incierto: no se puede afirmar que el servidor no haya escrito.
+ * - Un rechazo explícito del backend es definitivo.
+ */
+async function enviarAccionAvisoGestion(
+    payload,
+    timeoutMs
+) {
+
+    const controladorTimeout =
+        typeof AbortController === "function"
+            ? new AbortController()
+            : null;
+
+
+    let temporizadorTimeout = null;
+
+
+    if (controladorTimeout) {
+
+        temporizadorTimeout =
+            window.setTimeout(
+                function() {
+                    controladorTimeout.abort();
+                },
+                timeoutMs
+            );
+    }
+
+
+    let respuesta = null;
+
+
+    try {
+
+        const opciones = {
+            method: "POST",
+
+            headers: {
+                "Content-Type": "text/plain"
+            },
+
+            body: JSON.stringify(
+                payload
+            )
+        };
+
+
+        if (controladorTimeout) {
+
+            opciones.signal =
+                controladorTimeout.signal;
+
+        }
+
+
+        respuesta = await fetch(
+            CONFIG.api.url,
+            opciones
+        );
+
+    } catch (error) {
+
+        return {
+            ok: false,
+            incierto: true,
+            error:
+                "No se ha podido contactar con el servidor. " +
+                "No se puede confirmar si la operación se realizó."
+        };
+
+    } finally {
+
+        if (temporizadorTimeout) {
+
+            window.clearTimeout(
+                temporizadorTimeout
+            );
+        }
+    }
+
+
+    if (
+        !respuesta ||
+        typeof respuesta.json !== "function"
+    ) {
+
+        return {
+            ok: false,
+            incierto: true,
+            error:
+                "El servidor no ha devuelto una respuesta verificable."
+        };
+    }
+
+
+    if (
+        respuesta.status < 200 ||
+        respuesta.status >= 300
+    ) {
+
+        return {
+            ok: false,
+            incierto: true,
+            error:
+                "El servidor ha respondido con HTTP " +
+                respuesta.status +
+                ". No se puede confirmar la operación."
+        };
+    }
+
+
+    let resultado = null;
+
+
+    try {
+
+        resultado =
+            await respuesta.json();
+
+    } catch (error) {
+
+        return {
+            ok: false,
+            incierto: true,
+            error:
+                "La respuesta del servidor no es válida. " +
+                "No se puede confirmar la operación."
+        };
+    }
+
+
+    if (
+        !resultado ||
+        typeof resultado !== "object"
+    ) {
+
+        return {
+            ok: false,
+            incierto: true,
+            error:
+                "La respuesta del servidor no es válida."
+        };
+    }
+
+
+    if (resultado.ok !== true) {
+
+        return {
+            ok: false,
+            incierto:
+                resultado.incierto === true,
+            error:
+                resultado.error ||
+                resultado.mensaje ||
+                "El servidor ha rechazado la operación."
+        };
+    }
+
+
+    return Object.assign(
+        {},
+        resultado,
+        {
+            ok: true,
+            incierto: false
+        }
+    );
 }
 
 
@@ -723,6 +907,215 @@ const API = {
             guardado: true,
             aviso:
                 resultado.aviso
+        };
+    },
+
+
+    /* =========================================================
+       ACTUALIZAR AVISO
+       ---------------------------------------------------------
+       Modifica el aviso existente identificado por id_aviso.
+       No crea registros nuevos. Si la respuesta no se puede
+       verificar, se devuelve incierto:true.
+    ========================================================= */
+
+    async actualizarAviso(idAviso, datos) {
+
+        const id =
+            String(
+                idAviso || ""
+            ).trim();
+
+
+        if (!id) {
+
+            return {
+                ok: false,
+                incierto: false,
+                actualizado: false,
+                error:
+                    "El identificador del aviso es obligatorio."
+            };
+        }
+
+
+        if (CONFIG.modo === "mock") {
+
+            return {
+                ok: true,
+                incierto: false,
+                actualizado: true,
+                aviso: {
+                    id_aviso: id,
+                    punto_id:
+                        datos.punto_id,
+                    especie_indicada:
+                        datos.especie_indicada,
+                    numero_animales:
+                        datos.numero_animales,
+                    informacion_colaborador:
+                        datos.informacion_colaborador || "",
+                    observaciones:
+                        datos.observaciones || "",
+                    estado:
+                        "PENDIENTE"
+                }
+            };
+        }
+
+
+        const resultado =
+            await enviarAccionAvisoGestion(
+                {
+                    accion:
+                        "actualizar_aviso",
+                    id_aviso:
+                        id,
+                    punto_id:
+                        datos.punto_id,
+                    especie_indicada:
+                        datos.especie_indicada,
+                    numero_animales:
+                        datos.numero_animales,
+                    informacion_colaborador:
+                        datos.informacion_colaborador || "",
+                    observaciones:
+                        datos.observaciones || ""
+                },
+                TIMEOUT_ACTUALIZAR_AVISO_MS
+            );
+
+
+        if (!resultado.ok) {
+
+            return {
+                ok: false,
+                incierto:
+                    resultado.incierto === true,
+                actualizado: false,
+                error:
+                    resultado.error ||
+                    "No se ha podido actualizar el aviso."
+            };
+        }
+
+
+        if (
+            resultado.actualizado !== true ||
+            !resultado.aviso ||
+            String(
+                resultado.aviso.id_aviso
+            ).trim() !== id
+        ) {
+
+            return {
+                ok: false,
+                incierto: true,
+                actualizado: false,
+                error:
+                    "El servidor no ha confirmado el aviso actualizado. " +
+                    "Comprueba la lista antes de volver a intentarlo."
+            };
+        }
+
+
+        return {
+            ok: true,
+            incierto: false,
+            actualizado: true,
+            aviso:
+                resultado.aviso
+        };
+    },
+
+
+    /* =========================================================
+       ELIMINAR AVISO
+       ---------------------------------------------------------
+       Solo elimina el aviso identificado por id_aviso. La lista
+       local no debe modificarse hasta recibir confirmación.
+    ========================================================= */
+
+    async eliminarAviso(idAviso) {
+
+        const id =
+            String(
+                idAviso || ""
+            ).trim();
+
+
+        if (!id) {
+
+            return {
+                ok: false,
+                incierto: false,
+                eliminado: false,
+                error:
+                    "El identificador del aviso es obligatorio."
+            };
+        }
+
+
+        if (CONFIG.modo === "mock") {
+
+            return {
+                ok: true,
+                incierto: false,
+                eliminado: true,
+                id_aviso: id
+            };
+        }
+
+
+        const resultado =
+            await enviarAccionAvisoGestion(
+                {
+                    accion:
+                        "eliminar_aviso",
+                    id_aviso:
+                        id
+                },
+                TIMEOUT_ELIMINAR_AVISO_MS
+            );
+
+
+        if (!resultado.ok) {
+
+            return {
+                ok: false,
+                incierto:
+                    resultado.incierto === true,
+                eliminado: false,
+                error:
+                    resultado.error ||
+                    "No se ha podido eliminar el aviso."
+            };
+        }
+
+
+        if (
+            resultado.eliminado !== true ||
+            resultado.id_aviso === undefined ||
+            String(resultado.id_aviso).trim() !== id
+        ) {
+
+            return {
+                ok: false,
+                incierto: true,
+                eliminado: false,
+                error:
+                    "El servidor no ha confirmado la eliminación del aviso " +
+                    id +
+                    ". Comprueba la lista antes de volver a intentarlo."
+            };
+        }
+
+
+        return {
+            ok: true,
+            incierto: false,
+            eliminado: true,
+            id_aviso: id
         };
     },
 
