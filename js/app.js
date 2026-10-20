@@ -1733,6 +1733,12 @@ var avisoUltimoIntento = null;
 
 var avisoHoraIntento = null;
 
+var avisoEditandoId = null;
+
+var avisoFocoOrigen = null;
+
+var avisoEliminacionEnCurso = false;
+
 
 /*
  * Margen temporal usado para no confundir un aviso histórico
@@ -1926,6 +1932,304 @@ function configurarFormularioAviso() {
 }
 
 
+function recordarFocoAviso() {
+
+    var activo =
+        document.activeElement;
+
+
+    avisoFocoOrigen =
+        activo &&
+        activo !== document.body
+            ? activo
+            : null;
+
+}
+
+
+/*
+ * Devuelve el foco ANTES de ocultar el diálogo. Si el botón que
+ * lo abrió ya no existe (por ejemplo, tras refrescar la lista),
+ * se usa la acción rápida de avisos como destino seguro.
+ */
+function devolverFocoAviso() {
+
+    var destino =
+        avisoFocoOrigen;
+
+
+    avisoFocoOrigen = null;
+
+
+    var modal =
+        document.getElementById(
+            "modal-aviso"
+        );
+
+
+    var raiz =
+        document.documentElement ||
+        document.body;
+
+
+    if (
+        destino &&
+        raiz &&
+        typeof raiz.contains === "function" &&
+        raiz.contains(destino) &&
+        (!modal || !modal.contains(destino)) &&
+        !destino.disabled &&
+        typeof destino.focus === "function"
+    ) {
+
+        destino.focus();
+
+        return;
+
+    }
+
+
+    var alternativa =
+        document.getElementById(
+            "accion-aviso"
+        );
+
+
+    if (
+        alternativa &&
+        !alternativa.disabled &&
+        typeof alternativa.focus === "function"
+    ) {
+
+        alternativa.focus();
+
+    }
+
+}
+
+
+var avisoNotificacionTemporizador = null;
+
+
+function mostrarNotificacionAviso(tipo, texto) {
+
+    var elemento =
+        document.getElementById(
+            "notificacion-aviso"
+        );
+
+
+    if (!elemento) {
+
+        elemento =
+            document.createElement(
+                "div"
+            );
+
+        elemento.id =
+            "notificacion-aviso";
+
+        elemento.setAttribute(
+            "role",
+            "status"
+        );
+
+        elemento.setAttribute(
+            "aria-live",
+            "polite"
+        );
+
+
+        document.body.appendChild(
+            elemento
+        );
+
+    }
+
+
+    elemento.className =
+        "notificacion-aviso " +
+        String(
+            tipo || "info"
+        );
+
+
+    elemento.textContent =
+        String(
+            texto || ""
+        );
+
+
+    elemento.hidden =
+        false;
+
+
+    if (avisoNotificacionTemporizador) {
+
+        window.clearTimeout(
+            avisoNotificacionTemporizador
+        );
+
+    }
+
+
+    avisoNotificacionTemporizador =
+        window.setTimeout(
+            function() {
+
+                elemento.hidden =
+                    true;
+
+            },
+            6000
+        );
+
+}
+
+
+function enfocarBotonEdicionAviso(idAviso) {
+
+    if (
+        typeof document.querySelectorAll !==
+        "function"
+    ) {
+        return;
+    }
+
+
+    var botones =
+        document.querySelectorAll(
+            ".boton-editar-aviso"
+        );
+
+
+    for (
+        var indice = 0;
+        indice < botones.length;
+        indice += 1
+    ) {
+
+        if (
+            String(
+                botones[indice].dataset.avisoId
+            ) ===
+            String(idAviso)
+        ) {
+
+            botones[indice].focus();
+
+            return;
+
+        }
+
+    }
+
+}
+
+
+function obtenerIdAvisoAplicacion(aviso) {
+
+    if (!aviso) {
+        return null;
+    }
+
+
+    return (
+        aviso.id_aviso ||
+        aviso.aviso_id ||
+        aviso.id ||
+        aviso.ID_AVISO ||
+        aviso.AVISO_ID ||
+        null
+    );
+
+}
+
+
+function buscarAvisoAplicacionPorId(idAviso) {
+
+    var datos =
+        window.DATOS_MOCK || {};
+
+
+    var avisos =
+        Array.isArray(datos.AVISOS)
+            ? datos.AVISOS
+            : [];
+
+
+    return (
+        avisos.find(
+            function(aviso) {
+
+                return (
+                    String(
+                        obtenerIdAvisoAplicacion(
+                            aviso
+                        )
+                    ) ===
+                    String(idAviso)
+                );
+
+            }
+        ) ||
+        null
+    );
+
+}
+
+
+function obtenerPuntoIdAvisoAplicacion(aviso) {
+
+    if (!aviso) {
+        return "";
+    }
+
+
+    return String(
+        aviso.punto_id ||
+        aviso.puntoId ||
+        aviso.id_punto ||
+        ""
+    ).trim();
+
+}
+
+
+function refrescarAvisosAplicacion() {
+
+    if (
+        typeof renderizarAvisos ===
+        "function"
+    ) {
+
+        renderizarAvisos();
+
+    }
+
+
+    if (
+        typeof renderizarAvisosPendientes ===
+        "function"
+    ) {
+
+        renderizarAvisosPendientes();
+
+    }
+
+
+    if (
+        typeof dibujarAvisos ===
+        "function"
+    ) {
+
+        dibujarAvisos();
+
+    }
+
+}
+
+
 function abrirFormularioAviso() {
 
     var modal =
@@ -1937,6 +2241,16 @@ function abrirFormularioAviso() {
     if (!modal) {
         return;
     }
+
+
+    recordarFocoAviso();
+
+
+    avisoEditandoId = null;
+
+    avisoEnvioEnCurso = false;
+
+    avisoComprobacionEnCurso = false;
 
 
     var formulario =
@@ -1952,9 +2266,48 @@ function abrirFormularioAviso() {
     }
 
 
-    avisoEnvioEnCurso = false;
+    var titulo =
+        document.getElementById(
+            "modal-aviso-titulo"
+        );
 
-    avisoComprobacionEnCurso = false;
+
+    if (titulo) {
+
+        titulo.textContent =
+            "Nuevo aviso";
+
+    }
+
+
+    var botonGuardar =
+        document.getElementById(
+            "guardar-aviso"
+        );
+
+
+    if (botonGuardar) {
+
+        botonGuardar.textContent =
+            "Guardar aviso";
+
+    }
+
+
+    var botonCerrar =
+        document.getElementById(
+            "cerrar-modal-aviso"
+        );
+
+
+    if (botonCerrar) {
+
+        botonCerrar.setAttribute(
+            "aria-label",
+            "Cerrar formulario de aviso"
+        );
+
+    }
 
 
     /*
@@ -2030,11 +2383,14 @@ function abrirFormularioAviso() {
 }
 
 
-function cerrarFormularioAviso() {
+function cerrarFormularioAviso(forzarCierre) {
 
     if (
-        avisoEnvioEnCurso ||
-        avisoComprobacionEnCurso
+        !forzarCierre &&
+        (
+            avisoEnvioEnCurso ||
+            avisoComprobacionEnCurso
+        )
     ) {
         return;
     }
@@ -2049,6 +2405,14 @@ function cerrarFormularioAviso() {
     if (!modal) {
         return;
     }
+
+
+    /*
+     * El foco debe salir del diálogo antes de aplicar
+     * aria-hidden="true". Si el botón de origen ya no existe,
+     * devolverFocoAviso usa la acción rápida de avisos.
+     */
+    devolverFocoAviso();
 
 
     modal.classList.add(
@@ -2079,6 +2443,53 @@ function cerrarFormularioAviso() {
     }
 
 
+    avisoEditandoId = null;
+
+
+    var titulo =
+        document.getElementById(
+            "modal-aviso-titulo"
+        );
+
+
+    if (titulo) {
+
+        titulo.textContent =
+            "Nuevo aviso";
+
+    }
+
+
+    var botonGuardar =
+        document.getElementById(
+            "guardar-aviso"
+        );
+
+
+    if (botonGuardar) {
+
+        botonGuardar.textContent =
+            "Guardar aviso";
+
+    }
+
+
+    var botonCerrar =
+        document.getElementById(
+            "cerrar-modal-aviso"
+        );
+
+
+    if (botonCerrar) {
+
+        botonCerrar.setAttribute(
+            "aria-label",
+            "Cerrar formulario de aviso"
+        );
+
+    }
+
+
     /*
      * No se borran avisoResultadoPendiente, avisoUltimoIntento ni
      * avisoHoraIntento: el intento incierto debe seguir disponible
@@ -2091,6 +2502,561 @@ function cerrarFormularioAviso() {
     actualizarInfoPuntoAviso();
 
     actualizarBotonGuardarAviso();
+
+}
+
+
+function establecerValorCampoAviso(idCampo, valor) {
+
+    var campo =
+        document.getElementById(
+            idCampo
+        );
+
+
+    if (!campo) {
+        return;
+    }
+
+
+    campo.value =
+        valor === null ||
+        valor === undefined
+            ? ""
+            : String(valor);
+
+}
+
+
+function aplicarDatosAvisoEnMemoria(
+    datos,
+    avisoRespuesta,
+    punto
+) {
+
+    var almacen =
+        window.DATOS_MOCK;
+
+
+    if (
+        !almacen ||
+        !Array.isArray(almacen.AVISOS) ||
+        !datos ||
+        !datos.punto_id
+    ) {
+
+        return null;
+
+    }
+
+
+    var id =
+        avisoEditandoId;
+
+
+    var indice =
+        almacen.AVISOS.findIndex(
+            function(elemento) {
+
+                return (
+                    String(
+                        obtenerIdAvisoAplicacion(
+                            elemento
+                        )
+                    ) ===
+                    String(id)
+                );
+
+            }
+        );
+
+
+    if (indice < 0) {
+        return null;
+    }
+
+
+    var actual =
+        almacen.AVISOS[indice];
+
+
+    var latitud =
+        null;
+
+    var longitud =
+        null;
+
+    var nombrePunto =
+        String(
+            datos.punto_id
+        );
+
+
+    var coordenadasPunto =
+        obtenerCoordenadasPuntoAviso(
+            punto
+        );
+
+
+    if (coordenadasPunto.valido) {
+
+        latitud =
+            coordenadasPunto.lat;
+
+
+        longitud =
+            coordenadasPunto.lng;
+
+    }
+
+
+    if (punto) {
+
+        nombrePunto =
+            String(
+                punto.nombre ||
+                punto.nombre_punto ||
+                datos.punto_id
+            ).trim();
+
+    }
+
+
+    var actualizado =
+        Object.assign(
+            {},
+            actual,
+            {
+                id_aviso:
+                    String(id),
+                id:
+                    String(id),
+                punto_id:
+                    datos.punto_id,
+                puntoId:
+                    datos.punto_id,
+                punto:
+                    nombrePunto,
+                especie_indicada:
+                    datos.especie_indicada,
+                especie:
+                    datos.especie_indicada,
+                especie_reportada:
+                    datos.especie_indicada,
+                numero_animales:
+                    datos.numero_animales,
+                cantidad:
+                    datos.numero_animales,
+                informacion_colaborador:
+                    datos.informacion_colaborador || "",
+                observaciones:
+                    datos.observaciones || "",
+                latitud:
+                    latitud,
+                longitud:
+                    longitud
+            }
+        );
+
+
+    if (
+        avisoRespuesta &&
+        avisoRespuesta.estado !== undefined
+    ) {
+
+        actualizado.estado =
+            avisoRespuesta.estado;
+
+    }
+
+
+    if (
+        avisoRespuesta &&
+        avisoRespuesta.fecha_hora_aviso !== undefined
+    ) {
+
+        actualizado.fecha_hora_aviso =
+            avisoRespuesta.fecha_hora_aviso;
+
+    }
+
+
+    almacen.AVISOS[indice] =
+        actualizado;
+
+
+    return actualizado;
+
+}
+
+
+function abrirFormularioEdicionAviso(avisoId) {
+
+    var aviso =
+        buscarAvisoAplicacionPorId(
+            avisoId
+        );
+
+
+    if (!aviso) {
+
+        mostrarNotificacionAviso(
+            "error",
+            "No se ha encontrado el aviso seleccionado."
+        );
+
+        return;
+
+    }
+
+
+    var estado =
+        String(
+            aviso.estado || "PENDIENTE"
+        )
+            .trim()
+            .toUpperCase();
+
+
+    if (
+        estado &&
+        estado !== "PENDIENTE"
+    ) {
+
+        mostrarNotificacionAviso(
+            "error",
+            "Solo se pueden editar avisos pendientes."
+        );
+
+        return;
+
+    }
+
+
+    var id =
+        String(
+            obtenerIdAvisoAplicacion(
+                aviso
+            )
+        );
+
+
+    if (!id) {
+
+        mostrarNotificacionAviso(
+            "error",
+            "El aviso no tiene un identificador válido."
+        );
+
+        return;
+
+    }
+
+
+    abrirFormularioAviso();
+
+
+    avisoEditandoId =
+        id;
+
+
+    var puntoId =
+        obtenerPuntoIdAvisoAplicacion(
+            aviso
+        );
+
+
+    poblarPuntosAviso(
+        puntoId
+    );
+
+
+    establecerValorCampoAviso(
+        "aviso-punto",
+        puntoId
+    );
+
+
+    establecerValorCampoAviso(
+        "aviso-especie",
+        aviso.especie_indicada ||
+        aviso.especie_reportada ||
+        aviso.especie ||
+        ""
+    );
+
+
+    establecerValorCampoAviso(
+        "aviso-cantidad",
+        aviso.numero_animales !== undefined
+            ? aviso.numero_animales
+            : aviso.cantidad
+    );
+
+
+    establecerValorCampoAviso(
+        "aviso-colaborador",
+        aviso.informacion_colaborador ||
+        ""
+    );
+
+
+    establecerValorCampoAviso(
+        "aviso-observaciones",
+        aviso.observaciones ||
+        ""
+    );
+
+
+    var titulo =
+        document.getElementById(
+            "modal-aviso-titulo"
+        );
+
+
+    if (titulo) {
+
+        titulo.textContent =
+            "Editar aviso " +
+            id;
+
+    }
+
+
+    var guardar =
+        document.getElementById(
+            "guardar-aviso"
+        );
+
+
+    if (guardar) {
+
+        guardar.textContent =
+            "Guardar cambios";
+
+    }
+
+
+    var cerrar =
+        document.getElementById(
+            "cerrar-modal-aviso"
+        );
+
+
+    if (cerrar) {
+
+        cerrar.setAttribute(
+            "aria-label",
+            "Cerrar formulario de edición de aviso"
+        );
+
+    }
+
+
+    ocultarMensajeAviso();
+
+    ocultarBotonComprobarAviso();
+
+    actualizarInfoPuntoAviso();
+
+    actualizarBotonGuardarAviso();
+
+
+    var especie =
+        document.getElementById(
+            "aviso-especie"
+        );
+
+
+    if (
+        especie &&
+        typeof especie.focus === "function"
+    ) {
+
+        especie.focus();
+
+    }
+
+}
+
+
+async function eliminarAvisoAplicacion(avisoId) {
+
+    var id =
+        String(
+            avisoId || ""
+        ).trim();
+
+
+    if (!id || avisoEliminacionEnCurso) {
+        return;
+    }
+
+
+    var aviso =
+        buscarAvisoAplicacionPorId(
+            id
+        );
+
+
+    if (!aviso) {
+
+        mostrarNotificacionAviso(
+            "error",
+            "No se ha encontrado el aviso seleccionado."
+        );
+
+        return;
+
+    }
+
+
+    var estado =
+        String(
+            aviso.estado || "PENDIENTE"
+        )
+            .trim()
+            .toUpperCase();
+
+
+    if (
+        estado &&
+        estado !== "PENDIENTE"
+    ) {
+
+        mostrarNotificacionAviso(
+            "error",
+            "Solo se pueden eliminar avisos pendientes."
+        );
+
+        return;
+
+    }
+
+
+    var punto =
+        aviso.punto ||
+        aviso.nombre_punto ||
+        aviso.punto_id ||
+        "sin punto";
+
+
+    var confirmado =
+        window.confirm(
+            "¿Eliminar el aviso " +
+            id +
+            " (" +
+            punto +
+            ")?\n\n" +
+            "Esta acción no se puede deshacer."
+        );
+
+
+    if (!confirmado) {
+        return;
+    }
+
+
+    avisoEliminacionEnCurso =
+        true;
+
+
+    try {
+
+        var respuesta =
+            await API.eliminarAviso(
+                id
+            );
+
+
+        if (
+            respuesta &&
+            respuesta.ok &&
+            respuesta.eliminado === true
+        ) {
+
+            var almacen =
+                window.DATOS_MOCK;
+
+
+            if (
+                almacen &&
+                Array.isArray(
+                    almacen.AVISOS
+                )
+            ) {
+
+                almacen.AVISOS =
+                    almacen.AVISOS.filter(
+                        function(elemento) {
+
+                            return (
+                                String(
+                                    obtenerIdAvisoAplicacion(
+                                        elemento
+                                    )
+                                ) !==
+                                id
+                            );
+
+                        }
+                    );
+
+            }
+
+
+            refrescarAvisosAplicacion();
+
+
+            mostrarNotificacionAviso(
+                "exito",
+                "Aviso " +
+                id +
+                " eliminado correctamente."
+            );
+
+
+            var accion =
+                document.getElementById(
+                    "accion-aviso"
+                );
+
+
+            if (accion) {
+
+                accion.focus();
+
+            }
+
+
+            return;
+
+        }
+
+
+        mostrarNotificacionAviso(
+            "error",
+            (
+                respuesta &&
+                respuesta.error
+            ) ||
+            "No se ha podido eliminar el aviso."
+        );
+
+    } catch (error) {
+
+        mostrarNotificacionAviso(
+            "error",
+            "No se ha podido confirmar la eliminación. " +
+            "El aviso se mantiene en la lista."
+        );
+
+    } finally {
+
+        avisoEliminacionEnCurso =
+            false;
+
+    }
 
 }
 
@@ -2271,68 +3237,183 @@ function buscarPuntoAvisoPorId(puntoId) {
 }
 
 
-function tieneCoordenadasPuntoAviso(punto) {
+function primerNumeroCoordenadaAviso(valores) {
 
-    if (!punto) {
-        return false;
+    for (
+        var indice = 0;
+        indice < valores.length;
+        indice += 1
+    ) {
+
+        var valor =
+            valores[indice];
+
+
+        if (
+            valor === null ||
+            valor === undefined ||
+            (
+                typeof valor === "string" &&
+                valor.trim() === ""
+            )
+        ) {
+
+            continue;
+
+        }
+
+
+        var numero =
+            Number(
+                String(valor)
+                    .replace(",", ".")
+                    .trim()
+            );
+
+
+        if (Number.isFinite(numero)) {
+
+            return numero;
+
+        }
+
     }
 
 
-    var latitud =
-        punto.latitud !== undefined
-            ? punto.latitud
-            : punto.lat;
+    return NaN;
+
+}
 
 
-    var longitud =
-        punto.longitud !== undefined
-            ? punto.longitud
-            : punto.lng !== undefined
-                ? punto.lng
-                : punto.lon;
+function obtenerCoordenadasPuntoAviso(punto) {
 
+    if (!punto) {
 
-    if (
-        latitud === null ||
-        latitud === undefined ||
-        longitud === null ||
-        longitud === undefined
-    ) {
-
-        return false;
+        return {
+            lat: null,
+            lng: null,
+            valido: false
+        };
 
     }
 
 
     var lat =
-        Number(
-            String(latitud)
-                .replace(",", ".")
-                .trim()
-        );
+        primerNumeroCoordenadaAviso([
+            punto.latitud,
+            punto.lat,
+            punto.latitude,
+            punto.y
+        ]);
 
 
     var lng =
-        Number(
-            String(longitud)
-                .replace(",", ".")
-                .trim()
-        );
+        primerNumeroCoordenadaAviso([
+            punto.longitud,
+            punto.lng,
+            punto.lon,
+            punto.x
+        ]);
 
 
-    return (
+    if (
         Number.isFinite(lat) &&
         Number.isFinite(lng) &&
         lat >= -90 &&
         lat <= 90 &&
         lng >= -180 &&
         lng <= 180
-    );
+    ) {
+
+        return {
+            lat: lat,
+            lng: lng,
+            valido: true
+        };
+
+    }
+
+
+    return {
+        lat: null,
+        lng: null,
+        valido: false
+    };
 
 }
 
 
-function poblarPuntosAviso() {
+function tieneCoordenadasPuntoAviso(punto) {
+
+    return obtenerCoordenadasPuntoAviso(
+        punto
+    ).valido;
+
+}
+
+
+function obtenerPuntosFormularioAviso(puntoSeleccionadoId) {
+
+    var puntos =
+        obtenerPuntosDisponiblesAviso()
+            .slice();
+
+
+    var idSeleccionado =
+        String(
+            puntoSeleccionadoId || ""
+        ).trim();
+
+
+    if (!idSeleccionado) {
+
+        return puntos;
+
+    }
+
+
+    var yaIncluido =
+        puntos.some(
+            function(punto) {
+
+                return (
+                    String(
+                        obtenerIdPuntoParaAviso(
+                            punto
+                        )
+                    ).trim() ===
+                    idSeleccionado
+                );
+
+            }
+        );
+
+
+    if (!yaIncluido) {
+
+        var puntoActual =
+            buscarPuntoAvisoPorId(
+                idSeleccionado
+            );
+
+
+        if (puntoActual) {
+
+            puntos.push(
+                puntoActual
+            );
+
+        }
+
+    }
+
+
+    return puntos;
+
+}
+
+
+function poblarPuntosAviso(puntoSeleccionadoId) {
 
     var select =
         document.getElementById(
@@ -2371,8 +3452,16 @@ function poblarPuntosAviso() {
     );
 
 
+    var idSeleccionado =
+        String(
+            puntoSeleccionadoId || ""
+        ).trim();
+
+
     var puntos =
-        obtenerPuntosDisponiblesAviso();
+        obtenerPuntosFormularioAviso(
+            idSeleccionado
+        );
 
 
     if (puntos.length === 0) {
@@ -2468,6 +3557,14 @@ function poblarPuntosAviso() {
             }
 
 
+            if (!puntoAvisoEstaActivo(punto)) {
+
+                texto +=
+                    " (inactivo)";
+
+            }
+
+
             opcion.value = id;
 
             opcion.textContent = texto;
@@ -2479,6 +3576,14 @@ function poblarPuntosAviso() {
 
         }
     );
+
+
+    if (idSeleccionado) {
+
+        select.value =
+            idSeleccionado;
+
+    }
 
 
     select.disabled = false;
@@ -2502,15 +3607,41 @@ function actualizarBotonGuardarAviso() {
     }
 
 
+    var select =
+        document.getElementById(
+            "aviso-punto"
+        );
+
+
+    var idPuntoSeleccionado =
+        avisoEditandoId
+            ? obtenerPuntoIdAvisoAplicacion(
+                buscarAvisoAplicacionPorId(
+                    avisoEditandoId
+                )
+            )
+            : (
+                select
+                    ? String(
+                        select.value || ""
+                    ).trim()
+                    : ""
+            );
+
+
     var sinPuntos =
-        obtenerPuntosDisponiblesAviso()
-            .length === 0;
+        obtenerPuntosFormularioAviso(
+            idPuntoSeleccionado
+        ).length === 0;
 
 
     guardar.disabled =
         avisoEnvioEnCurso ||
         avisoComprobacionEnCurso ||
-        avisoResultadoPendiente ||
+        (
+            avisoResultadoPendiente &&
+            !avisoEditandoId
+        ) ||
         sinPuntos;
 
 
@@ -2727,39 +3858,19 @@ function actualizarInfoPuntoAviso() {
     }
 
 
-    if (tieneCoordenadasPuntoAviso(punto)) {
-
-        var latitud =
-            Number(
-                String(
-                    punto.latitud !== undefined
-                        ? punto.latitud
-                        : punto.lat
-                )
-                    .replace(",", ".")
-                    .trim()
-            );
+    var coordenadasPunto =
+        obtenerCoordenadasPuntoAviso(
+            punto
+        );
 
 
-        var longitud =
-            Number(
-                String(
-                    punto.longitud !== undefined
-                        ? punto.longitud
-                        : punto.lng !== undefined
-                            ? punto.lng
-                            : punto.lon
-                )
-                    .replace(",", ".")
-                    .trim()
-            );
-
+    if (coordenadasPunto.valido) {
 
         partes.push(
             "Coordenadas: " +
-            latitud +
+            coordenadasPunto.lat +
             ", " +
-            longitud
+            coordenadasPunto.lng
         );
 
     } else {
@@ -2922,6 +4033,206 @@ function validarFormularioAviso() {
 }
 
 
+async function enviarEdicionAviso(validacion) {
+
+    var idAviso =
+        String(
+            avisoEditandoId || ""
+        );
+
+
+    if (!idAviso) {
+        return;
+    }
+
+
+    avisoEnvioEnCurso =
+        true;
+
+
+    var guardar =
+        document.getElementById(
+            "guardar-aviso"
+        );
+
+
+    var cancelar =
+        document.getElementById(
+            "cancelar-aviso"
+        );
+
+
+    var cerrar =
+        document.getElementById(
+            "cerrar-modal-aviso"
+        );
+
+
+    if (guardar) {
+
+        guardar.disabled =
+            true;
+
+        guardar.textContent =
+            "Guardando...";
+
+    }
+
+
+    if (cancelar) {
+
+        cancelar.disabled =
+            true;
+
+    }
+
+
+    if (cerrar) {
+
+        cerrar.disabled =
+            true;
+
+    }
+
+
+    mostrarMensajeAviso(
+        "info",
+        "Guardando cambios..."
+    );
+
+
+    try {
+
+        var respuesta =
+            await API.actualizarAviso(
+                idAviso,
+                validacion.datos
+            );
+
+
+        if (
+            respuesta &&
+            respuesta.ok &&
+            respuesta.actualizado === true
+        ) {
+
+            aplicarDatosAvisoEnMemoria(
+                validacion.datos,
+                respuesta.aviso,
+                validacion.punto
+            );
+
+
+            refrescarAvisosAplicacion();
+
+
+            cerrarFormularioAviso(
+                true
+            );
+
+
+            mostrarNotificacionAviso(
+                "exito",
+                "Aviso " +
+                idAviso +
+                " actualizado correctamente."
+            );
+
+
+            enfocarBotonEdicionAviso(
+                idAviso
+            );
+
+
+            return;
+
+        }
+
+
+        if (
+            respuesta &&
+            respuesta.incierto
+        ) {
+
+            mostrarMensajeAviso(
+                "incierto",
+                respuesta.error ||
+                "No se ha podido confirmar si el aviso se actualizó. " +
+                "Revisa la lista antes de volver a intentarlo."
+            );
+
+            return;
+
+        }
+
+
+        mostrarMensajeAviso(
+            "error",
+            (
+                respuesta &&
+                respuesta.error
+            ) ||
+            "No se ha podido actualizar el aviso."
+        );
+
+    } catch (error) {
+
+        mostrarMensajeAviso(
+            "incierto",
+            "No se ha podido confirmar si el aviso se actualizó. " +
+            "Revisa la lista antes de volver a intentarlo."
+        );
+
+    } finally {
+
+        avisoEnvioEnCurso =
+            false;
+
+
+        var modal =
+            document.getElementById(
+                "modal-aviso"
+            );
+
+
+        var modalAbierto =
+            modal &&
+            !modal.classList.contains(
+                "oculto"
+            );
+
+
+        if (guardar && modalAbierto) {
+
+            guardar.textContent =
+                "Guardar cambios";
+
+        }
+
+
+        if (cancelar) {
+
+            cancelar.disabled =
+                false;
+
+        }
+
+
+        if (cerrar) {
+
+            cerrar.disabled =
+                false;
+
+        }
+
+
+        actualizarBotonGuardarAviso();
+
+    }
+
+}
+
+
 async function enviarFormularioAviso(evento) {
 
     evento.preventDefault();
@@ -2929,12 +4240,17 @@ async function enviarFormularioAviso(evento) {
 
     /*
      * Mientras se comprueba un resultado incierto no se permite
-     * reenviar la misma operación de forma inadvertida.
+     * reenviar la misma operación de forma inadvertida. La edición
+     * de otro aviso usa su propio identificador y no se bloquea por
+     * un alta pendiente.
      */
     if (
         avisoEnvioEnCurso ||
         avisoComprobacionEnCurso ||
-        avisoResultadoPendiente
+        (
+            avisoResultadoPendiente &&
+            !avisoEditandoId
+        )
     ) {
 
         return;
@@ -2964,6 +4280,17 @@ async function enviarFormularioAviso(evento) {
 
         }
 
+
+        return;
+
+    }
+
+
+    if (avisoEditandoId) {
+
+        await enviarEdicionAviso(
+            validacion
+        );
 
         return;
 
@@ -3049,35 +4376,15 @@ async function enviarFormularioAviso(evento) {
                 respuesta.aviso;
 
 
-            registrarAvisoCreado(
-                aviso,
-                validacion.punto
-            );
-
-
-            var formulario =
-                document.getElementById(
-                    "formulario-aviso"
+            var idAvisoCreado =
+                String(
+                    aviso.id_aviso
                 );
 
 
-            if (formulario) {
-
-                formulario.reset();
-
-            }
-
-
-            poblarPuntosAviso();
-
-            actualizarInfoPuntoAviso();
-
-
-            mostrarMensajeAviso(
-                "exito",
-                "Aviso " +
-                aviso.id_aviso +
-                " creado correctamente."
+            registrarAvisoCreado(
+                aviso,
+                validacion.punto
             );
 
 
@@ -3088,6 +4395,24 @@ async function enviarFormularioAviso(evento) {
             avisoHoraIntento = null;
 
             ocultarBotonComprobarAviso();
+
+
+            cerrarFormularioAviso(
+                true
+            );
+
+
+            mostrarNotificacionAviso(
+                "exito",
+                "Aviso " +
+                idAvisoCreado +
+                " creado correctamente."
+            );
+
+
+            enfocarBotonEdicionAviso(
+                idAvisoCreado
+            );
 
 
         } else if (
@@ -3258,32 +4583,20 @@ function crearAvisoParaMemoria(aviso, punto) {
     var longitud = null;
 
 
-    if (tieneCoordenadasPuntoAviso(punto)) {
+    var coordenadasPunto =
+        obtenerCoordenadasPuntoAviso(
+            punto
+        );
+
+
+    if (coordenadasPunto.valido) {
 
         latitud =
-            Number(
-                String(
-                    punto.latitud !== undefined
-                        ? punto.latitud
-                        : punto.lat
-                )
-                    .replace(",", ".")
-                    .trim()
-            );
+            coordenadasPunto.lat;
 
 
         longitud =
-            Number(
-                String(
-                    punto.longitud !== undefined
-                        ? punto.longitud
-                        : punto.lng !== undefined
-                            ? punto.lng
-                            : punto.lon
-                )
-                    .replace(",", ".")
-                    .trim()
-            );
+            coordenadasPunto.lng;
 
     }
 
@@ -3321,6 +4634,9 @@ function crearAvisoParaMemoria(aviso, punto) {
         puntoId:
             puntoId,
 
+        punto_id:
+            puntoId,
+
         punto:
             punto
                 ? String(
@@ -3329,6 +4645,12 @@ function crearAvisoParaMemoria(aviso, punto) {
                     puntoId
                 )
                 : "",
+
+        especie_indicada:
+            aviso.especie_indicada ||
+            aviso.especie ||
+            aviso.especie_reportada ||
+            "Especie no determinada",
 
         especie:
             aviso.especie_indicada ||
@@ -3343,6 +4665,9 @@ function crearAvisoParaMemoria(aviso, punto) {
             "Especie no determinada",
 
         cantidad:
+            cantidad,
+
+        numero_animales:
             cantidad,
 
         telefono:
@@ -3458,24 +4783,7 @@ function registrarAvisoCreado(aviso, punto) {
     }
 
 
-    if (
-        typeof renderizarAvisos ===
-        "function"
-    ) {
-
-        renderizarAvisos();
-
-    }
-
-
-    if (
-        typeof renderizarAvisosPendientes ===
-        "function"
-    ) {
-
-        renderizarAvisosPendientes();
-
-    }
+    refrescarAvisosAplicacion();
 
 }
 
