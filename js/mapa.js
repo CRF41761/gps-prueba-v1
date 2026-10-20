@@ -650,6 +650,80 @@ function resolverCoordenadasAviso(aviso) {
 }
 
 
+/*
+ * Un aviso está asignado cuando el modelo lo confirma mediante
+ * su pertenencia al plan vigente o mediante el estado ASIGNADO
+ * junto con un vehículo. Un estado ASIGNADO aislado, sin plan ni
+ * vehículo, es ambiguo y no recibe la marca verde.
+ */
+function avisoEstaAsignadoMapa(aviso) {
+
+    if (!aviso) {
+        return false;
+    }
+
+
+    var estado =
+        normalizarEstadoAviso(
+            aviso.estado
+        );
+
+
+    if (estado === "RECOGIDO") {
+        return false;
+    }
+
+
+    var id =
+        obtenerIdAvisoMapa(
+            aviso
+        );
+
+
+    if (
+        id !== null &&
+        id !== undefined &&
+        typeof avisoEstaPlanificadoEnFechaSeleccionada ===
+            "function"
+    ) {
+
+        try {
+
+            if (
+                avisoEstaPlanificadoEnFechaSeleccionada(
+                    id
+                )
+            ) {
+                return true;
+            }
+
+        } catch (error) {
+            /* Sin plan disponible se usa la validación siguiente. */
+        }
+    }
+
+
+    if (estado !== "ASIGNADO") {
+        return false;
+    }
+
+
+    var vehiculo =
+        aviso.vehiculo_id ||
+        aviso.vehiculo ||
+        aviso.id_vehiculo ||
+        aviso.VEHICULO_ID ||
+        aviso.VEHICULO;
+
+
+    return (
+        vehiculo !== null &&
+        vehiculo !== undefined &&
+        String(vehiculo).trim() !== ""
+    );
+}
+
+
 function crearMarcadorAvisoMapa(aviso) {
 
     var coordenadas =
@@ -672,13 +746,35 @@ function crearMarcadorAvisoMapa(aviso) {
     var clase =
         "alert-pending";
 
+    var contenido =
+        "!";
 
-    if (estado === "ASIGNADO") {
-        clase = "alert-assigned";
-    }
 
     if (estado === "RECOGIDO") {
-        clase = "alert-collected";
+
+        clase =
+            "alert-collected";
+
+    } else if (
+        avisoEstaAsignadoMapa(
+            aviso
+        )
+    ) {
+
+        clase =
+            "alert-assigned alert-assigned-confirmed";
+
+        contenido =
+            '<span class="alert-map-check" aria-hidden="true">✓</span>';
+
+    } else if (estado === "ASIGNADO") {
+
+        /*
+         * Estado incompleto: se conserva la presentación amarilla
+         * anterior, sin afirmar una asignación no confirmada.
+         */
+        clase =
+            "alert-assigned";
     }
 
 
@@ -690,7 +786,9 @@ function crearMarcadorAvisoMapa(aviso) {
         html:
             '<div class="alert-map-marker ' +
             clase +
-            '">!</div>',
+            '">' +
+            contenido +
+            '</div>',
 
         iconSize: [25, 25],
         iconAnchor: [12, 12]
