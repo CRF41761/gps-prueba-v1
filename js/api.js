@@ -14,6 +14,123 @@
 const TIMEOUT_GUARDADO_PLANIFICACION_MS = 15000;
 
 
+/*
+ * Alta de aviso: si la conexión se corta después de enviar, el
+ * resultado es incierto. No se reintenta automáticamente.
+ */
+const TIMEOUT_CREAR_AVISO_MS = 15000;
+
+
+/*
+ * Consulta de comprobación de un alta incierta: no puede
+ * quedarse bloqueada indefinidamente.
+ */
+const TIMEOUT_OBTENER_AVISOS_MS = 10000;
+
+
+/*
+ * Normaliza las claves de un aviso recibido por GET para que
+ * la comprobación tolere diferencias de mayúsculas/minúsculas
+ * en las cabeceras de la hoja.
+ *
+ * Añade alias para los datos de mock, que usan camelCase.
+ */
+function normalizarClavesAviso(aviso) {
+
+    if (
+        !aviso ||
+        typeof aviso !== "object" ||
+        Array.isArray(aviso)
+    ) {
+
+        return null;
+    }
+
+
+    const normalizado = {};
+
+
+    Object.keys(aviso).forEach(
+        function(clave) {
+
+            const nombre =
+                String(clave)
+                    .trim()
+                    .toLowerCase();
+
+
+            if (
+                nombre &&
+                normalizado[nombre] === undefined
+            ) {
+
+                normalizado[nombre] =
+                    aviso[clave];
+
+            }
+
+        }
+    );
+
+
+    if (
+        normalizado.id_aviso === undefined &&
+        aviso.id !== undefined
+    ) {
+
+        normalizado.id_aviso =
+            aviso.id;
+
+    }
+
+
+    if (
+        normalizado.punto_id === undefined &&
+        aviso.puntoId !== undefined
+    ) {
+
+        normalizado.punto_id =
+            aviso.puntoId;
+
+    }
+
+
+    if (
+        normalizado.especie_indicada === undefined
+    ) {
+
+        if (aviso.especie !== undefined) {
+
+            normalizado.especie_indicada =
+                aviso.especie;
+
+        } else if (
+            aviso.especie_reportada !== undefined
+        ) {
+
+            normalizado.especie_indicada =
+                aviso.especie_reportada;
+
+        }
+
+    }
+
+
+    if (
+        normalizado.numero_animales === undefined &&
+        aviso.cantidad !== undefined
+    ) {
+
+        normalizado.numero_animales =
+            aviso.cantidad;
+
+    }
+
+
+    return normalizado;
+}
+
+
 const API = {
 
     async obtenerDatos() {
@@ -40,6 +157,248 @@ const API = {
         }
 
         return resultado.datos;
+    },
+
+
+    /*
+     * Lectura de AVISOS para comprobar, tras un resultado
+     * incierto, si el alta llegó a guardarse.
+     *
+     * Es una petición GET de solo lectura.
+     */
+
+    async obtenerAvisos() {
+
+        if (CONFIG.modo === "mock") {
+
+            var origen = [];
+
+
+            if (
+                typeof window !== "undefined" &&
+                window.DATOS_MOCK &&
+                Array.isArray(
+                    window.DATOS_MOCK.AVISOS
+                )
+            ) {
+
+                origen =
+                    window.DATOS_MOCK.AVISOS;
+
+            } else if (
+                typeof MOCK_DATA !== "undefined" &&
+                MOCK_DATA &&
+                Array.isArray(MOCK_DATA.avisos)
+            ) {
+
+                origen =
+                    MOCK_DATA.avisos;
+
+            }
+
+
+            const avisosMock = [];
+
+
+            origen.forEach(
+                function(aviso) {
+
+                    const normalizado =
+                        normalizarClavesAviso(
+                            aviso
+                        );
+
+
+                    if (normalizado) {
+
+                        avisosMock.push(
+                            normalizado
+                        );
+
+                    }
+
+                }
+            );
+
+
+            return {
+                ok: true,
+                avisos: avisosMock
+            };
+        }
+
+
+        const controladorTimeout =
+            typeof AbortController === "function"
+                ? new AbortController()
+                : null;
+
+
+        let temporizadorTimeout = null;
+
+
+        if (controladorTimeout) {
+
+            temporizadorTimeout =
+                window.setTimeout(
+                    function() {
+
+                        controladorTimeout.abort();
+
+                    },
+                    TIMEOUT_OBTENER_AVISOS_MS
+                );
+
+        }
+
+
+        try {
+
+            const respuesta =
+                await fetch(
+                    CONFIG.api.url + "?accion=avisos",
+                    {
+                        cache: "no-store",
+
+                        signal:
+                            controladorTimeout
+                                ? controladorTimeout.signal
+                                : undefined
+                    }
+                );
+
+
+            if (
+                !respuesta ||
+                typeof respuesta.json !== "function"
+            ) {
+
+                return {
+                    ok: false,
+                    error:
+                        "La respuesta del servidor no es válida."
+                };
+            }
+
+
+            if (
+                respuesta.status < 200 ||
+                respuesta.status >= 300
+            ) {
+
+                return {
+                    ok: false,
+                    error:
+                        "El servidor ha respondido con HTTP " +
+                        respuesta.status +
+                        " al consultar los avisos."
+                };
+            }
+
+
+            const resultado =
+                await respuesta.json();
+
+
+            if (
+                !resultado ||
+                typeof resultado !== "object"
+            ) {
+
+                return {
+                    ok: false,
+                    error:
+                        "La respuesta de avisos no es válida."
+                };
+            }
+
+
+            if (resultado.ok !== true) {
+
+                return {
+                    ok: false,
+                    error:
+                        resultado.error ||
+                        resultado.mensaje ||
+                        "No se han podido consultar los avisos."
+                };
+            }
+
+
+            if (!Array.isArray(resultado.datos)) {
+
+                return {
+                    ok: false,
+                    error:
+                        "La respuesta de avisos no contiene una lista válida."
+                };
+            }
+
+
+            const avisos = [];
+
+
+            for (
+                let indice = 0;
+                indice < resultado.datos.length;
+                indice += 1
+            ) {
+
+                const normalizado =
+                    normalizarClavesAviso(
+                        resultado.datos[indice]
+                    );
+
+
+                if (!normalizado) {
+
+                    return {
+                        ok: false,
+                        error:
+                            "La respuesta de avisos contiene registros no válidos."
+                    };
+                }
+
+
+                avisos.push(
+                    normalizado
+                );
+            }
+
+
+            return {
+                ok: true,
+                avisos: avisos
+            };
+
+        } catch (error) {
+
+            const haExpirado =
+                !!controladorTimeout &&
+                !!error &&
+                (
+                    error.name === "AbortError" ||
+                    error.code === 20
+                );
+
+
+            return {
+                ok: false,
+                error: haExpirado
+                    ? "Tiempo de espera agotado al consultar los avisos."
+                    : "No se han podido consultar los avisos."
+            };
+
+        } finally {
+
+            if (temporizadorTimeout) {
+
+                window.clearTimeout(
+                    temporizadorTimeout
+                );
+
+            }
+        }
     },
 
 
@@ -74,6 +433,296 @@ const API = {
 
         return {
             ok: true
+        };
+    },
+
+
+    /* =========================================================
+       CREAR AVISO
+       ---------------------------------------------------------
+       POST con Content-Type text/plain, igual que el guardado
+       de planificación, para poder leer la respuesta del
+       servidor sin una respuesta opaca.
+
+       Devuelve:
+       - { ok:true, aviso } si el servidor confirma el alta.
+       - { ok:false, error } si el servidor rechaza o hay un
+         error definitivo.
+       - { ok:false, incierto:true, error } si no se puede
+         saber si el servidor llegó a guardar el aviso.
+
+       En el caso incierto NO se reintenta automáticamente.
+    ========================================================= */
+
+    async crearAviso(datos) {
+
+        if (CONFIG.modo === "mock") {
+
+            return {
+                ok: true,
+                incierto: false,
+                guardado: true,
+                mock: true,
+                aviso: {
+                    id_aviso:
+                        "AV-MOCK-" +
+                        Date.now(),
+                    fecha_hora_aviso:
+                        new Date().toISOString(),
+                    punto_id:
+                        datos.punto_id,
+                    especie_indicada:
+                        datos.especie_indicada,
+                    numero_animales:
+                        datos.numero_animales,
+                    informacion_colaborador:
+                        datos.informacion_colaborador || "",
+                    observaciones:
+                        datos.observaciones || "",
+                    estado:
+                        "PENDIENTE"
+                }
+            };
+        }
+
+
+        const payload = {
+            accion:
+                "crear_aviso",
+            punto_id:
+                datos.punto_id,
+            especie_indicada:
+                datos.especie_indicada,
+            numero_animales:
+                datos.numero_animales,
+            informacion_colaborador:
+                datos.informacion_colaborador || "",
+            observaciones:
+                datos.observaciones || ""
+        };
+
+
+        const controladorTimeout =
+            typeof AbortController === "function"
+                ? new AbortController()
+                : null;
+
+
+        let temporizadorTimeout = null;
+
+
+        if (controladorTimeout) {
+
+            temporizadorTimeout =
+                window.setTimeout(
+                    function() {
+                        controladorTimeout.abort();
+                    },
+                    TIMEOUT_CREAR_AVISO_MS
+                );
+        }
+
+
+        let respuesta = null;
+
+
+        try {
+
+            respuesta = await fetch(
+                CONFIG.api.url,
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type": "text/plain"
+                    },
+
+                    body: JSON.stringify(
+                        payload
+                    ),
+
+                    signal:
+                        controladorTimeout
+                            ? controladorTimeout.signal
+                            : undefined
+                }
+            );
+
+        } catch (error) {
+
+            return {
+                ok: false,
+                incierto: true,
+                guardado: false,
+                error:
+                    "No se ha podido confirmar si el aviso se guardó. " +
+                    "Comprueba si ya existe antes de volver a intentarlo."
+            };
+
+        } finally {
+
+            if (temporizadorTimeout) {
+
+                window.clearTimeout(
+                    temporizadorTimeout
+                );
+            }
+        }
+
+
+        if (
+            !respuesta ||
+            typeof respuesta.json !== "function"
+        ) {
+
+            return {
+                ok: false,
+                incierto: true,
+                guardado: false,
+                error:
+                    "El servidor no ha devuelto una respuesta verificable. " +
+                    "Comprueba si el aviso ya existe antes de volver a intentarlo."
+            };
+        }
+
+
+        /*
+         * Un estado HTTP distinto de 2xx no permite saber si el
+         * servidor llegó a escribir la fila. No se trata como un
+         * rechazo definitivo.
+         */
+        if (
+            respuesta.status < 200 ||
+            respuesta.status >= 300
+        ) {
+
+            return {
+                ok: false,
+                incierto: true,
+                guardado: false,
+                error:
+                    "El servidor ha respondido con HTTP " +
+                    respuesta.status +
+                    ". No se ha podido confirmar si el aviso se guardó. " +
+                    "Comprueba si ya existe antes de volver a intentarlo."
+            };
+        }
+
+
+        let resultado = null;
+
+
+        try {
+
+            resultado =
+                await respuesta.json();
+
+        } catch (error) {
+
+            return {
+                ok: false,
+                incierto: true,
+                guardado: false,
+                error:
+                    "No se ha podido leer la respuesta del servidor. " +
+                    "Comprueba si el aviso ya existe antes de volver a intentarlo."
+            };
+        }
+
+
+        if (
+            !resultado ||
+            typeof resultado !== "object"
+        ) {
+
+            return {
+                ok: false,
+                incierto: true,
+                guardado: false,
+                error:
+                    "La respuesta del servidor no es válida. " +
+                    "Comprueba si el aviso ya existe antes de volver a intentarlo."
+            };
+        }
+
+
+        if (resultado.ok !== true) {
+
+            /*
+             * El backend puede confirmar que la fila se escribió
+             * aunque no haya podido construir una respuesta de éxito
+             * completa. En ese caso no se devuelve un rechazo
+             * definitivo que invite a repetir el alta.
+             */
+            if (
+                resultado.incierto === true ||
+                resultado.guardado === true
+            ) {
+
+                return {
+                    ok: false,
+                    incierto: true,
+                    guardado:
+                        resultado.guardado === true,
+                    aviso:
+                        resultado.aviso,
+                    error:
+                        resultado.error ||
+                        resultado.mensaje ||
+                        "No se ha podido confirmar el resultado del alta."
+                };
+            }
+
+
+            return {
+                ok: false,
+                incierto: false,
+                guardado: false,
+                error:
+                    resultado.error ||
+                    resultado.mensaje ||
+                    "No se ha podido crear el aviso."
+            };
+        }
+
+
+        if (resultado.guardado === false) {
+
+            return {
+                ok: false,
+                incierto: true,
+                guardado: false,
+                aviso:
+                    resultado.aviso,
+                error:
+                    "El servidor no ha confirmado la escritura del aviso. " +
+                    "Comprueba si ya existe antes de volver a intentarlo."
+            };
+        }
+
+
+        if (
+            !resultado.aviso ||
+            !resultado.aviso.id_aviso
+        ) {
+
+            return {
+                ok: false,
+                incierto: true,
+                guardado: false,
+                error:
+                    "El servidor no ha confirmado el identificador del aviso. " +
+                    "Comprueba si ya existe antes de volver a intentarlo."
+            };
+        }
+
+
+        return {
+            ok: true,
+            incierto: false,
+            guardado: true,
+            aviso:
+                resultado.aviso
         };
     },
 
