@@ -1058,6 +1058,200 @@
 
 
 <!-- ============================================================
+     MODAL · NUEVO AVISO
+============================================================= -->
+
+<div
+    id="modal-aviso"
+    class="modal-aviso oculto"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="modal-aviso-titulo"
+    aria-hidden="true"
+>
+
+    <div
+        class="modal-aviso-fondo"
+        data-cerrar-aviso="true"
+    ></div>
+
+
+    <div class="modal-aviso-contenido">
+
+        <div class="modal-aviso-cabecera">
+
+            <div>
+
+                <div class="eyebrow">
+                    AVISOS
+                </div>
+
+                <h2 id="modal-aviso-titulo">
+                    Nuevo aviso
+                </h2>
+
+            </div>
+
+
+            <button
+                type="button"
+                id="cerrar-modal-aviso"
+                class="modal-aviso-cerrar"
+                aria-label="Cerrar formulario de nuevo aviso"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <form
+            id="formulario-aviso"
+            novalidate
+        >
+
+            <div class="campo-aviso">
+
+                <label for="aviso-punto">
+                    Punto de recogida
+                    <span class="aviso-obligatorio">*</span>
+                </label>
+
+                <select
+                    id="aviso-punto"
+                    name="punto_id"
+                    required
+                >
+                    <option value="">
+                        Seleccionar punto...
+                    </option>
+                </select>
+
+                <small
+                    id="aviso-punto-info"
+                    class="aviso-ayuda"
+                ></small>
+
+            </div>
+
+
+            <div class="campo-aviso">
+
+                <label for="aviso-especie">
+                    Especie indicada
+                    <span class="aviso-obligatorio">*</span>
+                </label>
+
+                <input
+                    id="aviso-especie"
+                    name="especie_indicada"
+                    type="text"
+                    maxlength="200"
+                    autocomplete="off"
+                    required
+                />
+
+            </div>
+
+
+            <div class="campo-aviso">
+
+                <label for="aviso-cantidad">
+                    Número de animales
+                    <span class="aviso-obligatorio">*</span>
+                </label>
+
+                <input
+                    id="aviso-cantidad"
+                    name="numero_animales"
+                    type="number"
+                    min="1"
+                    step="1"
+                    inputmode="numeric"
+                    required
+                />
+
+            </div>
+
+
+            <div class="campo-aviso">
+
+                <label for="aviso-colaborador">
+                    Información del colaborador
+                </label>
+
+                <input
+                    id="aviso-colaborador"
+                    name="informacion_colaborador"
+                    type="text"
+                    maxlength="300"
+                    autocomplete="off"
+                />
+
+            </div>
+
+
+            <div class="campo-aviso">
+
+                <label for="aviso-observaciones">
+                    Observaciones
+                </label>
+
+                <textarea
+                    id="aviso-observaciones"
+                    name="observaciones"
+                    rows="3"
+                    maxlength="2000"
+                ></textarea>
+
+            </div>
+
+
+            <div
+                id="aviso-mensaje"
+                class="aviso-mensaje oculto"
+                role="alert"
+                aria-live="polite"
+            ></div>
+
+
+            <div class="modal-aviso-acciones">
+
+                <button
+                    type="button"
+                    id="aviso-comprobar"
+                    class="boton-aviso comprobar oculto"
+                >
+                    Comprobar si se guardó
+                </button>
+
+                <button
+                    type="button"
+                    id="cancelar-aviso"
+                    class="boton-aviso secundario"
+                >
+                    Cancelar
+                </button>
+
+                <button
+                    type="submit"
+                    id="guardar-aviso"
+                    class="boton-aviso principal"
+                >
+                    Guardar aviso
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+
+<!-- ============================================================
      LEAFLET
 ============================================================= -->
 
