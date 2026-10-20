@@ -1595,7 +1595,8 @@ color: #1E293B;
 
 /* Asignación confirmada por el plan o por vehículo válido. */
 .alert-assigned-confirmed {
-    background: var(--success);
+    background: var(--warning);
+    color: #3b2a00;
 }
 
 .alert-map-check {
@@ -1603,8 +1604,9 @@ color: #1E293B;
     line-height: 1;
 }
 
+/* Recogida confirmada por el estado RECOGIDO del aviso. */
 .alert-collected {
-    background: var(--success);
+    background: #546E7A;
 }
 
 
