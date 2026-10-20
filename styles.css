@@ -1593,6 +1593,16 @@ color: #1E293B;
     background: var(--warning);
 }
 
+/* Asignación confirmada por el plan o por vehículo válido. */
+.alert-assigned-confirmed {
+    background: var(--success);
+}
+
+.alert-map-check {
+    font-size: 14px;
+    line-height: 1;
+}
+
 .alert-collected {
     background: var(--success);
 }
