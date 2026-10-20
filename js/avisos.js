@@ -189,22 +189,51 @@ function seleccionarAviso(
     aviso
 ) {
 
-    var lat =
-        Number(
-            aviso.lat !== undefined
-                ? aviso.lat
-                : aviso.latitud
-        );
+    var lat = NaN;
+
+    var lng = NaN;
 
 
-    var lng =
-        Number(
-            aviso.lng !== undefined
-                ? aviso.lng
-                : aviso.longitud !== undefined
-                    ? aviso.longitud
-                    : aviso.lon
-        );
+    if (
+        typeof resolverCoordenadasAviso ===
+        "function"
+    ) {
+
+        var coordenadas =
+            resolverCoordenadasAviso(
+                aviso
+            );
+
+
+        if (!coordenadas.valido) {
+            return;
+        }
+
+
+        lat = coordenadas.lat;
+
+        lng = coordenadas.lng;
+
+    } else {
+
+        lat =
+            Number(
+                aviso.lat !== undefined
+                    ? aviso.lat
+                    : aviso.latitud
+            );
+
+
+        lng =
+            Number(
+                aviso.lng !== undefined
+                    ? aviso.lng
+                    : aviso.longitud !== undefined
+                        ? aviso.longitud
+                        : aviso.lon
+            );
+
+    }
 
 
     if (
