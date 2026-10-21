@@ -2382,6 +2382,9 @@ function crearPlanVehiculo(
 
 
     const rutaHabitual =
+        vehiculo.ruta_habitual_identificada ||
+        vehiculo.rutaHabitual ||
+        vehiculo.ruta_habitual ||
         vehiculo.ruta_id ||
         vehiculo.ruta ||
         vehiculo.RUTA_ID ||
@@ -2402,8 +2405,14 @@ function crearPlanVehiculo(
         rutaHabitual:
             rutaHabitual,
 
+        /*
+         * BLOQUE 3 · la ruta diaria arranca ausente. La ruta
+         * habitual es solo una referencia y no se copia aquí;
+         * se rellena únicamente si el plan guardado la define
+         * o si el usuario la selecciona explícitamente.
+         */
         rutaActiva:
-            rutaHabitual,
+            "",
 
         horaSalida:
             vehiculo.hora_salida ||
