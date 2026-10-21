@@ -96,6 +96,14 @@ async function inicializarPlanificacion() {
 
 
         /*
+         * BLOQUE 7 · el mapa se dibujó antes de cargar los planes.
+         * Se refresca para que el vehículo y su recorrido diario
+         * reflejen la ruta seleccionada, no solo la habitual.
+         */
+        refrescarMapaPlanificacion();
+
+
+        /*
          * FASE 3F.6.7-C4-B · recuperar marcas de borrado
          * ANTES de que cualquier gesto pueda emitir: los
          * bloqueos reconstruidos frenan de inmediato todas
@@ -3890,6 +3898,18 @@ function seleccionarVehiculoPlan(
 
 
     renderizarPlanificacion();
+
+
+    /*
+     * BLOQUE 7 · al cambiar de vehículo se retira el recorrido
+     * calculado del anterior y se dibuja solo el del nuevo.
+     */
+    if (
+        typeof dibujarRutas ===
+        "function"
+    ) {
+        dibujarRutas();
+    }
 }
 
 
@@ -3908,6 +3928,558 @@ function obtenerPlanSeleccionado() {
         ] ||
         null
     );
+}
+
+
+/*
+ * BLOQUE 7 · refresco único del mapa tras cargar, sustituir o
+ * borrar la planificación. Las funciones de mapa pueden no estar
+ * cargadas en pruebas o en otros contextos: se comprueban.
+ */
+function refrescarMapaPlanificacion() {
+
+    if (
+        typeof dibujarRutas ===
+        "function"
+    ) {
+        dibujarRutas();
+    }
+
+
+    if (
+        typeof dibujarVehiculos ===
+        "function"
+    ) {
+        dibujarVehiculos();
+    }
+}
+
+
+/* ============================================================
+   GEOMETRÍA OSRM · NORMALIZACIÓN
+============================================================ */
+
+/*
+ * BLOQUE 7 · La geometría es la única fuente válida para pintar
+ * el recorrido real. Nunca se sustituye por una línea recta
+ * entre origen y destino.
+ */
+
+function normalizarPuntoGeometriaOSRM(punto) {
+
+    if (Array.isArray(punto)) {
+
+        const lng =
+            Number(punto[0]);
+
+        const lat =
+            Number(punto[1]);
+
+
+        if (
+            !Number.isFinite(lat) ||
+            !Number.isFinite(lng) ||
+            lat < -90 ||
+            lat > 90 ||
+            lng < -180 ||
+            lng > 180
+        ) {
+            return null;
+        }
+
+
+        return [lat, lng];
+    }
+
+
+    if (
+        punto &&
+        typeof punto === "object"
+    ) {
+
+        const lat =
+            Number(punto.lat);
+
+        const lng =
+            Number(punto.lng);
+
+
+        if (
+            !Number.isFinite(lat) ||
+            !Number.isFinite(lng) ||
+            lat < -90 ||
+            lat > 90 ||
+            lng < -180 ||
+            lng > 180
+        ) {
+            return null;
+        }
+
+
+        return [lat, lng];
+    }
+
+
+    return null;
+}
+
+
+function decodificarPolilineaOSRM(texto, precision) {
+
+    if (
+        typeof texto !== "string" ||
+        texto.length === 0
+    ) {
+        return [];
+    }
+
+
+    const factor =
+        Math.pow(
+            10,
+            precision || 5
+        );
+
+    let indice = 0;
+    let lat = 0;
+    let lng = 0;
+
+    const coordenadas = [];
+
+
+    while (indice < texto.length) {
+
+        let cambioLat = 0;
+        let desplazamiento = 0;
+        let byte = 0;
+
+
+        do {
+
+            if (indice >= texto.length) {
+                return [];
+            }
+
+
+            byte =
+                texto.charCodeAt(
+                    indice++
+                ) - 63;
+
+
+            cambioLat |=
+                (byte & 0x1f) <<
+                desplazamiento;
+
+
+            desplazamiento += 5;
+
+        } while (byte >= 0x20);
+
+
+        let cambioLng = 0;
+        let desplazamientoLng = 0;
+
+
+        do {
+
+            if (indice >= texto.length) {
+                return [];
+            }
+
+
+            byte =
+                texto.charCodeAt(
+                    indice++
+                ) - 63;
+
+
+            cambioLng |=
+                (byte & 0x1f) <<
+                desplazamientoLng;
+
+
+            desplazamientoLng += 5;
+
+        } while (byte >= 0x20);
+
+
+        lat +=
+            (cambioLat & 1)
+                ? ~(cambioLat >> 1)
+                : (cambioLat >> 1);
+
+
+        lng +=
+            (cambioLng & 1)
+                ? ~(cambioLng >> 1)
+                : (cambioLng >> 1);
+
+
+        coordenadas.push(
+            [
+                lat / factor,
+                lng / factor
+            ]
+        );
+    }
+
+
+    return coordenadas;
+}
+
+
+function errorExtremosGeometriaOSRM(
+    coordenadas,
+    origen,
+    destino
+) {
+
+    if (
+        !Array.isArray(coordenadas) ||
+        coordenadas.length < 2 ||
+        !origen ||
+        !destino
+    ) {
+        return Infinity;
+    }
+
+
+    const latOrigen =
+        Number(origen.lat);
+
+    const lngOrigen =
+        Number(origen.lng);
+
+    const latDestino =
+        Number(destino.lat);
+
+    const lngDestino =
+        Number(destino.lng);
+
+
+    if (
+        !Number.isFinite(latOrigen) ||
+        !Number.isFinite(lngOrigen) ||
+        !Number.isFinite(latDestino) ||
+        !Number.isFinite(lngDestino)
+    ) {
+        return Infinity;
+    }
+
+
+    const primera =
+        coordenadas[0];
+
+    const ultima =
+        coordenadas[
+            coordenadas.length - 1
+        ];
+
+
+    const diferenciaLatOrigen =
+        primera[0] - latOrigen;
+
+    const diferenciaLngOrigen =
+        primera[1] - lngOrigen;
+
+    const diferenciaLatDestino =
+        ultima[0] - latDestino;
+
+    const diferenciaLngDestino =
+        ultima[1] - lngDestino;
+
+
+    return (
+        diferenciaLatOrigen *
+            diferenciaLatOrigen +
+        diferenciaLngOrigen *
+            diferenciaLngOrigen +
+        diferenciaLatDestino *
+            diferenciaLatDestino +
+        diferenciaLngDestino *
+            diferenciaLngDestino
+    );
+}
+
+
+function geometriaValidaOSRM(coordenadas) {
+
+    if (
+        !Array.isArray(coordenadas) ||
+        coordenadas.length < 2
+    ) {
+        return false;
+    }
+
+
+    for (
+        let indice = 0;
+        indice < coordenadas.length;
+        indice++
+    ) {
+
+        const punto =
+            coordenadas[indice];
+
+
+        if (!Array.isArray(punto)) {
+            return false;
+        }
+
+
+        const lat =
+            Number(punto[0]);
+
+        const lng =
+            Number(punto[1]);
+
+
+        if (
+            !Number.isFinite(lat) ||
+            !Number.isFinite(lng) ||
+            lat < -90 ||
+            lat > 90 ||
+            lng < -180 ||
+            lng > 180
+        ) {
+            return false;
+        }
+    }
+
+
+    return true;
+}
+
+
+function extraerCoordenadasGeometriaOSRM(
+    ruta,
+    origen,
+    destino
+) {
+
+    if (
+        !ruta ||
+        typeof ruta !== "object"
+    ) {
+        return [];
+    }
+
+
+    if (
+        typeof ruta.geometry === "string"
+    ) {
+
+        const precisionCinco =
+            decodificarPolilineaOSRM(
+                ruta.geometry,
+                5
+            );
+
+        const precisionSeis =
+            decodificarPolilineaOSRM(
+                ruta.geometry,
+                6
+            );
+
+
+        const cincoValida =
+            geometriaValidaOSRM(
+                precisionCinco
+            );
+
+        const seisValida =
+            geometriaValidaOSRM(
+                precisionSeis
+            );
+
+
+        if (cincoValida && seisValida) {
+
+            /*
+             * Una polilínea puede decodificar en ambos formatos.
+             * Se elige la que acerca más sus extremos al origen y
+             * destino solicitados; nunca se inventa el trazado.
+             */
+            const errorCinco =
+                errorExtremosGeometriaOSRM(
+                    precisionCinco,
+                    origen,
+                    destino
+                );
+
+            const errorSeis =
+                errorExtremosGeometriaOSRM(
+                    precisionSeis,
+                    origen,
+                    destino
+                );
+
+
+            return errorSeis < errorCinco
+                ? precisionSeis
+                : precisionCinco;
+        }
+
+
+        if (cincoValida) {
+            return precisionCinco;
+        }
+
+
+        return seisValida
+            ? precisionSeis
+            : [];
+    }
+
+
+    let fuente = null;
+
+
+    if (
+        ruta.geometry &&
+        typeof ruta.geometry === "object"
+    ) {
+
+        if (
+            Array.isArray(
+                ruta.geometry.coordinates
+            )
+        ) {
+            fuente =
+                ruta.geometry.coordinates;
+        } else if (
+            Array.isArray(
+                ruta.geometry
+            )
+        ) {
+            fuente =
+                ruta.geometry;
+        }
+    } else if (
+        Array.isArray(
+            ruta.geometry
+        )
+    ) {
+        fuente =
+            ruta.geometry;
+    } else if (
+        Array.isArray(
+            ruta.coordinates
+        )
+    ) {
+        fuente =
+            ruta.coordinates;
+    }
+
+
+    if (!fuente) {
+        return [];
+    }
+
+
+    const normalizadas = [];
+
+
+    for (
+        let indice = 0;
+        indice < fuente.length;
+        indice++
+    ) {
+
+        const punto =
+            normalizarPuntoGeometriaOSRM(
+                fuente[indice]
+            );
+
+
+        if (!punto) {
+            return [];
+        }
+
+
+        normalizadas.push(
+            punto
+        );
+    }
+
+
+    return normalizadas.length >= 2
+        ? normalizadas
+        : [];
+}
+
+
+function unirCoordenadasGeometriaOSRM(tramos) {
+
+    if (!Array.isArray(tramos)) {
+        return [];
+    }
+
+
+    const coordenadas = [];
+
+
+    for (
+        let indiceTramo = 0;
+        indiceTramo < tramos.length;
+        indiceTramo++
+    ) {
+
+        const tramo =
+            tramos[indiceTramo];
+
+        const tramoCoordenadas =
+            tramo &&
+            Array.isArray(tramo.coordenadas)
+                ? tramo.coordenadas
+                : [];
+
+
+        if (tramoCoordenadas.length < 2) {
+            return [];
+        }
+
+
+        let inicio = 0;
+
+
+        if (coordenadas.length > 0) {
+
+            const ultima =
+                coordenadas[
+                    coordenadas.length - 1
+                ];
+
+            const primera =
+                tramoCoordenadas[0];
+
+
+            if (
+                ultima[0] === primera[0] &&
+                ultima[1] === primera[1]
+            ) {
+                inicio = 1;
+            }
+        }
+
+
+        for (
+            let indicePunto = inicio;
+            indicePunto < tramoCoordenadas.length;
+            indicePunto++
+        ) {
+
+            coordenadas.push(
+                tramoCoordenadas[indicePunto]
+            );
+        }
+    }
+
+
+    return coordenadas.length >= 2
+        ? coordenadas
+        : [];
 }
 
 
@@ -3993,9 +4565,34 @@ async function calcularRutasRealesVehiculo(
                     resultado.duracionSegundos
                 );
 
+
+            const geometriaTramo =
+                extraerCoordenadasGeometriaOSRM(
+                    resultado.ruta,
+                    origen,
+                    destino
+                );
+
+
+            if (geometriaTramo.length >= 2) {
+
+                tramo.coordenadas =
+                    geometriaTramo;
+
+                tramo.geometriaEstado =
+                    "OK";
+
+            } else {
+
+                tramo.geometriaEstado =
+                    "SIN_GEOMETRIA";
+            }
+
         } catch (error) {
 
             tramo.estado = "ERROR";
+            tramo.geometriaEstado =
+                "ERROR";
             tramo.error =
                 error && error.message
                     ? error.message
@@ -4032,13 +4629,35 @@ async function calcularRutasRealesVehiculo(
     }
 
 
+    /*
+     * BLOQUE 7 · Solo se publica una geometría completa cuando
+     * todos los tramos tienen coordenadas válidas. Si falta un
+     * tramo, no se dibuja un recorrido parcial ni una línea
+     * recta: los tiempos pueden seguir calculándose, pero el
+     * mapa no presenta una ruta ficticia.
+     */
+    const geometria =
+        unirCoordenadasGeometriaOSRM(
+            tramos
+        );
+
+
+    const geometriaEstado =
+        estadoGeneral === "OK" &&
+        geometria.length >= 2
+            ? "OK"
+            : "SIN_GEOMETRIA";
+
+
     plan.calculosRuta = {
         estado: estadoGeneral,
         origenCRF: {
             lat: origenCRF.lat,
             lng: origenCRF.lng
         },
-        tramos: tramos
+        tramos: tramos,
+        geometria: geometria,
+        geometriaEstado: geometriaEstado
     };
 
     return plan.calculosRuta;
@@ -4499,6 +5118,20 @@ async function recalcularYActualizarPlanificacionVehiculo(
             resultado &&
             resultado.estado === "ERROR"
         ) {
+
+            /*
+             * BLOQUE 7 · un cálculo fallido no puede dejar en el
+             * mapa el trazado de una versión anterior. La función
+             * de dibujo decide si aún hay geometría válida.
+             */
+            if (
+                typeof dibujarRutas ===
+                "function"
+            ) {
+                dibujarRutas();
+            }
+
+
             return resultado;
         }
 
@@ -8121,6 +8754,19 @@ function cambiarRutaPlanificada(
 
         dibujarRutas();
     }
+
+
+    /*
+     * BLOQUE 7 · el marcador usa el color de la ruta diaria.
+     * La ruta habitual del vehículo no se modifica.
+     */
+    if (
+        typeof dibujarVehiculos ===
+        "function"
+    ) {
+
+        dibujarVehiculos();
+    }
 }
 
 
@@ -10743,6 +11389,12 @@ async function descartarCambiosYCargarDiaNuevo() {
 
     renderizarPlanificacion();
 
+    /*
+     * BLOQUE 7 · al sustituir la planificación por otro día,
+     * el mapa no puede conservar el recorrido del día anterior.
+     */
+    refrescarMapaPlanificacion();
+
 
     if (
         typeof actualizarFechaPlanificacion ===
@@ -10804,6 +11456,12 @@ async function recargarPlanificacionLimpia(nuevoDia) {
         cargarPlanificacionDesdeDatos();
 
         renderizarPlanificacion();
+
+        /*
+         * BLOQUE 7 · recarga limpia de otro día: se retira el
+         * recorrido calculado que ya no corresponde.
+         */
+        refrescarMapaPlanificacion();
 
 
         if (
@@ -12239,6 +12897,16 @@ function limpiarEstadoLocalTrasBorrado(id, conservarEdiciones) {
             false;
 
 
+        /*
+         * BLOQUE 7 · el trazado calculado pertenece al plan que
+         * acaba de borrarse. No puede sobrevivir como si siguiera
+         * vigente.
+         */
+        invalidarCalculosPlanificacion(
+            plan
+        );
+
+
         if (conservarEdiciones !== true) {
 
             plan.paradas = [];
@@ -12283,6 +12951,13 @@ function limpiarEstadoLocalTrasBorrado(id, conservarEdiciones) {
 function refrescarTrasBorrado() {
 
     renderizarPlanificacion();
+
+
+    /*
+     * BLOQUE 7 · tras un borrado confirmado no debe quedar el
+     * recorrido calculado del plan eliminado.
+     */
+    refrescarMapaPlanificacion();
 
 
     if (
