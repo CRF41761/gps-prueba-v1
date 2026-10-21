@@ -2425,8 +2425,241 @@ function crearPlanVehiculo(
             fecha,
 
         modificado:
+            false,
+
+        /*
+         * BLOQUE 6 · distingue una planificación realmente
+         * guardada de un plan que solo existe en memoria porque
+         * se reconstruyó desde avisos ASIGNADO/RECOGIDO.
+         */
+        tienePlanGuardado:
             false
     };
+}
+
+
+/**
+ * BLOQUE 6 · clave fiable de una parada de tipo AVISO.
+ *
+ * Solo se usan identificadores explícitos del aviso. No se
+ * emplean nombre, coordenadas, orden, posición del array ni el
+ * campo genérico `id` (que puede ser sintético): si no hay
+ * avisoId/id_aviso, no se puede deduplicar con garantías.
+ */
+function obtenerClaveAvisoParada(parada) {
+
+    if (
+        !parada ||
+        String(
+            parada.tipo || ""
+        ).toUpperCase() !== "AVISO"
+    ) {
+
+        return null;
+    }
+
+
+    const candidatos = [
+        parada.avisoId,
+        parada.id_aviso
+    ];
+
+
+    for (
+        let indice = 0;
+        indice < candidatos.length;
+        indice += 1
+    ) {
+
+        const valor =
+            candidatos[indice];
+
+
+        if (
+            valor !== null &&
+            valor !== undefined &&
+            String(valor).trim() !== ""
+        ) {
+
+            return String(valor);
+        }
+    }
+
+
+    return null;
+}
+
+
+/**
+ * BLOQUE 6 · combina las paradas del plan guardado con las
+ * paradas reconstruidas desde avisos.
+ *
+ * - Conserva el orden y el contenido del plan guardado.
+ * - Añade al final solo los avisos reconstruidos que no estén
+ *   ya representados por la misma clave de aviso.
+ * - Nunca deduplica por nombre, coordenadas, orden o posición.
+ */
+function fusionarParadasGuardadasConReconstruidas(
+    plan,
+    paradasGuardadas
+) {
+
+    const guardadas =
+        Array.isArray(paradasGuardadas)
+            ? paradasGuardadas
+            : [];
+
+
+    const clavesGuardadas =
+        new Set();
+
+
+    guardadas.forEach(
+        parada => {
+
+            const clave =
+                obtenerClaveAvisoParada(
+                    parada
+                );
+
+
+            if (clave !== null) {
+
+                clavesGuardadas.add(
+                    clave
+                );
+            }
+        }
+    );
+
+
+    const reconstruidas =
+        (
+            Array.isArray(plan && plan.paradas)
+                ? plan.paradas
+                : []
+        ).filter(
+            parada =>
+                parada &&
+                parada.reconstruidaDesdeAviso === true
+        );
+
+
+    const noRepresentadas =
+        reconstruidas.filter(
+            parada => {
+
+                const clave =
+                    obtenerClaveAvisoParada(
+                        parada
+                    );
+
+
+                return (
+                    clave === null ||
+                    !clavesGuardadas.has(
+                        clave
+                    )
+                );
+            }
+        );
+
+
+    plan.paradas =
+        guardadas.concat(
+            noRepresentadas
+        );
+
+
+    return {
+        guardadas: guardadas.length,
+        reconstruidas: noRepresentadas.length
+    };
+}
+
+
+/**
+ * BLOQUE 6 · tras un guardado confirmado, las paradas
+ * reconstruidas que formaban parte del snapshot ya están
+ * persistidas. Se retira su marca solo si su clave de aviso
+ * aparece en el payload; así una parada distinta no se
+ * declara guardada por error.
+ */
+function confirmarParadasPersistidasEnPlan(
+    plan,
+    paradasPayload
+) {
+
+    if (!plan) {
+
+        return;
+    }
+
+
+    const clavesPersistidas =
+        new Set();
+
+
+    (
+        Array.isArray(paradasPayload)
+            ? paradasPayload
+            : []
+    ).forEach(
+        parada => {
+
+            const clave =
+                obtenerClaveAvisoParada(
+                    parada
+                );
+
+
+            if (clave !== null) {
+
+                clavesPersistidas.add(
+                    clave
+                );
+            }
+        }
+    );
+
+
+    (
+        Array.isArray(plan.paradas)
+            ? plan.paradas
+            : []
+    ).forEach(
+        parada => {
+
+            if (
+                !parada ||
+                parada.reconstruidaDesdeAviso !== true
+            ) {
+
+                return;
+            }
+
+
+            const clave =
+                obtenerClaveAvisoParada(
+                    parada
+                );
+
+
+            if (
+                clave !== null &&
+                clavesPersistidas.has(
+                    clave
+                )
+            ) {
+
+                delete parada.reconstruidaDesdeAviso;
+            }
+        }
+    );
+
+
+    plan.tienePlanGuardado =
+        true;
 }
 
 
@@ -2715,7 +2948,16 @@ function cargarPlanificacionDesdeDatos() {
                     estado,
 
                 origen:
-                    "AVISO"
+                    "AVISO",
+
+                /*
+                 * BLOQUE 6 · esta parada no viene de una
+                 * planificación guardada: se reconstruye desde
+                 * el estado del aviso. La interfaz debe poder
+                 * distinguirla.
+                 */
+                reconstruidaDesdeAviso:
+                    true
             });
         }
     );
@@ -2853,8 +3095,23 @@ function cargarPlanificacionDesdeDatos() {
                     )
                 ) {
 
-                    plan.paradas =
-                        guardada.paradas;
+                    /*
+                     * BLOQUE 6 · el plan guardado y los avisos
+                     * reconstruidos son fuentes distintas: el
+                     * plan guardado no debe hacer desaparecer
+                     * avisos asignados/recogidos que aún no
+                     * figuren en él. Se conserva el orden del
+                     * plan y se añaden solo los avisos cuya
+                     * clave real no esté ya representada.
+                     */
+                    fusionarParadasGuardadasConReconstruidas(
+                        plan,
+                        guardada.paradas
+                    );
+
+
+                    plan.tienePlanGuardado =
+                        guardada.paradas.length > 0;
                 }
 
 
@@ -4653,6 +4910,99 @@ function formatearDuracionLegible(
    DETALLE DEL VEHÍCULO SELECCIONADO
 ============================================================ */
 
+function contarParadasReconstruidasDesdeAvisos(
+    plan
+) {
+
+    return (
+        Array.isArray(plan && plan.paradas)
+            ? plan.paradas
+            : []
+    ).filter(
+        parada =>
+            parada &&
+            parada.reconstruidaDesdeAviso === true
+    ).length;
+}
+
+
+/**
+ * BLOQUE 6 · aviso de coherencia del plan.
+ *
+ * No afirma que un plan eliminado se haya recuperado: si no
+ * hay planificación persistida, explica que las paradas
+ * proceden de avisos ASIGNADO/RECOGIDO.
+ */
+function crearAvisoCoherenciaPlan(
+    plan
+) {
+
+    const total =
+        contarParadasReconstruidasDesdeAvisos(
+            plan
+        );
+
+
+    if (total === 0) {
+
+        return "";
+    }
+
+
+    const singular =
+        total === 1;
+
+
+    let texto = "";
+
+
+    if (
+        plan &&
+        plan.tienePlanGuardado === true
+    ) {
+
+        texto =
+            singular
+                ? "Este plan incluye 1 parada reconstruida desde avisos que no figuraba en el plan guardado."
+                : "Este plan incluye " + total +
+                  " paradas reconstruidas desde avisos que no figuraban en el plan guardado.";
+
+    } else {
+
+        texto =
+            singular
+                ? "No hay planificación guardada para este vehículo y fecha. La parada mostrada procede de un aviso asignado o recogido; no es un plan recuperado."
+                : "No hay planificación guardada para este vehículo y fecha. Las " + total +
+                  " paradas mostradas proceden de avisos asignados o recogidos; no son un plan recuperado.";
+    }
+
+
+    return `
+
+        <div
+            style="
+                margin:0 0 12px;
+                padding:10px 12px;
+                border-left:4px solid #b26a00;
+                background:#fff4e0;
+                color:#5a3a00;
+                border-radius:6px;
+                font-size:13px;
+                line-height:1.45;
+            "
+        >
+            <strong>
+                Origen de las paradas
+            </strong>
+
+            <br />
+
+            ${escaparHTML(texto)}
+        </div>
+    `;
+}
+
+
 function crearDetalleVehiculoPlan(
     plan
 ) {
@@ -4940,6 +5290,9 @@ function crearDetalleVehiculoPlan(
                         </div>
 
                     </div>
+
+
+                    ${crearAvisoCoherenciaPlan(plan)}
 
 
                     <!-- RUTA ACTIVA -->
@@ -6938,6 +7291,29 @@ function crearParadaHTML(
                         estado
                     )}
                 </span>
+
+
+                ${
+                    parada.reconstruidaDesdeAviso === true
+                        ? `
+                            <span
+                                style="
+                                    display:inline-block;
+                                    margin-top:4px;
+                                    margin-left:4px;
+                                    padding:1px 6px;
+                                    border-radius:999px;
+                                    background:#fff4e0;
+                                    color:#7a4a00;
+                                    font-size:11px;
+                                    font-weight:600;
+                                "
+                            >
+                                Reconstruida desde aviso
+                            </span>
+                        `
+                        : ""
+                }
 
             </div>
 
@@ -8940,6 +9316,17 @@ async function guardarPlanificacionVehiculo(vehiculoId, opciones) {
                     error: "La fecha confirmada por el servidor no coincide con la enviada"
                 };
             }
+
+
+            /*
+             * BLOQUE 6 · el backend ha confirmado el snapshot y
+             * la fecha: las paradas reconstruidas incluidas en
+             * él ya forman parte de una planificación persistida.
+             */
+            confirmarParadasPersistidasEnPlan(
+                plan,
+                payload.paradas
+            );
 
 
             if (!plan.modificado) {
@@ -11840,14 +12227,38 @@ function limpiarEstadoLocalTrasBorrado(id, conservarEdiciones) {
         planificacionDia[id];
 
 
+    if (plan) {
+
+        /*
+         * BLOQUE 6 · el servidor ya no tiene este plan. Nunca
+         * debe conservarse un estado visual de "guardado",
+         * aunque las paradas locales se mantengan por ediciones
+         * posteriores.
+         */
+        plan.tienePlanGuardado =
+            false;
+
+
+        if (conservarEdiciones !== true) {
+
+            plan.paradas = [];
+
+            plan.modificado = false;
+        }
+    }
+
+
+    /*
+     * BLOQUE 6 · un feedback "Planificación guardada" anterior
+     * no puede sobrevivir al borrado confirmado del plan.
+     */
     if (
-        plan &&
-        conservarEdiciones !== true
+        String(
+            estadoFeedbackGuardadoPlanificacion.vehiculoId
+        ) === String(id)
     ) {
 
-        plan.paradas = [];
-
-        plan.modificado = false;
+        limpiarFeedbackGuardadoPlanificacion();
     }
 
 
@@ -12181,6 +12592,28 @@ async function solicitarBorradoPlanificacion(vehiculoId) {
             planFinal !== plan ||
             versionFinal !== versionBase
         ) {
+
+            /*
+             * BLOQUE 6 · el servidor borró el plan; las
+             * ediciones locales se conservan, pero ya no son
+             * una planificación persistida.
+             */
+            if (planFinal) {
+
+                planFinal.tienePlanGuardado =
+                    false;
+            }
+
+
+            if (
+                String(
+                    estadoFeedbackGuardadoPlanificacion.vehiculoId
+                ) === String(id)
+            ) {
+
+                limpiarFeedbackGuardadoPlanificacion();
+            }
+
 
             bloqueo.fase = "confirmado";
 
