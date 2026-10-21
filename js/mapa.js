@@ -1037,10 +1037,12 @@ function dibujarVehiculos() {
 
             var rutaId =
                 String(
-                    vehiculo.ruta_id ||
+                    vehiculo.ruta_habitual_identificada ||
+                    vehiculo.rutaHabitual ||
                     vehiculo.ruta_habitual ||
+                    vehiculo.ruta_id ||
                     vehiculo.ruta ||
-                    "R" + (indice + 1)
+                    ""
                 ).toUpperCase();
 
 
