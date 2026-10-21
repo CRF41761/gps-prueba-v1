@@ -213,6 +213,209 @@ function obtenerColorRuta(id) {
 }
 
 
+function obtenerPlanMapa(vehiculoId) {
+
+    try {
+
+        if (
+            typeof planificacionDia === "undefined" ||
+            !planificacionDia
+        ) {
+            return null;
+        }
+
+        return (
+            planificacionDia[
+                String(vehiculoId)
+            ] ||
+            null
+        );
+
+    } catch (error) {
+
+        return null;
+    }
+}
+
+
+function obtenerVehiculoPlanSeleccionadoMapa() {
+
+    try {
+
+        if (
+            typeof vehiculoPlanSeleccionado === "undefined" ||
+            !vehiculoPlanSeleccionado
+        ) {
+            return null;
+        }
+
+        return String(
+            vehiculoPlanSeleccionado
+        );
+
+    } catch (error) {
+
+        return null;
+    }
+}
+
+
+function normalizarCoordenadasRutaCalculadaMapa(coordenadas) {
+
+    if (!Array.isArray(coordenadas)) {
+        return [];
+    }
+
+
+    var normalizadas = [];
+
+
+    for (
+        var indice = 0;
+        indice < coordenadas.length;
+        indice++
+    ) {
+
+        var punto =
+            coordenadas[indice];
+
+
+        if (!Array.isArray(punto)) {
+            return [];
+        }
+
+
+        var lat =
+            normalizarCoordenadaMapa(
+                punto[0]
+            );
+
+
+        var lng =
+            normalizarCoordenadaMapa(
+                punto[1]
+            );
+
+
+        if (
+            !Number.isFinite(lat) ||
+            !Number.isFinite(lng) ||
+            lat < -90 ||
+            lat > 90 ||
+            lng < -180 ||
+            lng > 180
+        ) {
+            return [];
+        }
+
+
+        normalizadas.push(
+            [lat, lng]
+        );
+    }
+
+
+    return normalizadas.length >= 2
+        ? normalizadas
+        : [];
+}
+
+
+function obtenerCoordenadasRutaCalculadaMapa(plan) {
+
+    if (
+        !plan ||
+        !Array.isArray(plan.paradas) ||
+        plan.paradas.length === 0
+    ) {
+        return [];
+    }
+
+
+    var calculos =
+        plan.calculosRuta;
+
+
+    if (
+        !calculos ||
+        calculos.estado !== "OK" ||
+        calculos.geometriaEstado !== "OK"
+    ) {
+        return [];
+    }
+
+
+    return normalizarCoordenadasRutaCalculadaMapa(
+        calculos.geometria
+    );
+}
+
+
+function dibujarRutaCalculadaSeleccionada() {
+
+    var vehiculoId =
+        obtenerVehiculoPlanSeleccionadoMapa();
+
+
+    if (!vehiculoId) {
+        return;
+    }
+
+
+    var plan =
+        obtenerPlanMapa(
+            vehiculoId
+        );
+
+
+    var coordenadas =
+        obtenerCoordenadasRutaCalculadaMapa(
+            plan
+        );
+
+
+    if (!coordenadas.length) {
+        return;
+    }
+
+
+    var rutaId =
+        String(
+            plan.rutaActiva ||
+            ""
+        ).toUpperCase();
+
+
+    var linea = L.polyline(
+        coordenadas,
+        {
+            color: obtenerColorRuta(rutaId),
+            weight: 6,
+            opacity: 0.95,
+            lineJoin: "round"
+        }
+    );
+
+
+    linea.bindPopup(
+        "<strong>Recorrido calculado</strong><br>" +
+        "Vehículo: " +
+        escaparHTML(vehiculoId) +
+        "<br>" +
+        "Ruta diaria: " +
+        escaparHTML(
+            rutaId || "Sin ruta asignada"
+        ) +
+        "<br><small>" +
+        "Trazado real devuelto por el cálculo de rutas." +
+        "</small>"
+    );
+
+
+    linea.addTo(capas.rutas);
+}
+
+
 function dibujarRutas() {
 
     if (!capas.rutas) return;
@@ -244,13 +447,17 @@ function dibujarRutas() {
             "<strong>" +
             escaparHTML(ruta.nombre) +
             "</strong><br>" +
-            "Ruta planificada<br>" +
-            "<small>La posición GPS del vehículo se muestra por separado.</small>"
+            "Trazado estático de referencia<br>" +
+            "<small>No es el recorrido diario calculado. " +
+            "La posición GPS del vehículo se muestra por separado.</small>"
         );
 
 
         linea.addTo(capas.rutas);
     });
+
+
+    dibujarRutaCalculadaSeleccionada();
 }
 
 
@@ -1035,7 +1242,7 @@ function dibujarVehiculos() {
             };
 
 
-            var rutaId =
+            var rutaHabitualId =
                 String(
                     vehiculo.ruta_habitual_identificada ||
                     vehiculo.rutaHabitual ||
@@ -1046,9 +1253,34 @@ function dibujarVehiculos() {
                 ).toUpperCase();
 
 
+            var plan =
+                obtenerPlanMapa(id);
+
+
+            var rutaDiariaId =
+                plan
+                    ? String(
+                        plan.rutaActiva ||
+                        ""
+                    ).toUpperCase()
+                    : "";
+
+
+            /*
+             * El color del marcador representa la ruta diaria cuando
+             * existe un plan para el vehículo. Si el plan no tiene
+             * ruta, se usa el color neutro: nunca se pinta como una
+             * ruta R1/R2/R3 que no ha sido seleccionada.
+             */
+            var rutaColorId =
+                plan
+                    ? rutaDiariaId
+                    : rutaHabitualId;
+
+
             var color =
                 obtenerColorRuta(
-                    rutaId
+                    rutaColorId
                 );
 
 
@@ -1104,7 +1336,17 @@ function dibujarVehiculos() {
                 escaparHTML(id) +
                 "<br>" +
                 "Ruta habitual: " +
-                escaparHTML(rutaId) +
+                escaparHTML(rutaHabitualId) +
+                "<br>" +
+                "Ruta diaria: " +
+                escaparHTML(
+                    plan
+                        ? (
+                            rutaDiariaId ||
+                            "Sin ruta asignada"
+                        )
+                        : "Sin planificación cargada"
+                ) +
                 "<br><small>" +
                 "GPS independiente de la ruta planificada." +
                 "</small>"
