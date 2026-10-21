@@ -8626,6 +8626,40 @@ async function guardarPlanificacionVehiculo(vehiculoId, opciones) {
     }
 
 
+    /*
+     * BLOQUE 5 · un snapshot sin paradas NO se envía. El
+     * backend lo acepta como no-op (ok:true, filas:0) y no
+     * guarda ni borra nada; presentarlo como éxito dejaría el
+     * plan local como "guardado" cuando al recargar volvería
+     * el estado anterior. El borrado explícito es la única
+     * operación que elimina filas del servidor.
+     */
+    if (
+        !Array.isArray(plan.paradas) ||
+        plan.paradas.length === 0
+    ) {
+
+        plan.modificado = true;
+
+        establecerFeedbackGuardadoPlanificacion(
+            vehiculoId,
+            "vacio"
+        );
+
+        renderizarPlanificacion();
+
+
+        return {
+            ok: false,
+            vacio: true,
+            error:
+                "Una planificación sin paradas no se puede " +
+                "guardar. Use la eliminación explícita si " +
+                "desea quitarla del servidor."
+        };
+    }
+
+
     guardandoPlanificacion = true;
 
     vehiculoGuardandoPlanificacion = vehiculoId;
@@ -8737,6 +8771,58 @@ async function guardarPlanificacionVehiculo(vehiculoId, opciones) {
 
             estadoVersiones.versionActual =
                 versionFinal;
+
+
+            /*
+             * BLOQUE 5 · confirmación real del snapshot: el
+             * backend devuelve en filas el número de filas
+             * escritas para estas paradas. Sin esa coincidencia
+             * no hay guardado confirmado (filas:0 incluye el
+             * caso de plan vacío, que el backend no persiste).
+             */
+            const filasConfirmadas =
+                typeof resultado.filas === "number"
+                    ? resultado.filas
+                    : NaN;
+
+            const filasEnviadas =
+                payload.paradas.length;
+
+
+            if (
+                !Number.isFinite(filasConfirmadas) ||
+                filasConfirmadas !== filasEnviadas ||
+                filasEnviadas === 0
+            ) {
+
+                plan.modificado = true;
+
+                estadoVersiones.versionActual =
+                    versionFinal;
+
+                establecerFeedbackGuardadoPlanificacion(
+                    vehiculoId,
+                    filasEnviadas === 0
+                        ? "vacio"
+                        : "error"
+                );
+
+                console.error(
+                    "Guardado no confirmado para " +
+                    vehiculoId + ": enviadas " +
+                    filasEnviadas + ", confirmadas " +
+                    filasConfirmadas
+                );
+
+
+                return {
+                    ok: false,
+                    vacio: filasEnviadas === 0,
+                    error:
+                        "El servidor no ha confirmado las " +
+                        "paradas enviadas"
+                };
+            }
 
 
             plan.modificado =
@@ -9074,7 +9160,7 @@ let vehiculoGuardandoPlanificacion = "";
 
 /*
  * Feedback visible del último guardado de un vehículo.
- * estado: "" | "ok" | "error"
+ * estado: "" | "ok" | "error" | "vacio"
  */
 let estadoFeedbackGuardadoPlanificacion = {
     vehiculoId: "",
@@ -9163,8 +9249,8 @@ function establecerFeedbackGuardadoPlanificacion(
 
 
 /*
- * FASE 3F.2.4 · I4: aviso de ERROR de guardado de un vehículo
- * que NO está seleccionado.
+ * FASE 3F.2.4 · I4: aviso de ERROR (o de plan sin paradas)
+ * de guardado de un vehículo que NO está seleccionado.
  *
  * El fallo ya queda registrado en el feedback existente
  * (estadoFeedbackGuardadoPlanificacion), pero ese feedback se
@@ -9182,9 +9268,13 @@ function establecerFeedbackGuardadoPlanificacion(
  */
 function crearAvisoErrorGuardadoPlanificacion() {
 
+    const estadoFeedback =
+        estadoFeedbackGuardadoPlanificacion.estado;
+
+
     if (
-        estadoFeedbackGuardadoPlanificacion.estado !==
-        "error"
+        estadoFeedback !== "error" &&
+        estadoFeedback !== "vacio"
     ) {
         return "";
     }
@@ -9203,8 +9293,8 @@ function crearAvisoErrorGuardadoPlanificacion() {
 
 
     /*
-     * Vehículo seleccionado: su propio botón ya muestra
-     * "⚠ No se ha podido guardar". No se duplica el aviso.
+     * Vehículo seleccionado: su propio botón ya muestra el
+     * estado (error o plan sin paradas). No se duplica el aviso.
      */
 
     if (
@@ -9233,7 +9323,11 @@ function crearAvisoErrorGuardadoPlanificacion() {
                 font-weight: 700;
             "
         >
-            ⚠ No se ha podido guardar ${escaparHTML(
+            ⚠ ${
+                estadoFeedback === "vacio"
+                    ? "Planificación sin paradas no guardada"
+                    : "No se ha podido guardar"
+            } ${escaparHTML(
                 vehiculoId
             )}
         </div>
@@ -9352,6 +9446,19 @@ function obtenerEstadoBotonGuardarPlanificacion(
                 texto: "✓ Planificación guardada",
                 deshabilitado: deshabilitado,
                 clase: "guardado"
+            };
+        }
+
+
+        if (
+            estadoFeedbackGuardadoPlanificacion.estado ===
+            "vacio"
+        ) {
+
+            return {
+                texto: "⚠ Plan sin paradas — no guardado",
+                deshabilitado: deshabilitado,
+                clase: "error"
             };
         }
 
