@@ -3115,6 +3115,151 @@ function obtenerRutasDisponibles() {
 }
 
 
+function obtenerIdRutaCatalogo(
+    ruta
+) {
+
+    if (
+        !ruta ||
+        typeof ruta !== "object"
+    ) {
+
+        return "";
+    }
+
+
+    const id =
+        ruta.id_ruta ||
+        ruta.ruta_id ||
+        ruta.id ||
+        ruta.RUTA_ID;
+
+
+    return (
+        id === null ||
+        id === undefined
+    )
+        ? ""
+        : String(id);
+}
+
+
+function buscarRutaEnCatalogo(
+    rutaId
+) {
+
+    if (
+        rutaId === null ||
+        rutaId === undefined ||
+        String(rutaId) === ""
+    ) {
+
+        return null;
+    }
+
+
+    return (
+        obtenerRutasDisponibles()
+            .find(
+                ruta => {
+
+                    return (
+                        obtenerIdRutaCatalogo(
+                            ruta
+                        ) ===
+                        String(rutaId)
+                    );
+                }
+            ) ||
+        null
+    );
+}
+
+
+/*
+ * BLOQUE 4 · estado de la ruta del plan.
+ *
+ * Un catálogo vacío se considera "todavía no disponible":
+ * no se concluye que una ruta guardada sea inválida.
+ */
+function obtenerEstadoRutaPlan(
+    rutaId
+) {
+
+    if (
+        rutaId === null ||
+        rutaId === undefined ||
+        String(rutaId) === ""
+    ) {
+
+        return "SIN_RUTA";
+    }
+
+
+    if (
+        !obtenerRutasDisponibles().length
+    ) {
+
+        return "CATALOGO_NO_CARGADO";
+    }
+
+
+    return buscarRutaEnCatalogo(
+        rutaId
+    )
+        ? "VALIDA"
+        : "NO_DISPONIBLE";
+}
+
+
+function obtenerTextoRutaPlan(
+    rutaId
+) {
+
+    const estado =
+        obtenerEstadoRutaPlan(
+            rutaId
+        );
+
+
+    if (
+        estado === "SIN_RUTA"
+    ) {
+
+        return "Sin ruta";
+    }
+
+
+    if (
+        estado === "NO_DISPONIBLE"
+    ) {
+
+        return (
+            "Ruta no disponible (" +
+            String(rutaId) +
+            ")"
+        );
+    }
+
+
+    if (
+        estado === "CATALOGO_NO_CARGADO"
+    ) {
+
+        return (
+            "Ruta " +
+            String(rutaId) +
+            " (catálogo no disponible)"
+        );
+    }
+
+
+    return obtenerNombreRuta(
+        rutaId
+    );
+}
+
+
 function obtenerNombreRuta(
     rutaId
 ) {
@@ -4528,8 +4673,13 @@ function crearDetalleVehiculoPlan(
         );
 
 
+    /*
+     * BLOQUE 4 · la ruta diaria se muestra con su estado real:
+     * sin ruta, válida, no disponible en el catálogo o catálogo
+     * todavía no cargado. No se sustituye por otra ruta.
+     */
     const rutaActiva =
-        obtenerNombreRuta(
+        obtenerTextoRutaPlan(
             plan.rutaActiva
         );
 
@@ -5387,64 +5537,140 @@ function crearOpcionesRutas(
         obtenerRutasDisponibles();
 
 
-    if (!rutas.length) {
+    const seleccionada =
+        rutaSeleccionada === null ||
+        rutaSeleccionada === undefined
+            ? ""
+            : String(
+                rutaSeleccionada
+            );
 
-        return `
 
-            <option value="">
-                Sin rutas disponibles
+    const opciones =
+        [];
+
+
+    /*
+     * BLOQUE 4 · opción explícita para un plan sin ruta.
+     * No asigna ni modifica nada por sí sola.
+     */
+    opciones.push(`
+
+        <option
+            value=""
+            ${seleccionada === "" ? " selected" : ""}
+        >
+            Sin ruta
+        </option>
+
+    `);
+
+
+    const idsCatalogo =
+        {};
+
+
+    rutas.forEach(
+        ruta => {
+
+            const id =
+                obtenerIdRutaCatalogo(
+                    ruta
+                );
+
+
+            if (id === "") {
+
+                return;
+            }
+
+
+            idsCatalogo[id] =
+                true;
+
+
+            const nombre =
+                ruta.nombre ||
+                ruta.nombre_ruta ||
+                ruta.descripcion ||
+                obtenerNombreRuta(
+                    id
+                );
+
+
+            const selected =
+                id === seleccionada
+                    ? " selected"
+                    : "";
+
+
+            opciones.push(`
+
+                <option
+                    value="${escaparHTML(
+                        id
+                    )}"
+                    ${selected}
+                >
+                    ${escaparHTML(
+                        String(
+                            nombre
+                        )
+                    )}
+                </option>
+
+            `);
+        }
+    );
+
+
+    /*
+     * Una ruta guardada que no está en el catálogo se conserva
+     * como opción de estado, nunca se sustituye por otra.
+     *
+     * Si el catálogo está vacío no se afirma que sea inválida:
+     * puede no haberse cargado todavía.
+     */
+    if (
+        seleccionada !== "" &&
+        !Object.prototype.hasOwnProperty.call(
+            idsCatalogo,
+            seleccionada
+        )
+    ) {
+
+        const esCatalogoVacio =
+            rutas.length === 0;
+
+
+        const etiqueta =
+            esCatalogoVacio
+                ? "Ruta " +
+                  seleccionada +
+                  " (catálogo no disponible)"
+                : "Ruta no disponible (" +
+                  seleccionada +
+                  ")";
+
+
+        opciones.push(`
+
+            <option
+                value="${escaparHTML(
+                    seleccionada
+                )}"
+                selected
+            >
+                ${escaparHTML(
+                    etiqueta
+                )}
             </option>
 
-        `;
+        `);
     }
 
 
-    return rutas
-        .map(
-            ruta => {
-
-                const id =
-                    ruta.id_ruta ||
-                    ruta.ruta_id ||
-                    ruta.id ||
-                    ruta.RUTA_ID;
-
-
-                const nombre =
-                    ruta.nombre ||
-                    ruta.nombre_ruta ||
-                    ruta.descripcion ||
-                    obtenerNombreRuta(
-                        id
-                    );
-
-
-                const selected =
-                    String(id) ===
-                    String(rutaSeleccionada)
-                        ? " selected"
-                        : "";
-
-
-                return `
-
-                    <option
-                        value="${escaparHTML(
-                            String(id)
-                        )}"
-                        ${selected}
-                    >
-                        ${escaparHTML(
-                            String(
-                                nombre
-                            )
-                        )}
-                    </option>
-
-                `;
-            }
-        )
-        .join("");
+    return opciones.join("");
 }
 
 
