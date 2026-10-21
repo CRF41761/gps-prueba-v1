@@ -2368,6 +2368,59 @@ function incorporarAvisoAPlan(vehiculoId, avisoId) {
    CARGA DE PLANIFICACIÓN
 ============================================================ */
 
+function crearPlanVehiculo(
+    vehiculo,
+    vehiculoId,
+    fecha
+) {
+
+    const tabletId =
+        vehiculo.tablet_id ||
+        vehiculo.tablet ||
+        vehiculo.TABLET_ID ||
+        "";
+
+
+    const rutaHabitual =
+        vehiculo.ruta_id ||
+        vehiculo.ruta ||
+        vehiculo.RUTA_ID ||
+        "";
+
+
+    return {
+
+        vehiculoId:
+            vehiculoId,
+
+        vehiculo:
+            vehiculo,
+
+        tabletId:
+            tabletId,
+
+        rutaHabitual:
+            rutaHabitual,
+
+        rutaActiva:
+            rutaHabitual,
+
+        horaSalida:
+            vehiculo.hora_salida ||
+            "08:00",
+
+        paradas:
+            [],
+
+        fecha:
+            fecha,
+
+        modificado:
+            false
+    };
+}
+
+
 function cargarPlanificacionDesdeDatos() {
 
     /*
@@ -2441,6 +2494,42 @@ function cargarPlanificacionDesdeDatos() {
         obtenerVehiculosDisponibles();
 
 
+    /*
+     * BLOQUE 2 · mapa de TODOS los vehículos (también inactivos
+     * o desconocidos). No crea planes por sí mismo: solo permite
+     * reconstruir un plan guardado cuyo vehículo ya no está
+     * confirmado como activo.
+     */
+    const vehiculosPorId =
+        {};
+
+
+    (
+        Array.isArray(datosCarga.VEHICULOS)
+            ? datosCarga.VEHICULOS
+            : []
+    ).forEach(
+        vehiculo => {
+
+            const id =
+                obtenerIdVehiculo(
+                    vehiculo
+                );
+
+
+            if (
+                id !== null &&
+                id !== undefined
+            ) {
+
+                vehiculosPorId[
+                    String(id)
+                ] = vehiculo;
+            }
+        }
+    );
+
+
     vehiculos.forEach(
         vehiculo => {
 
@@ -2455,52 +2544,13 @@ function cargarPlanificacionDesdeDatos() {
             }
 
 
-            const tabletId =
-                vehiculo.tablet_id ||
-                vehiculo.tablet ||
-                vehiculo.TABLET_ID ||
-                "";
-
-
-            const rutaHabitual =
-                vehiculo.ruta_id ||
-                vehiculo.ruta ||
-                vehiculo.RUTA_ID ||
-                "";
-
-
             planificacionDia[
                 vehiculoId
-            ] = {
-
-                vehiculoId:
-                    vehiculoId,
-
-                vehiculo:
-                    vehiculo,
-
-                tabletId:
-                    tabletId,
-
-                rutaHabitual:
-                    rutaHabitual,
-
-                rutaActiva:
-                    rutaHabitual,
-
-                horaSalida:
-                    vehiculo.hora_salida ||
-                    "08:00",
-
-                paradas:
-                    [],
-
-                fecha:
-                    fechaServidor,
-
-                modificado:
-                    false
-            };
+            ] = crearPlanVehiculo(
+                vehiculo,
+                vehiculoId,
+                fechaServidor
+            );
         }
     );
 
@@ -2541,14 +2591,44 @@ function cargarPlanificacionDesdeDatos() {
             }
 
 
-            const plan =
+            let plan =
                 planificacionDia[
                     vehiculoId
                 ];
 
 
+            /*
+             * BLOQUE 2 · un aviso ya asignado a un vehículo
+             * inactivo o desconocido se conserva: se reconstruye
+             * su plan solo para no perder la parada existente.
+             * No se crean planes vacíos por esta vía.
+             */
             if (!plan) {
-                return;
+
+                const vehiculo =
+                    vehiculosPorId[
+                        String(
+                            vehiculoId
+                        )
+                    ];
+
+
+                if (!vehiculo) {
+                    return;
+                }
+
+
+                plan =
+                    crearPlanVehiculo(
+                        vehiculo,
+                        vehiculoId,
+                        fechaServidor
+                    );
+
+
+                planificacionDia[
+                    vehiculoId
+                ] = plan;
             }
 
 
@@ -2711,17 +2791,50 @@ function cargarPlanificacionDesdeDatos() {
                 const guardada = entrada[1];
 
 
-                const plan =
+                if (!guardada) {
+                    return;
+                }
+
+
+                let plan =
                     planificacionDia[
                         vehiculoId
                     ];
 
 
-                if (
-                    !plan ||
-                    !guardada
-                ) {
-                    return;
+                /*
+                 * BLOQUE 2 · un plan YA GUARDADO no se descarta
+                 * porque su vehículo esté inactivo o tenga
+                 * actividad desconocida. Solo en ese caso se
+                 * reconstruye la base del plan; nunca se crea un
+                 * plan vacío para un vehículo no confirmado.
+                 */
+                if (!plan) {
+
+                    const vehiculo =
+                        vehiculosPorId[
+                            String(
+                                vehiculoId
+                            )
+                        ];
+
+
+                    if (!vehiculo) {
+                        return;
+                    }
+
+
+                    plan =
+                        crearPlanVehiculo(
+                            vehiculo,
+                            vehiculoId,
+                            fechaServidor
+                        );
+
+
+                    planificacionDia[
+                        vehiculoId
+                    ] = plan;
                 }
 
 
@@ -2818,24 +2931,36 @@ function obtenerVehiculosDisponibles() {
             : [];
 
 
+    /*
+     * BLOQUE 2 · solo activos confirmados. No se interpretan
+     * 1/0 ni valores ausentes como activos: un vehículo
+     * desconocido queda fuera de la creación de planes nuevos
+     * y de los selectores de asignación.
+     */
     return vehiculos.filter(
         vehiculo => {
 
-            const activo =
-                vehiculo.activo ??
-                vehiculo.ACTIVO ??
-                true;
+            if (
+                typeof clasificarActividadVehiculo !==
+                "function"
+            ) {
+
+                return false;
+            }
+
+
+            const valorActividad =
+                vehiculo.actividad !== undefined
+                    ? vehiculo.actividad
+                    : vehiculo.activo !== undefined
+                        ? vehiculo.activo
+                        : vehiculo.ACTIVO;
 
 
             return (
-                activo === true ||
-                String(
-                    activo
-                ).toUpperCase() ===
-                    "TRUE" ||
-                String(
-                    activo
-                ) === "1"
+                clasificarActividadVehiculo(
+                    valorActividad
+                ) === "ACTIVO"
             );
         }
     );
