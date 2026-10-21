@@ -258,6 +258,308 @@ function validarFechaServidor(valor) {
 }
 
 
+function clasificarActividadVehiculo(
+    valor
+) {
+
+    if (valor === true) {
+
+        return "ACTIVO";
+    }
+
+
+    if (valor === false) {
+
+        return "INACTIVO";
+    }
+
+
+    if (typeof valor === "string") {
+
+        var texto =
+            valor.trim().toUpperCase();
+
+
+        if (
+            texto === "TRUE" ||
+            texto === "ACTIVO" ||
+            texto === "ACTIVA"
+        ) {
+
+            return "ACTIVO";
+        }
+
+
+        if (
+            texto === "FALSE" ||
+            texto === "INACTIVO" ||
+            texto === "INACTIVA"
+        ) {
+
+            return "INACTIVO";
+        }
+    }
+
+
+    return "DESCONOCIDO";
+}
+
+
+/* ============================================================
+   ASIGNACIONES DE RUTA · NORMALIZACIÓN (BLOQUE 1)
+   ------------------------------------------------------------
+   El backend publica la hoja ASIGNACIONES_RUTA bajo la clave
+   `asignaciones`; los mocks locales la publican como
+   `asignacionesRuta`. Se aceptan ambas, sin concatenarlas:
+   si `asignaciones` llega como array, es la fuente
+   autoritativa del backend y el alias local se ignora
+   (aunque venga vacío), para no duplicar ni mezclar filas.
+
+   Solo se normalizan los alias respaldados por el código
+   existente. No se elige ruta activa, no se descartan filas y
+   no se generan identificadores sintéticos.
+============================================================ */
+
+function obtenerValorAsignacion(
+    origen,
+    claves
+) {
+
+    for (
+        var i = 0;
+        i < claves.length;
+        i++
+    ) {
+
+        var valor =
+            origen[claves[i]];
+
+
+        if (
+            valor !== undefined &&
+            valor !== null &&
+            String(valor).trim() !== ""
+        ) {
+
+            return valor;
+        }
+    }
+
+
+    return undefined;
+}
+
+
+function normalizarOrdenAsignacion(
+    valor
+) {
+
+    if (
+        valor === undefined ||
+        valor === null ||
+        String(valor).trim() === ""
+    ) {
+
+        return null;
+    }
+
+
+    var numero =
+        Number(valor);
+
+
+    /*
+     * Un orden no numérico no se sustituye por una posición
+     * inventada: se conserva el valor recibido tal cual.
+     */
+    return isFinite(numero)
+        ? numero
+        : valor;
+}
+
+
+function normalizarActivaAsignacion(
+    valor
+) {
+
+    if (valor === true) {
+
+        return true;
+    }
+
+
+    if (valor === false) {
+
+        return false;
+    }
+
+
+    if (typeof valor === "string") {
+
+        var texto =
+            valor.trim().toUpperCase();
+
+
+        if (
+            texto === "TRUE" ||
+            texto === "ACTIVO" ||
+            texto === "ACTIVA"
+        ) {
+
+            return true;
+        }
+
+
+        if (
+            texto === "FALSE" ||
+            texto === "INACTIVO" ||
+            texto === "INACTIVA"
+        ) {
+
+            return false;
+        }
+    }
+
+
+    return null;
+}
+
+
+function normalizarAsignacionRuta(
+    fila
+) {
+
+    var origen =
+        fila &&
+        typeof fila === "object" &&
+        !Array.isArray(fila)
+            ? fila
+            : {};
+
+
+    var idVehiculo =
+        obtenerValorAsignacion(
+            origen,
+            [
+                "vehiculo_id",
+                "id_vehiculo",
+                "vehiculo"
+            ]
+        );
+
+
+    var idRuta =
+        obtenerValorAsignacion(
+            origen,
+            [
+                "ruta_id",
+                "id_ruta",
+                "ruta"
+            ]
+        );
+
+
+    var indicadorActiva =
+        obtenerValorAsignacion(
+            origen,
+            [
+                "activa",
+                "activo"
+            ]
+        );
+
+
+    /*
+     * Se conservan las propiedades originales (incluidas las
+     * columnas no reconocidas) y se añaden los nombres
+     * canónicos. Así los datos incompletos no se descartan.
+     */
+    var normalizada =
+        Object.assign(
+            {},
+            origen
+        );
+
+
+    normalizada.vehiculo_id =
+        idVehiculo === undefined
+            ? ""
+            : String(idVehiculo).trim();
+
+
+    normalizada.ruta_id =
+        idRuta === undefined
+            ? ""
+            : String(idRuta).trim();
+
+
+    normalizada.orden =
+        normalizarOrdenAsignacion(
+            origen.orden
+        );
+
+
+    normalizada.activa =
+        normalizarActivaAsignacion(
+            indicadorActiva
+        );
+
+
+    return normalizada;
+}
+
+
+function normalizarAsignacionesRuta(
+    datos
+) {
+
+    var asignacionesBackend =
+        Array.isArray(datos.asignaciones)
+            ? datos.asignaciones
+            : null;
+
+
+    var asignacionesLocales =
+        Array.isArray(datos.asignacionesRuta)
+            ? datos.asignacionesRuta
+            : null;
+
+
+    var origen;
+
+
+    if (asignacionesBackend) {
+
+        origen =
+            asignacionesBackend;
+
+
+        if (
+            asignacionesLocales &&
+            asignacionesLocales.length > 0
+        ) {
+
+            console.warn(
+                "CRF - Se han recibido 'asignaciones' y " +
+                "'asignacionesRuta'. Se usa 'asignaciones' " +
+                "(contrato del backend) y se ignora el alias local " +
+                "para no duplicar filas."
+            );
+        }
+
+    } else {
+
+        origen =
+            asignacionesLocales || [];
+    }
+
+
+    return origen.map(
+        normalizarAsignacionRuta
+    );
+}
+
+
 function normalizarDatosAplicacion(
     datos
 ) {
@@ -315,6 +617,38 @@ function normalizarDatosAplicacion(
                               );
 
 
+                /*
+                 * Ruta identificada realmente en el vehículo.
+                 * Se guarda aparte porque ruta_id conserva el
+                 * fallback histórico que utiliza planificación.
+                 */
+                var rutaHabitualIdentificada =
+                    vehiculo.rutaHabitual ||
+                    vehiculo.ruta_habitual ||
+                    vehiculo.ruta_id ||
+                    vehiculo.ruta ||
+                    "";
+
+
+                rutaHabitualIdentificada =
+                    String(
+                        rutaHabitualIdentificada
+                    ).trim();
+
+
+                /*
+                 * BLOQUE 2 · un único criterio de actividad.
+                 * `actividad` es la referencia; `activo` ya no
+                 * convierte un valor desconocido en true.
+                 * Conserva booleanos para los valores confirmados
+                 * y null cuando no hay confirmación.
+                 */
+                var actividadVehiculo =
+                    clasificarActividadVehiculo(
+                        vehiculo.activo
+                    );
+
+
                 return {
 
                     id_vehiculo:
@@ -356,8 +690,23 @@ function normalizarDatosAplicacion(
                         vehiculo.id_tablet ||
                         "",
 
+                    ruta_habitual_identificada:
+                        rutaHabitualIdentificada,
+
+                    /*
+                     * `activo` y `actividad` comparten ahora el
+                     * mismo criterio: true/false solo para valores
+                     * confirmados; null para desconocido.
+                     */
                     activo:
-                        vehiculo.activo !== false,
+                        actividadVehiculo === "ACTIVO"
+                            ? true
+                            : actividadVehiculo === "INACTIVO"
+                                ? false
+                                : null,
+
+                    actividad:
+                        actividadVehiculo,
 
                     estado:
                         vehiculo.estado ||
@@ -851,11 +1200,9 @@ function normalizarDatosAplicacion(
                 : [],
 
         ASIGNACIONES_RUTA:
-            Array.isArray(
-                datos.asignacionesRuta
+            normalizarAsignacionesRuta(
+                datos
             )
-                ? datos.asignacionesRuta
-                : []
 
     };
 
