@@ -5,6 +5,106 @@
 var vehiculoSeleccionado = null;
 
 
+function clasificarActividadTarjeta(
+    valor
+) {
+
+    /*
+     * BLOQUE 2 · criterio único: la tarjeta delega en el
+     * clasificador de app.js. Si por orden de carga no estuviera
+     * disponible, se devuelve desconocido (nunca activo).
+     */
+    if (
+        typeof clasificarActividadVehiculo !==
+        "function"
+    ) {
+
+        return "DESCONOCIDO";
+    }
+
+
+    return clasificarActividadVehiculo(
+        valor
+    );
+}
+
+
+function obtenerEstadoActividadVehiculo(
+    vehiculo
+) {
+
+    var actividad =
+        vehiculo &&
+        vehiculo.actividad !== undefined
+            ? clasificarActividadTarjeta(
+                vehiculo.actividad
+            )
+            : clasificarActividadTarjeta(
+                vehiculo
+                    ? vehiculo.activo
+                    : undefined
+            );
+
+
+    if (actividad === "ACTIVO") {
+
+        return {
+            clave: "activo",
+            texto: "Activo"
+        };
+    }
+
+
+    if (actividad === "INACTIVO") {
+
+        return {
+            clave: "inactivo",
+            texto: "Inactivo"
+        };
+    }
+
+
+    return {
+        clave: "desconocido",
+        texto: "Estado desconocido"
+    };
+}
+
+
+function obtenerRutaHabitualVehiculo(
+    vehiculo
+) {
+
+    if (!vehiculo) {
+
+        return "";
+    }
+
+
+    if (
+        Object.prototype.hasOwnProperty.call(
+            vehiculo,
+            "ruta_habitual_identificada"
+        )
+    ) {
+
+        return String(
+            vehiculo.ruta_habitual_identificada ||
+            ""
+        ).trim();
+    }
+
+
+    return String(
+        vehiculo.rutaHabitual ||
+        vehiculo.ruta_habitual ||
+        vehiculo.ruta_id ||
+        vehiculo.ruta ||
+        ""
+    ).trim();
+}
+
+
 function renderizarVehiculos() {
 
     var contenedor =
@@ -51,10 +151,9 @@ function renderizarVehiculos() {
 
 
             var ruta =
-                vehiculo.ruta_id ||
-                vehiculo.ruta_habitual ||
-                vehiculo.ruta ||
-                "R" + (indice + 1);
+                obtenerRutaHabitualVehiculo(
+                    vehiculo
+                );
 
 
             var tablet =
@@ -64,8 +163,10 @@ function renderizarVehiculos() {
                 "";
 
 
-            var activo =
-                vehiculo.activo !== false;
+            var estadoActividad =
+                obtenerEstadoActividadVehiculo(
+                    vehiculo
+                );
 
 
             var tarjeta =
@@ -83,7 +184,13 @@ function renderizarVehiculos() {
 
 
             tarjeta.innerHTML =
-                '<div class="vehicle-top">' +
+                '<div class="vehicle-top' +
+                (
+                    estadoActividad.clave === "desconocido"
+                        ? " vehicle-top--desconocido"
+                        : ""
+                ) +
+                '">' +
 
                     '<div class="vehicle-name">' +
 
@@ -95,11 +202,13 @@ function renderizarVehiculos() {
 
                     '</div>' +
 
-                    '<div class="vehicle-status">' +
+                    '<div class="vehicle-status estado-' +
+                    estadoActividad.clave +
+                    '">' +
 
                         '<span class="vehicle-status-dot"></span>' +
 
-                        (activo ? "En ruta" : "Inactivo") +
+                        estadoActividad.texto +
 
                     '</div>' +
 
@@ -115,8 +224,8 @@ function renderizarVehiculos() {
                     escaparHTML(tablet || "—") +
                     '</strong></span>' +
 
-                    '<span>Ruta <strong>' +
-                    escaparHTML(ruta) +
+                    '<span title="Ruta habitual">Ruta <strong>' +
+                    escaparHTML(ruta || "Sin ruta") +
                     '</strong></span>' +
 
                 '</div>';
@@ -193,7 +302,11 @@ function actualizarKpiVehiculos(
         vehiculos.filter(
             function(vehiculo) {
 
-                return vehiculo.activo !== false;
+                return (
+                    obtenerEstadoActividadVehiculo(
+                        vehiculo
+                    ).clave === "activo"
+                );
 
             }
         ).length;
@@ -207,6 +320,18 @@ function actualizarKpiVehiculos(
 
     if (elemento) {
         elemento.textContent =
+            activos;
+    }
+
+
+    var resumen =
+        document.getElementById(
+            "summary-vehiculos"
+        );
+
+
+    if (resumen) {
+        resumen.textContent =
             activos;
     }
 }
