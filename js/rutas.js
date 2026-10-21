@@ -2678,10 +2678,10 @@ function cargarPlanificacionDesdeDatos() {
      * sus contadores NO sobreviven a una reconstrucción de los
      * planes (un timer huérfano podría disparar sobre planes
      * recién creados). Solo se limpia el estado de RECUPERACIÓN
-     * nuevo de esta fase: el resto de la recarga (debounces,
-     * versiones) queda exactamente como en la auditoría 3F.2.3,
-     * que dejó la recarga en caliente documentada como riesgo
-     * bajo y fuera de alcance.
+     * nuevo de esta fase. Bloque 8 añade, además, la limpieza
+     * del feedback de guardado y la invalidación monótona de
+     * las versiones de cálculo, para que ninguna respuesta
+     * asíncrona del plan anterior escriba en el plan nuevo.
      */
 
     Object.keys(estadoRecuperacionAutosave).forEach(
@@ -2692,6 +2692,23 @@ function cargarPlanificacionDesdeDatos() {
             delete estadoRecuperacionAutosave[vehiculoId];
         }
     );
+
+
+    /*
+     * BLOQUE 8 · al reconstruir la planificación se sustituye
+     * el estado visible por el persistido. Una confirmación de
+     * guardado del día o del plan anterior no puede sobrevivir
+     * a esa sustitución.
+     */
+    limpiarFeedbackGuardadoPlanificacion();
+
+
+    /*
+     * BLOQUE 8 · los cálculos en vuelo pertenecen a los planes
+     * que se van a descartar. Se invalida su versión para que
+     * una respuesta tardía no escriba en el día nuevo.
+     */
+    invalidarVersionesCalculoPlanificacion();
 
 
     /*
@@ -5007,6 +5024,16 @@ async function recalcularPlanificacionVehiculo(
     versionLocal
 ) {
 
+    /*
+     * BLOQUE 8 · identidad del plan al iniciar el cálculo. Si
+     * una recarga de día reconstruye el plan mientras OSRM
+     * responde, la fase de tiempos no puede escribir sobre el
+     * plan nuevo usando los tramos del plan anterior.
+     */
+    const planInicial =
+        planificacionDia[vehiculoId] || null;
+
+
     try {
 
         const resultadoRuta =
@@ -5021,6 +5048,18 @@ async function recalcularPlanificacionVehiculo(
             resultadoRuta.descartado === true
         ) {
             return resultadoRuta;
+        }
+
+
+        if (
+            !planInicial ||
+            planificacionDia[vehiculoId] !== planInicial
+        ) {
+
+            return {
+                estado: "DESCARTADO",
+                descartado: true
+            };
         }
 
 
@@ -8437,17 +8476,72 @@ function eliminarParada(
 ============================================================ */
 
 /*
- * Después de un cambio estructural (subir, bajar, eliminar),
- * los cálculos anteriores dejan de representar la ruta actual.
- * Se limpian antes de lanzar el nuevo cálculo para que nunca
- * se presenten como vigentes. El nuevo cálculo los regenera.
+ * Después de un cambio estructural (subir, bajar, eliminar) o
+ * de reconstruir la planificación por un día nuevo, los cálculos
+ * anteriores dejan de representar la ruta actual. Se invalidan
+ * antes de lanzar el nuevo cálculo para que nunca se presenten
+ * como vigentes. El nuevo cálculo los regenera.
  */
+function invalidarVersionesCalculoPlanificacion() {
+
+    /*
+     * BLOQUE 8 · sube de forma monótona la versión de todos
+     * los cálculos conocidos. No se reinicia el mapa: reiniciar
+     * permitiría que una respuesta antigua (versión 1) volviera
+     * a coincidir con un cálculo nuevo del día siguiente.
+     */
+    Object.keys(
+        versionesRecalculoPlanificacion || {}
+    ).forEach(
+        function(vehiculoId) {
+
+            versionesRecalculoPlanificacion[
+                vehiculoId
+            ] =
+                (
+                    Number(
+                        versionesRecalculoPlanificacion[
+                            vehiculoId
+                        ]
+                    ) || 0
+                ) + 1;
+        }
+    );
+}
+
+
 function invalidarCalculosPlanificacion(
     plan
 ) {
 
     if (!plan) {
         return;
+    }
+
+
+    /*
+     * BLOQUE 8 · una respuesta de OSRM iniciada antes de este
+     * cambio estructural ya no representa la ruta actual. Se
+     * invalida su versión para que no pueda volver a escribir
+     * los cálculos que se están limpiando.
+     */
+    if (
+        plan.vehiculoId &&
+        planificacionDia[
+            String(plan.vehiculoId)
+        ] === plan
+    ) {
+
+        versionesRecalculoPlanificacion[
+            String(plan.vehiculoId)
+        ] =
+            (
+                Number(
+                    versionesRecalculoPlanificacion[
+                        String(plan.vehiculoId)
+                    ]
+                ) || 0
+            ) + 1;
     }
 
 
@@ -8821,6 +8915,24 @@ function marcarPlanificacionModificada(
 
     plan.modificado =
         true;
+
+
+    /*
+     * BLOQUE 8 · una edición posterior invalida cualquier
+     * confirmación de guardado que aún se estuviera mostrando
+     * para este vehículo. El plan vuelve a estar pendiente y
+     * el botón debe reflejarlo, no conservar un "guardada"
+     * que ya no describe el estado actual.
+     */
+    if (
+        plan.vehiculoId &&
+        String(
+            estadoFeedbackGuardadoPlanificacion.vehiculoId
+        ) === String(plan.vehiculoId)
+    ) {
+
+        limpiarFeedbackGuardadoPlanificacion();
+    }
 
 
     /*
@@ -11015,6 +11127,18 @@ function evaluarCambioDia() {
 
 
     /*
+     * BLOQUE 8 · una respuesta de borrado pendiente puede
+     * llegar después de reconstruir los planes. No se recarga
+     * el día mientras el borrado siga en vuelo: el siguiente
+     * tick decidirá con el estado final.
+     */
+    if (hayBorradoEnCurso()) {
+
+        return "en-vuelo";
+    }
+
+
+    /*
      * FASE 3F.6.6-B3 · CR-1: si el usuario autorizó guardar en
      * el día original y sigue habiendo trabajo de ese día, el
      * control periódico no vuelve a pausar ni cancela el
@@ -11274,6 +11398,22 @@ async function descartarCambiosYCargarDiaNuevo() {
     }
 
 
+    /*
+     * BLOQUE 8 · con una operación en vuelo no se inicia el
+     * descarte: su respuesta podría llegar después de sustituir
+     * los planes y escribir sobre el estado equivocado.
+     */
+    if (
+        carrilAutosaveOcupado() ||
+        hayBorradoEnCurso()
+    ) {
+
+        volverADialogoPausa();
+
+        return;
+    }
+
+
     let datos = null;
 
     try {
@@ -11286,6 +11426,27 @@ async function descartarCambiosYCargarDiaNuevo() {
         console.error(
             "No se pudo cargar la planificación del nuevo día:",
             error
+        );
+
+
+        volverADialogoPausa();
+
+
+        return;
+    }
+
+
+    /*
+     * BLOQUE 8 · la espera de la lectura también puede solaparse
+     * con un guardado o un borrado iniciado después del clic.
+     */
+    if (
+        carrilAutosaveOcupado() ||
+        hayBorradoEnCurso()
+    ) {
+
+        console.error(
+            "Descarte anulado: hay una operación de guardado o borrado en curso."
         );
 
 
@@ -11365,14 +11526,27 @@ async function descartarCambiosYCargarDiaNuevo() {
     }
 
 
+    let diaActual = "";
+
+    try {
+
+        diaActual = fechaLocalYYYYMMDD();
+
+    } catch (error) {
+
+        diaActual = "";
+    }
+
+
     if (
         !fechaServidorValidaRutas(
             normalizados.FECHA_SERVIDOR
-        )
+        ) ||
+        normalizados.FECHA_SERVIDOR !== diaActual
     ) {
 
         console.error(
-            "Descarte anulado: el nuevo día no trae fecha válida."
+            "Descarte anulado: los datos no pertenecen al día actual."
         );
 
 
@@ -11414,18 +11588,46 @@ async function descartarCambiosYCargarDiaNuevo() {
 
 async function recargarPlanificacionLimpia(nuevoDia) {
 
+    const diaSolicitado =
+        fechaServidorValidaRutas(nuevoDia);
+
+
+    if (!diaSolicitado) {
+
+        return;
+    }
+
+
     if (
         recargaLimpiaEnCurso ||
-        ultimoDiaRecargaIntentada === nuevoDia
+        ultimoDiaRecargaIntentada === diaSolicitado
     ) {
 
         return;
     }
 
 
+    /*
+     * BLOQUE 8 · no se inicia una lectura que podría competir
+     * con un borrado en vuelo.
+     */
+    if (hayBorradoEnCurso()) {
+
+        return;
+    }
+
+
+    /*
+     * BLOQUE 8 · el intento de recarga ya no representa el
+     * estado confirmado del plan mostrado. Se retira cualquier
+     * confirmación anterior aunque la lectura acabe fallando.
+     */
+    limpiarFeedbackGuardadoPlanificacion();
+
+
     recargaLimpiaEnCurso = true;
 
-    ultimoDiaRecargaIntentada = nuevoDia;
+    ultimoDiaRecargaIntentada = diaSolicitado;
 
 
     try {
@@ -11438,20 +11640,84 @@ async function recargarPlanificacionLimpia(nuevoDia) {
          * Si el usuario modificó algo durante la lectura, no
          * se reconstruye encima: el siguiente tick detectará
          * el día cambiado con trabajo pendiente y pausará.
+         *
+         * BLOQUE 8 · un intento abortado no es un intento
+         * fallido: se libera la marca para que, una vez
+         * resuelto el trabajo pendiente, el día pueda
+         * recargarse de verdad.
          */
 
         if (
             hayPlanificacionModificadaSinGuardar() ||
             carrilAutosaveOcupado() ||
-            !recuperacionLimpia()
+            !recuperacionLimpia() ||
+            hayBorradoEnCurso()
         ) {
+
+            ultimoDiaRecargaIntentada = "";
+
+            return;
+        }
+
+
+        /*
+         * BLOQUE 8 · si el reloj ya ha pasado a otro día
+         * mientras se leía, esta respuesta pertenece a un día
+         * anterior y no debe sustituir el estado actual.
+         */
+        let diaActual = "";
+
+        try {
+
+            diaActual = fechaLocalYYYYMMDD();
+
+        } catch (error) {
+
+            diaActual = "";
+        }
+
+
+        if (diaActual !== diaSolicitado) {
+
+            ultimoDiaRecargaIntentada = "";
+
+            return;
+        }
+
+
+        const normalizados =
+            normalizarDatosAplicacion(datos);
+
+
+        /*
+         * BLOQUE 8 · la respuesta debe pertenecer exactamente
+         * al día solicitado. Si el servidor devuelve otro día,
+         * no se aplica y el fallo queda visible para reintentar.
+         */
+        if (
+            normalizados.FECHA_SERVIDOR !==
+            diaSolicitado
+        ) {
+
+            falloRecargaDia = {
+
+                fechaIntentada:
+                    diaSolicitado,
+
+                mensaje:
+                    "No se pudo cargar la planificación del día " +
+                    diaSolicitado +
+                    ": el servidor devolvió otra fecha."
+            };
+
+            renderizarPlanificacion();
 
             return;
         }
 
 
         window.DATOS_MOCK =
-            normalizarDatosAplicacion(datos);
+            normalizados;
 
         cargarPlanificacionDesdeDatos();
 
@@ -11489,11 +11755,11 @@ async function recargarPlanificacionLimpia(nuevoDia) {
         falloRecargaDia = {
 
             fechaIntentada:
-                nuevoDia,
+                diaSolicitado,
 
             mensaje:
                 "No se pudo cargar la planificación del día " +
-                nuevoDia + "."
+                diaSolicitado + "."
         };
 
         renderizarPlanificacion();
@@ -12202,6 +12468,36 @@ function bloqueoBorradoActivo(vehiculoId) {
 
 
     return null;
+}
+
+
+/*
+ * BLOQUE 8 · un borrado solicitado, enviado o pendiente de
+ * reconciliación todavía puede recibir una respuesta y modificar
+ * el estado local. Mientras exista uno, no se reconstruye la
+ * planificación por una recarga de día ni por un descarte.
+ */
+function hayBorradoEnCurso() {
+
+    return Object.keys(
+        bloqueosBorrado || {}
+    ).some(
+        function(vehiculoId) {
+
+            const bloqueo =
+                bloqueosBorrado[vehiculoId];
+
+
+            return (
+                !!bloqueo &&
+                (
+                    bloqueo.fase === "solicitado" ||
+                    bloqueo.fase === "enviado" ||
+                    bloqueo.fase === "desconocido"
+                )
+            );
+        }
+    );
 }
 
 
