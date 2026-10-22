@@ -1030,6 +1030,159 @@ const API = {
 
 
     /* =========================================================
+       ASIGNAR AVISO A UN VEHÍCULO · BLOQUE 12C
+       ---------------------------------------------------------
+       POST con Content-Type text/plain (transporte legible
+       idéntico al de crear/actualizar/eliminar aviso). Solicitud
+       "simple" sin cabeceras personalizadas: no dispara
+       preflight CORS y la respuesta del servidor se lee
+       directamente.
+
+       Devuelve:
+       - { ok:true, asignado:true, aviso } cuando el servidor
+         confirma con eco de id_aviso y vehiculo_id.
+       - { ok:false, error } si el backend rechaza la acción.
+       - { ok:false, incierto:true, error } si no se puede saber
+         si la asignación se realizó (red, timeout o respuesta
+         inválida/no confirmatoria).
+
+       El cumplimiento del fetch NO se interpreta como escritura
+       confirmada: solo la respuesta ok:true con aviso de retorno
+       lo es. Con mode no-cors la respuesta sería opaca y esto no
+       sería comprobable; por eso esta acción no usa no-cors.
+    ========================================================= */
+
+    async asignarAviso(idAviso, vehiculoId) {
+
+        const id =
+            String(
+                idAviso || ""
+            ).trim();
+
+        const vehiculo =
+            String(
+                vehiculoId || ""
+            ).trim();
+
+
+        if (!id) {
+
+            return {
+                ok: false,
+                incierto: false,
+                asignado: false,
+                error:
+                    "El identificador del aviso es obligatorio."
+            };
+        }
+
+
+        if (!vehiculo) {
+
+            return {
+                ok: false,
+                incierto: false,
+                asignado: false,
+                error:
+                    "El vehículo de destino es obligatorio."
+            };
+        }
+
+
+        if (CONFIG.modo === "mock") {
+
+            return {
+                ok: true,
+                incierto: false,
+                asignado: true,
+                mock: true,
+                aviso: {
+                    id_aviso: id,
+                    vehiculo_id: vehiculo,
+                    estado: "ASIGNADO"
+                }
+            };
+        }
+
+
+        let resultado = null;
+
+        try {
+
+            resultado =
+                await enviarAccionAvisoGestion(
+                    {
+                        accion:
+                            "asignar_aviso",
+                        id_aviso:
+                            id,
+                        vehiculo_id:
+                            vehiculo
+                    },
+                    TIMEOUT_ACTUALIZAR_AVISO_MS
+                );
+
+        } catch (error) {
+
+            return {
+                ok: false,
+                incierto: true,
+                asignado: false,
+                error:
+                    "No se ha podido contactar con el servidor " +
+                    "para asignar el aviso. No se puede confirmar " +
+                    "si la asignación se realizó."
+            };
+        }
+
+
+        if (!resultado.ok) {
+
+            return {
+                ok: false,
+                incierto:
+                    resultado.incierto === true,
+                asignado: false,
+                error:
+                    resultado.error ||
+                    "No se ha podido asignar el aviso."
+            };
+        }
+
+
+        if (
+            resultado.asignado !== true ||
+            !resultado.aviso ||
+            String(
+                resultado.aviso.id_aviso
+            ).trim() !== id ||
+            String(
+                resultado.aviso.vehiculo_id
+            ).trim() !== vehiculo
+        ) {
+
+            return {
+                ok: false,
+                incierto: true,
+                asignado: false,
+                error:
+                    "El servidor no ha confirmado la asignación del aviso. " +
+                    "Comprueba la lista antes de volver a intentarlo."
+            };
+        }
+
+
+        return {
+            ok: true,
+            incierto: false,
+            asignado: true,
+            aviso:
+                resultado.aviso
+        };
+    },
+
+
+    /* =========================================================
        ELIMINAR AVISO
        ---------------------------------------------------------
        Solo elimina el aviso identificado por id_aviso. La lista
