@@ -1780,7 +1780,7 @@ function asignarAvisoAVehiculo(
      * pendiente». La validación, el traslado y los efectos
      * posteriores viven en incorporarAvisoAPlan().
      */
-    incorporarAvisoAPlan(
+    return incorporarAvisoAPlan(
         vehiculoId,
         avisoId
     );
@@ -2039,10 +2039,16 @@ function resolverCoordenadasAvisoRutas(aviso) {
  *  - no crea persistencia nueva: usa el autosave existente y
  *    no declara el guardado como confirmado.
  */
-function incorporarAvisoAPlan(vehiculoId, avisoId) {
+async function incorporarAvisoAPlan(vehiculoId, avisoId) {
+
+    const idDestino =
+        String(vehiculoId || "");
+
+    vehiculoId =
+        idDestino;
 
     const planDestino =
-        planificacionDia[vehiculoId];
+        planificacionDia[idDestino];
 
     if (!planDestino) {
 
@@ -2159,6 +2165,33 @@ function incorporarAvisoAPlan(vehiculoId, avisoId) {
 
 
     /* --------------------------------------------------------
+       BLOQUE 11 · el destino debe poder guardarse antes de tocar
+       ningún plan. No se usa la ruta habitual.
+    -------------------------------------------------------- */
+
+    const validacionDestino =
+        validarPlanParaGuardado(
+            planDestino,
+            { aplicarRutaAsignada: false }
+        );
+
+
+    if (!validacionDestino.ok) {
+
+        alert(
+            "No se puede añadir el aviso: " +
+            validacionDestino.error
+        );
+
+        return {
+            ok: false,
+            motivo: validacionDestino.motivo,
+            error: validacionDestino.error
+        };
+    }
+
+
+    /* --------------------------------------------------------
        Traslado desde otro vehículo de la misma fecha
     -------------------------------------------------------- */
 
@@ -2169,12 +2202,16 @@ function incorporarAvisoAPlan(vehiculoId, avisoId) {
         vehiculoOrigen !== null &&
         String(vehiculoOrigen) !== String(vehiculoId);
 
+    let planOrigenTraslado = null;
+    let paradasOrigenRestantes = [];
+    let origenTeniaPlanGuardado = false;
+
     if (esTraslado) {
 
-        const planOrigen =
+        planOrigenTraslado =
             planificacionDia[vehiculoOrigen];
 
-        if (!planOrigen) {
+        if (!planOrigenTraslado) {
 
             alert(
                 "No se ha encontrado la planificación del " +
@@ -2188,7 +2225,7 @@ function incorporarAvisoAPlan(vehiculoId, avisoId) {
         }
 
         const motivoOrigen =
-            motivoBloqueoGuardado(planOrigen);
+            motivoBloqueoGuardado(planOrigenTraslado);
 
         const motivoDestino =
             motivoBloqueoGuardado(planDestino);
@@ -2207,16 +2244,114 @@ function incorporarAvisoAPlan(vehiculoId, avisoId) {
             };
         }
 
+
+        /*
+         * BLOQUE 11 · si el origen conserva paradas, también debe
+         * poder guardarse. Si queda vacío, no se envía un plan
+         * vacío: se usará el borrado explícito.
+         */
+        paradasOrigenRestantes =
+            (planOrigenTraslado.paradas || []).filter(
+                function(parada) {
+
+                    return !(
+                        String(
+                            parada.tipo
+                        ).toUpperCase() === "AVISO" &&
+                        String(
+                            parada.avisoId ||
+                            parada.id_aviso ||
+                            parada.id
+                        ) === String(idAviso)
+                    );
+                }
+            );
+
+
+        origenTeniaPlanGuardado =
+            planOrigenTraslado.tienePlanGuardado === true;
+
+
+        if (paradasOrigenRestantes.length > 0) {
+
+            const validacionOrigen =
+                validarPlanParaGuardado(
+                    planOrigenTraslado,
+                    { aplicarRutaAsignada: false }
+                );
+
+
+            if (!validacionOrigen.ok) {
+
+                alert(
+                    "No se ha trasladado el aviso: el plan de " +
+                    obtenerNombreVehiculo(vehiculoOrigen) +
+                    " no se podría guardar.\n\n" +
+                    validacionOrigen.error
+                );
+
+                return {
+                    ok: false,
+                    motivo: validacionOrigen.motivo,
+                    error: validacionOrigen.error
+                };
+            }
+        }
+
+
+        if (
+            guardandoPlanificacion === true ||
+            vehiculoAutosaveEnCurso !== null ||
+            bloqueoBorradoActivo(vehiculoId) ||
+            bloqueoBorradoActivo(vehiculoOrigen)
+        ) {
+
+            alert(
+                "No se ha trasladado el aviso: hay un guardado o " +
+                "un borrado en curso. Inténtalo de nuevo cuando " +
+                "termine."
+            );
+
+            return {
+                ok: false,
+                motivo: "GUARDADO_EN_CURSO"
+            };
+        }
+
+
         const nombreOrigen =
             obtenerNombreVehiculo(vehiculoOrigen);
 
         const nombreDestino =
             obtenerNombreVehiculo(vehiculoId);
 
+        let textoConfirmacion =
+            "El aviso ya está asignado a " + nombreOrigen + ".\n\n" +
+            "¿Quieres moverlo a " + nombreDestino + "?";
+
+
+        if (paradasOrigenRestantes.length === 0) {
+
+            textoConfirmacion +=
+                "\n\n" +
+                nombreOrigen +
+                " quedará sin paradas";
+
+
+            if (origenTeniaPlanGuardado) {
+
+                textoConfirmacion +=
+                    " y su planificación guardada se eliminará " +
+                    "del servidor.";
+            } else {
+                textoConfirmacion += ".";
+            }
+        }
+
+
         const confirmar =
             confirm(
-                "El aviso ya está asignado a " + nombreOrigen + ".\n\n" +
-                "¿Quieres moverlo a " + nombreDestino + "?"
+                textoConfirmacion
             );
 
         if (!confirmar) {
@@ -2233,6 +2368,15 @@ function incorporarAvisoAPlan(vehiculoId, avisoId) {
        Ambas mutaciones son síncronas: no hay await entre ellas.
     -------------------------------------------------------- */
 
+    if (
+        esTraslado &&
+        validacionDestino.rutaDesdeAsignacion === true
+    ) {
+
+        planDestino.rutaActiva =
+            validacionDestino.ruta;
+    }
+
     if (esTraslado) {
 
         quitarAvisoDePlanSinPerderAviso(
@@ -2244,6 +2388,20 @@ function incorporarAvisoAPlan(vehiculoId, avisoId) {
             planificacionDia[vehiculoOrigen]
         );
     }
+
+    /*
+     * BLOQUE 12D · un aviso RECOGIDO conserva su estado al
+     * trasladarlo. `asignar_aviso` no toca la columna `estado`
+     * de la hoja AVISOS; la nueva parada y el aviso en memoria
+     * heredan también RECOGIDO para no degradarlo a ASIGNADO
+     * durante la sesión.
+     */
+
+    const estadoAvisoTrasladado =
+
+        normalizarEstado(aviso.estado) === "RECOGIDO"
+            ? "RECOGIDO"
+            : "ASIGNADO";
 
     planDestino.paradas.push({
         id:
@@ -2265,13 +2423,13 @@ function incorporarAvisoAPlan(vehiculoId, avisoId) {
         municipio:
             obtenerMunicipioAviso(aviso),
         estado:
-            "ASIGNADO",
+            estadoAvisoTrasladado,
         origen:
             "AVISO"
     });
 
     aviso.estado =
-        "ASIGNADO";
+        estadoAvisoTrasladado;
 
     aviso.vehiculo_id =
         vehiculoId;
@@ -2341,33 +2499,504 @@ function incorporarAvisoAPlan(vehiculoId, avisoId) {
     }
 
 
-    /* --------------------------------------------------------
-       Honestidad de guardado: el autosave existente enviará
-       cada plan. Si el destino está bloqueado se informa; el
-       cambio queda pendiente y visible, nunca "guardado".
-    -------------------------------------------------------- */
+    /*
+     * BLOQUE 11 · alta simple: se conserva el autosave existente.
+     * No se declara guardada: el cambio queda pendiente hasta que
+     * el motor reciba confirmación del servidor.
+     */
+    if (!esTraslado) {
 
-    const motivoDestinoFinal =
-        motivoBloqueoGuardado(planDestino);
+        const motivoDestinoFinal =
+            motivoBloqueoGuardado(planDestino);
 
-    if (motivoDestinoFinal) {
+        if (motivoDestinoFinal) {
+
+            establecerFeedbackGuardadoPlanificacion(
+                vehiculoId,
+                "error"
+            );
+
+            alert(
+                "El aviso se ha incorporado, pero el cambio NO se ha " +
+                "guardado:\n\n" +
+                motivoDestinoFinal
+            );
+
+            return {
+                ok: false,
+                traslado: false,
+                guardado: false,
+                error: motivoDestinoFinal
+            };
+        }
+
+        return {
+            ok: true,
+            traslado: false,
+            guardado: false,
+            pendiente: true,
+            vehiculoOrigen: null
+        };
+    }
+
+
+    /*
+     * BLOQUE 11 · traslado con persistencia comprobada.
+     *
+     * Se cancela el debounce de ambos planes para que no se cruce
+     * un POST automático del origen con la secuencia controlada:
+     * primero destino, después origen. Nunca se declara completo
+     * si alguna de las dos operaciones no confirma.
+     */
+
+    cancelarEsperasAutosave(vehiculoId);
+    cancelarEsperasAutosave(vehiculoOrigen);
+
+    colaAutosave =
+        colaAutosave.filter(
+            function(entrada) {
+
+                return (
+                    String(entrada) !== String(vehiculoId) &&
+                    String(entrada) !== String(vehiculoOrigen)
+                );
+            }
+        );
+
+
+    let resultadoDestino = null;
+
+    try {
+
+        resultadoDestino =
+            await guardarPlanificacionVehiculo(
+                vehiculoId
+            );
+
+    } catch (error) {
+
+        resultadoDestino = {
+            ok: false,
+            error:
+                String(
+                    (error && error.message) || error
+                )
+        };
+    }
+
+
+    if (
+        !resultadoDestino ||
+        resultadoDestino.ok !== true
+    ) {
+
+        const errorDestino =
+            (
+                resultadoDestino &&
+                resultadoDestino.error
+            ) ||
+            "No se ha confirmado el guardado del destino.";
+
 
         establecerFeedbackGuardadoPlanificacion(
             vehiculoId,
             "error"
         );
 
+        renderizarPlanificacion();
+
+
         alert(
-            "El aviso se ha incorporado, pero el cambio NO se ha " +
-            "guardado:\n\n" +
-            motivoDestinoFinal
+            "El aviso se ha movido solo en esta pantalla.\n\n" +
+            "NO se ha guardado la planificación de " +
+            obtenerNombreVehiculo(vehiculoId) +
+            ":\n" +
+            errorDestino +
+            "\n\nEl origen no se ha modificado en el servidor."
+        );
+
+
+        return {
+            ok: false,
+            traslado: true,
+            guardado: false,
+            guardadoDestino: false,
+            vehiculoOrigen: vehiculoOrigen,
+            error: errorDestino
+        };
+    }
+
+
+    planDestino.tienePlanGuardado =
+        true;
+
+
+    let origenGuardado = false;
+    let origenEliminado = false;
+
+
+    if (paradasOrigenRestantes.length > 0) {
+
+        let resultadoOrigen = null;
+
+        try {
+
+            resultadoOrigen =
+                await guardarPlanificacionVehiculo(
+                    vehiculoOrigen
+                );
+
+        } catch (error) {
+
+            resultadoOrigen = {
+                ok: false,
+                error:
+                    String(
+                        (error && error.message) || error
+                    )
+            };
+        }
+
+
+        if (
+            !resultadoOrigen ||
+            resultadoOrigen.ok !== true
+        ) {
+
+            const errorOrigen =
+                (
+                    resultadoOrigen &&
+                    resultadoOrigen.error
+                ) ||
+                "No se ha confirmado el guardado del origen.";
+
+
+            alert(
+                "El aviso se ha guardado en " +
+                obtenerNombreVehiculo(vehiculoId) +
+                ", pero NO se ha podido guardar el plan de " +
+                obtenerNombreVehiculo(vehiculoOrigen) +
+                ":\n" +
+                errorOrigen +
+                "\n\nEl traslado NO está completo: el origen puede " +
+                "conservar todavía el aviso."
+            );
+
+
+            return {
+                ok: false,
+                traslado: true,
+                parcial: true,
+                guardado: false,
+                guardadoDestino: true,
+                guardadoOrigen: false,
+                vehiculoOrigen: vehiculoOrigen,
+                error: errorOrigen
+            };
+        }
+
+
+        planOrigenTraslado.tienePlanGuardado =
+            true;
+
+        origenGuardado = true;
+
+    } else if (origenTeniaPlanGuardado) {
+
+        const fechaOrigen =
+            fechaPertenenciaPlan(
+                planOrigenTraslado
+            );
+
+
+        if (!fechaOrigen) {
+
+            alert(
+                "El aviso se ha guardado en " +
+                obtenerNombreVehiculo(vehiculoId) +
+                ", pero NO se ha podido eliminar el plan vacío de " +
+                obtenerNombreVehiculo(vehiculoOrigen) +
+                ": fecha desconocida."
+            );
+
+            return {
+                ok: false,
+                traslado: true,
+                parcial: true,
+                guardado: false,
+                guardadoDestino: true,
+                eliminadoOrigen: false,
+                vehiculoOrigen: vehiculoOrigen,
+                error: "Fecha del plan de origen desconocida."
+            };
+        }
+
+
+        let resultadoEliminacion = null;
+
+        try {
+
+            resultadoEliminacion =
+                await API.eliminarPlanificacion({
+                    accion:
+                        "eliminar_planificacion",
+                    fecha:
+                        fechaOrigen,
+                    vehiculo_id:
+                        String(vehiculoOrigen),
+                    confirmar_borrado:
+                        true
+                });
+
+        } catch (error) {
+
+            resultadoEliminacion = {
+                ok: false,
+                error:
+                    String(
+                        (error && error.message) || error
+                    )
+            };
+        }
+
+
+        if (
+            !resultadoEliminacion ||
+            resultadoEliminacion.ok !== true ||
+            resultadoEliminacion.accion !==
+                "eliminar_planificacion" ||
+            typeof resultadoEliminacion.eliminadas !==
+                "number"
+        ) {
+
+            const desconocido =
+                resultadoEliminacion &&
+                resultadoEliminacion.timeout === true;
+
+
+            alert(
+                "El aviso se ha guardado en " +
+                obtenerNombreVehiculo(vehiculoId) +
+                ", pero NO se ha confirmado la eliminación del plan " +
+                "vacío de " +
+                obtenerNombreVehiculo(vehiculoOrigen) +
+                ":\n" +
+                (
+                    desconocido
+                        ? "El resultado es DESCONOCIDO (sin respuesta " +
+                          "del servidor)."
+                        : (
+                            resultadoEliminacion &&
+                            resultadoEliminacion.error
+                        ) ||
+                          "Error eliminando la planificación."
+                ) +
+                "\n\nEl traslado NO está completo y puede quedar " +
+                "duplicado hasta resolverlo."
+            );
+
+
+            return {
+                ok: false,
+                traslado: true,
+                parcial: true,
+                guardado: false,
+                guardadoDestino: true,
+                eliminadoOrigen: false,
+                eliminacionDesconocida: Boolean(desconocido),
+                vehiculoOrigen: vehiculoOrigen,
+                error:
+                    desconocido
+                        ? "Resultado de eliminación desconocido."
+                        : "No se ha eliminado el plan de origen."
+            };
+        }
+
+
+        limpiarEstadoLocalTrasBorrado(
+            vehiculoOrigen,
+            false
+        );
+
+        origenEliminado = true;
+    } else {
+
+        /*
+         * El origen no tenía plan persistido: no hay nada que
+         * borrar en el servidor. Solo se limpia su estado local.
+         */
+        limpiarEstadoLocalTrasBorrado(
+            vehiculoOrigen,
+            false
         );
     }
 
+
+    establecerFeedbackGuardadoPlanificacion(
+        vehiculoId,
+        "ok"
+    );
+
+    renderizarPlanificacion();
+
+    if (
+        typeof refrescarMapaPlanificacion ===
+        "function"
+    ) {
+
+        refrescarMapaPlanificacion();
+    }
+
+
+    /*
+     * BLOQUE 12C · tras confirmar los planes, se persiste la
+     * asignación del aviso en la hoja AVISOS (vehiculo_id).
+     * Sin esta confirmación el traslado NO se declara completo:
+     * al cambiar de día la reconstrucción volvería a depender
+     * del vehículo antiguo registrado en AVISOS.
+     */
+
+    let resultadoAsignacion = null;
+
+    try {
+
+        resultadoAsignacion =
+            await API.asignarAviso(
+                idAviso,
+                String(vehiculoId)
+            );
+
+    } catch (error) {
+
+        resultadoAsignacion = {
+            ok: false,
+            error:
+                String(
+                    (error && error.message) || error
+                )
+        };
+    }
+
+
+    const textoOrigenPlan =
+
+        obtenerNombreVehiculo(vehiculoOrigen) +
+        (
+            origenEliminado
+                ? ": plan vacío eliminado del servidor."
+                : (
+                    origenGuardado
+                        ? ": planificación guardada sin el aviso."
+                        : ": sin plan persistido que eliminar."
+                )
+        );
+
+
+    if (
+        resultadoAsignacion &&
+        resultadoAsignacion.ok === true
+    ) {
+
+        /*
+         * BLOQUE 12C · si el servidor confirma la asignación,
+         * se limpia cualquier registro pendiente de este aviso.
+         */
+        eliminarAsignacionPendiente(idAviso);
+
+
+        alert(
+            "Aviso trasladado y guardado.\n\n" +
+            obtenerNombreVehiculo(vehiculoId) +
+            ": planificación guardada con el aviso.\n" +
+            textoOrigenPlan +
+            "\n\nAsignación del aviso persistida en la hoja " +
+            "AVISOS (vehículo " +
+            obtenerNombreVehiculo(vehiculoId) + ")."
+        );
+
+
+        return {
+            ok: true,
+            traslado: true,
+            guardado: true,
+            guardadoDestino: true,
+            guardadoOrigen: origenGuardado,
+            eliminadoOrigen: origenEliminado,
+            asignacionAviso: true,
+            vehiculoOrigen: vehiculoOrigen,
+            persistenciaAviso: "CONFIRMADA"
+        };
+    }
+
+
+    const asignacionDesconocida =
+        Boolean(
+            resultadoAsignacion &&
+            resultadoAsignacion.incierto === true
+        );
+
+
+    const errorAsignacion =
+
+        (resultadoAsignacion && resultadoAsignacion.error) ||
+        "El servidor no ha confirmado la asignación del aviso.";
+
+
+    /*
+     * BLOQUE 12C · escritura parcial sin rollback: los planes ya
+     * están guardados de forma coherente (destino con el aviso;
+     * origen vacío o sin él), pero AVISOS sigue ligando el aviso
+     * a su vehículo anterior. Se informa del estado exacto y se
+     * registra el reintento; `procesarAsignacionesAvisoPendientes`
+     * lo reintenta en la próxima recarga o cambio de día.
+     */
+    registrarAsignacionAvisoPendiente(
+        idAviso,
+        String(vehiculoId),
+        {
+            vehiculo_origen: vehiculoOrigen,
+            fecha_planificacion: fechaServidor || ""
+        }
+    );
+
+
+    const textoAsignacionKo =
+
+        asignacionDesconocida
+            ? "La asignación del aviso en la hoja AVISOS NO ha " +
+              "podido verificarse con el servidor."
+            : "NO se ha confirmado la asignación del aviso en la " +
+              "hoja AVISOS:\n" + errorAsignacion;
+
+
+    alert(
+        "El traslado NO está completamente guardado.\n\n" +
+        obtenerNombreVehiculo(vehiculoId) +
+        ": planificación guardada con el aviso.\n" +
+        textoOrigenPlan +
+        "\n\n" +
+        textoAsignacionKo +
+        "\n\nAl recargar el MISMO día no habrá duplicados (el plan " +
+        "guardado manda), pero al cambiar de día el aviso puede " +
+        "volver a " +
+        obtenerNombreVehiculo(vehiculoOrigen) +
+        ". Se registró el reintento de la asignación para la " +
+        "próxima recarga."
+    );
+
+
     return {
-        ok: true,
-        traslado: esTraslado,
-        vehiculoOrigen: esTraslado ? vehiculoOrigen : null
+        ok: false,
+        traslado: true,
+        parcial: true,
+        guardado: true,
+        guardadoDestino: true,
+        guardadoOrigen: origenGuardado,
+        eliminadoOrigen: origenEliminado,
+        asignacionAviso: false,
+        asignacionDesconocida: asignacionDesconocida,
+        vehiculoOrigen: vehiculoOrigen,
+        error: errorAsignacion
     };
 }
 
@@ -2443,6 +3072,730 @@ function crearPlanVehiculo(
         tienePlanGuardado:
             false
     };
+}
+
+
+/* ============================================================
+   BLOQUE 12D · ASIGNACIONES DE AVISO PENDIENTES (PERSISTENTES)
+   ------------------------------------------------------------
+   Traslados cuyos planes quedaron guardados y coherentes pero
+   cuyo `vehiculo_id` no se pudo actualizar (o no se pudo
+   verificar) en la hoja AVISOS.
+
+   - Registro en MEMORIA (`asignacionesAvisoPendientes`) y
+     ESPEJO en localStorage (`crf-traslados-pendientes-v1`),
+     mismo patrón que `crf-borrado-v1` / `crf-distribucion-v1`:
+     clave versionada, try/catch, solo identificadores y marcas
+     temporales (nunca datos personales ni campos del aviso).
+     Si el almacenamiento no está disponible, la sesión sigue
+     con la copia en memoria y los límites de reintentos.
+   - Estados definitivos de un pendiente:
+     CONFIRMADO   → eliminado tras eco del servidor.
+     SUPERADO     → el servidor ya registra una asignación
+                    distinta (más reciente): NO se reaplica
+                    para no revertir un traslado posterior.
+     NO_RESUELTO  → el servidor rechaza de forma definitiva
+                    (aviso no encontrado, id duplicado,
+                    columnas ausentes): visible, sin bucles.
+     AGOTADO      → límite de reintentos automáticos alcanzado.
+     CADUCADO     → demasiado antiguo para verificar vigencia:
+                    no se reaplica automáticamente.
+     INCIERTO/FALLO → se conserva y se reintenta al volver a
+                    cargar; tras INCIERTO se verifica el estado
+                    del servidor (API.obtenerAvisos, lectura
+                    existente) antes de repetir la escritura.
+   - El reintento solo toca la celda vehiculo_id del aviso:
+     nunca crea planes ni duplica paradas.
+   - Estado visible: una única alerta por sesión con los
+     pendientes sin confirmación. Nunca se simula rollback:
+     el backend no lo ofrece.
+============================================================ */
+
+const CLAVE_TRASLADOS_PENDIENTES =
+    "crf-traslados-pendientes-v1";
+
+const LIMITE_REINTENTOS_ASIGNACION = 5;
+
+const ANTIGUEDAD_MAX_TRASLADO_PENDIENTE_MS =
+    7 * 24 * 60 * 60 * 1000;
+
+let asignacionesAvisoPendientes = [];
+
+let trasladosPendientesRecuperados = false;
+
+let alertaTrasladosPendientesMostrada = false;
+
+
+function leerTrasladosPendientesAlmacenados() {
+
+    let texto = null;
+
+    try {
+
+        texto =
+            window.localStorage.getItem(
+                CLAVE_TRASLADOS_PENDIENTES
+            );
+
+    } catch (error) {
+
+        return [];
+
+    }
+
+
+    if (!texto) {
+        return [];
+    }
+
+
+    let registro = null;
+
+    try {
+
+        registro = JSON.parse(texto);
+
+    } catch (error) {
+
+        return [];
+
+    }
+
+
+    if (
+        !registro ||
+        typeof registro !== "object" ||
+        registro.version !== 1 ||
+        !Array.isArray(registro.pendientes)
+    ) {
+        return [];
+    }
+
+
+    const pendientes = [];
+
+
+    registro.pendientes.forEach(
+        function(entrada) {
+
+            if (
+                !entrada ||
+                typeof entrada !== "object"
+            ) {
+                return;
+            }
+
+
+            const id =
+                String(entrada.id_aviso || "").trim();
+
+            const destino =
+                String(entrada.vehiculo_id || "").trim();
+
+
+            if (!id || !destino) {
+                return;
+            }
+
+
+            pendientes.push({
+                id_aviso: id,
+                vehiculo_id: destino,
+                vehiculo_origen:
+                    String(entrada.vehiculo_origen || "").trim(),
+                fecha_planificacion:
+                    String(entrada.fecha_planificacion || "").trim(),
+                registrada_en:
+                    String(entrada.registrada_en || "").trim(),
+                intentos:
+                    typeof entrada.intentos === "number" &&
+                    isFinite(entrada.intentos)
+                        ? entrada.intentos
+                        : 1,
+                ultimo_intento_en:
+                    String(entrada.ultimo_intento_en || "").trim(),
+                ultimo_resultado:
+                    String(entrada.ultimo_resultado || "").trim()
+            });
+
+        }
+    );
+
+    return pendientes;
+}
+
+
+function guardarTrasladosPendientesAlmacenados() {
+
+    try {
+
+        window.localStorage.setItem(
+            CLAVE_TRASLADOS_PENDIENTES,
+            JSON.stringify({
+                version: 1,
+                pendientes:
+                    asignacionesAvisoPendientes.map(
+                        function(registro) {
+                            return {
+                                id_aviso: registro.id_aviso,
+                                vehiculo_id: registro.vehiculo_id,
+                                vehiculo_origen:
+                                    registro.vehiculo_origen || "",
+                                fecha_planificacion:
+                                    registro.fecha_planificacion || "",
+                                registrada_en:
+                                    registro.registrada_en || "",
+                                intentos:
+                                    registro.intentos || 1,
+                                ultimo_intento_en:
+                                    registro.ultimo_intento_en || "",
+                                ultimo_resultado:
+                                    registro.ultimo_resultado || ""
+                            };
+                        }
+                    )
+            })
+        );
+
+    } catch (error) {
+
+        /*
+         * Sin almacenamiento disponible sigue funcionando la
+         * copia en memoria, con los mismos límites de reintentos.
+         */
+    }
+}
+
+
+function recuperarTrasladosPendientesAlmacenados() {
+
+    if (trasladosPendientesRecuperados) {
+        return 0;
+    }
+
+    trasladosPendientesRecuperados = true;
+
+
+    const almacenados =
+        leerTrasladosPendientesAlmacenados();
+
+    let recuperados = 0;
+
+
+    almacenados.forEach(
+        function(entrada) {
+
+            const existente =
+                asignacionesAvisoPendientes.find(
+                    function(registro) {
+                        return registro.id_aviso === entrada.id_aviso;
+                    }
+                );
+
+
+            if (existente) {
+                return;
+            }
+
+
+            asignacionesAvisoPendientes.push(entrada);
+
+            recuperados += 1;
+
+        }
+    );
+
+    return recuperados;
+}
+
+
+function registrarAsignacionAvisoPendiente(
+    idAviso,
+    vehiculoId,
+    contexto
+) {
+
+    const id =
+        String(
+            idAviso || ""
+        ).trim();
+
+    const vehiculo =
+        String(
+            vehiculoId || ""
+        ).trim();
+
+
+    if (
+        !id ||
+        !vehiculo
+    ) {
+        return;
+    }
+
+
+    const datosContexto = contexto || {};
+
+
+    const existente =
+        asignacionesAvisoPendientes.find(
+            function(registro) {
+                return registro.id_aviso === id;
+            }
+        );
+
+
+    if (existente) {
+
+        existente.vehiculo_id =
+            vehiculo;
+
+        existente.vehiculo_origen =
+            String(datosContexto.vehiculo_origen || "").trim() ||
+            existente.vehiculo_origen ||
+            "";
+
+        existente.fecha_planificacion =
+            String(datosContexto.fecha_planificacion || "").trim() ||
+            existente.fecha_planificacion ||
+            "";
+
+        existente.intentos += 1;
+
+        guardarTrasladosPendientesAlmacenados();
+
+        return;
+    }
+
+
+    asignacionesAvisoPendientes.push({
+        id_aviso: id,
+        vehiculo_id: vehiculo,
+        vehiculo_origen:
+            String(datosContexto.vehiculo_origen || "").trim(),
+        fecha_planificacion:
+            String(datosContexto.fecha_planificacion || "").trim(),
+        registrada_en:
+            new Date().toISOString(),
+        intentos: 1,
+        ultimo_intento_en: "",
+        ultimo_resultado: "NUEVO"
+    });
+
+    guardarTrasladosPendientesAlmacenados();
+}
+
+
+function eliminarAsignacionPendiente(
+    idAviso
+) {
+
+    const id =
+        String(
+            idAviso || ""
+        ).trim();
+
+
+    const indice =
+        asignacionesAvisoPendientes.findIndex(
+            function(registro) {
+                return registro.id_aviso === id;
+            }
+        );
+
+
+    if (indice >= 0) {
+
+        asignacionesAvisoPendientes.splice(
+            indice,
+            1
+        );
+
+        guardarTrasladosPendientesAlmacenados();
+    }
+}
+
+
+function obtenerVehiculoConsolidadoAviso(aviso) {
+
+    if (!aviso) {
+        return "";
+    }
+
+    return String(
+        aviso.vehiculo_id ||
+        aviso.vehiculo ||
+        aviso.id_vehiculo ||
+        ""
+    ).trim();
+}
+
+
+function clasificarFalloAsignacion(errorAsignacion) {
+
+    const texto =
+        String(errorAsignacion || "").toLowerCase();
+
+    if (
+        texto.indexOf("no se ha encontrado el aviso") !== -1 ||
+        texto.indexOf("no se actualiza ninguna") !== -1 ||
+        texto.indexOf("faltan columnas obligatorias") !== -1
+    ) {
+        return "NO_RESUELTO";
+    }
+
+    return "FALLO";
+}
+
+
+function actualizarPendienteConResultado(
+    pendiente,
+    resultado
+) {
+
+    pendiente.intentos =
+        (pendiente.intentos || 0) + 1;
+
+    pendiente.ultimo_intento_en =
+        new Date().toISOString();
+
+    pendiente.ultimo_resultado =
+        resultado;
+
+    guardarTrasladosPendientesAlmacenados();
+}
+
+
+function textoEstadoPendiente(resultado) {
+
+    switch (resultado) {
+
+        case "NUEVO":
+            return "sin intento resuelto aún";
+
+        case "CONFIRMADO":
+            return "confirmado";
+
+        case "INCIERTO":
+            return "sin confirmar (resultado incierto)";
+
+        case "NO_RESUELTO":
+            return "el servidor rechaza de forma definitiva la operación";
+
+        case "AGOTADO":
+            return "reintentos automáticos agotados";
+
+        case "CADUCADO":
+            return "operación demasiado antigua para verificarla";
+
+        case "SUPERADO":
+            return "el servidor ya registra una asignación más reciente";
+
+        default:
+            return "fallo pendiente de reintentar";
+
+    }
+}
+
+
+async function procesarAsignacionesAvisoPendientes(origenProceso) {
+
+    /*
+     * BLOQUE 12D · en modo "carga" los datos en memoria acaban de
+     * normalizarse desde el servidor, así que "aviso.vehiculo_id"
+     * refleja la verdad del servidor y permite verificar la
+     * vigencia. En sesiones en vivo, tras un traslado fallido la
+     * memoria ya contiene el destino optimista, y usarla para esa
+     * comprobación daría resultados falsos: ahí solo se reintentan
+     * escrituras (o relecturas frente al servidor).
+     */
+    const verificarVigencia =
+        origenProceso === "carga";
+
+    recuperarTrasladosPendientesAlmacenados();
+
+    if (
+        asignacionesAvisoPendientes.length === 0
+    ) {
+        return;
+    }
+
+
+    const pendientes =
+        asignacionesAvisoPendientes.slice();
+
+
+    for (
+        let indice = 0;
+        indice < pendientes.length;
+        indice += 1
+    ) {
+
+        const pendiente =
+            pendientes[indice];
+
+
+        try {
+
+            const resultadoPrevio =
+                String(pendiente.ultimo_resultado || "");
+
+
+            // Resultados terminales: visibles, sin nuevos intentos.
+            if (
+                resultadoPrevio === "NO_RESUELTO" ||
+                resultadoPrevio === "AGOTADO" ||
+                resultadoPrevio === "CADUCADO" ||
+                resultadoPrevio === "SUPERADO"
+            ) {
+                continue;
+            }
+
+
+            // Límite de reintentos automáticos (anti-bucle).
+            if (
+                (pendiente.intentos || 0) >=
+                LIMITE_REINTENTOS_ASIGNACION
+            ) {
+
+                pendiente.ultimo_resultado = "AGOTADO";
+
+                guardarTrasladosPendientesAlmacenados();
+
+                continue;
+            }
+
+
+            // Vigencia temporal: un pendiente muy antiguo no se
+            // reaplica automáticamente.
+            const registradaEn =
+                Date.parse(pendiente.registrada_en || "");
+
+            if (
+                !isNaN(registradaEn) &&
+                Date.now() - registradaEn >
+                    ANTIGUEDAD_MAX_TRASLADO_PENDIENTE_MS
+            ) {
+
+                pendiente.ultimo_resultado = "CADUCADO";
+
+                guardarTrasladosPendientesAlmacenados();
+
+                continue;
+            }
+
+
+            // Vigencia frente al estado del servidor cargado
+            // (solo con datos recién llegados del servidor).
+            const aviso =
+                encontrarAvisoPorId(pendiente.id_aviso);
+
+            const vehiculoServidor =
+                obtenerVehiculoConsolidadoAviso(aviso);
+
+            if (
+                verificarVigencia &&
+                aviso &&
+                vehiculoServidor === pendiente.vehiculo_id
+            ) {
+
+                // El servidor ya tiene el destino del pendiente:
+                // no hace falta escribir de nuevo.
+                eliminarAsignacionPendiente(pendiente.id_aviso);
+
+                continue;
+            }
+
+
+            if (
+                verificarVigencia &&
+                aviso &&
+                vehiculoServidor !== "" &&
+                vehiculoServidor !== pendiente.vehiculo_id &&
+                vehiculoServidor !== pendiente.vehiculo_origen
+            ) {
+
+                // Asignación posterior distinta en el servidor:
+                // reaplicar revertiría un traslado más reciente.
+                pendiente.ultimo_resultado = "SUPERADO";
+
+                guardarTrasladosPendientesAlmacenados();
+
+                continue;
+            }
+
+
+            // Tras un resultado incierto, se verifica el estado del
+            // servidor con la lectura existente antes de repetir la
+            // escritura.
+            if (resultadoPrevio === "INCIERTO") {
+
+                const lectura =
+                    await API.obtenerAvisos();
+
+                if (
+                    !lectura ||
+                    lectura.ok !== true
+                ) {
+
+                    actualizarPendienteConResultado(
+                        pendiente,
+                        "INCIERTO"
+                    );
+
+                    continue;
+                }
+
+
+                const lista = lectura.avisos || [];
+
+
+                const fila =
+                    lista.find(
+                        function(entrada) {
+                            return String(
+                                entrada.id_aviso || ""
+                            ).trim().toUpperCase() ===
+                                String(
+                                    pendiente.id_aviso
+                                ).trim().toUpperCase();
+                        }
+                    );
+
+                const vehiculoLeido =
+                    fila
+                        ? obtenerVehiculoConsolidadoAviso(fila)
+                        : null;
+
+
+                if (
+                    fila &&
+                    vehiculoLeido === pendiente.vehiculo_id
+                ) {
+
+                    // La escritura sí llegó al servidor.
+                    eliminarAsignacionPendiente(
+                        pendiente.id_aviso
+                    );
+
+                    continue;
+                }
+
+
+                if (
+                    fila &&
+                    vehiculoLeido !== "" &&
+                    vehiculoLeido !== pendiente.vehiculo_id &&
+                    vehiculoLeido !== pendiente.vehiculo_origen
+                ) {
+
+                    pendiente.ultimo_resultado = "SUPERADO";
+
+                    guardarTrasladosPendientesAlmacenados();
+
+                    continue;
+                }
+
+
+                // Lectura válida sin evidencia de la asignación:
+                // procede repetir la escritura.
+            }
+
+
+            const resultado =
+                await API.asignarAviso(
+                    pendiente.id_aviso,
+                    pendiente.vehiculo_id
+                );
+
+
+            if (
+                resultado &&
+                resultado.ok === true
+            ) {
+
+                if (aviso) {
+
+                    aviso.vehiculo_id =
+                        pendiente.vehiculo_id;
+
+                    aviso.vehiculo =
+                        pendiente.vehiculo_id;
+
+                }
+
+                eliminarAsignacionPendiente(
+                    pendiente.id_aviso
+                );
+
+                continue;
+            }
+
+
+            if (
+                resultado &&
+                resultado.incierto === true
+            ) {
+
+                actualizarPendienteConResultado(
+                    pendiente,
+                    "INCIERTO"
+                );
+
+                continue;
+            }
+
+
+            actualizarPendienteConResultado(
+                pendiente,
+                clasificarFalloAsignacion(
+                    (resultado && resultado.error) || ""
+                )
+            );
+
+        } catch (error) {
+
+            /*
+             * El reintento no puede interrumpir la carga:
+             * el fallo queda registrado para el siguiente
+             * intento y es visible en el traslado anterior.
+             */
+        }
+
+    }
+
+
+    // Estado visible: una única alerta por sesión con los
+    // pendientes que siguen sin confirmación.
+    if (
+        asignacionesAvisoPendientes.length > 0 &&
+        !alertaTrasladosPendientesMostrada
+    ) {
+
+        alertaTrasladosPendientesMostrada = true;
+
+        const lineas =
+            asignacionesAvisoPendientes.map(
+                function(registro) {
+                    return (
+                        "Aviso " + registro.id_aviso +
+                        " → " +
+                        obtenerNombreVehiculo(registro.vehiculo_id) +
+                        " (" +
+                        textoEstadoPendiente(
+                            registro.ultimo_resultado
+                        ) + ")"
+                    );
+                }
+            );
+
+        alert(
+            "Hay traslados de avisos sin confirmación completa en la " +
+            "hoja AVISOS. Los planes están guardados, pero al cambiar de " +
+            "día el aviso podría volver al vehículo anterior.\n\n" +
+            lineas.join("\n")
+        );
+    }
 }
 
 
@@ -2583,6 +3936,148 @@ function fusionarParadasGuardadasConReconstruidas(
         guardadas: guardadas.length,
         reconstruidas: noRepresentadas.length
     };
+}
+
+
+/**
+ * BLOQUE 11 · una parada reconstruida desde AVISOS no puede
+ * duplicar un aviso que ya forma parte de un plan persistido de
+ * otro vehículo.
+ *
+ * Tras un traslado V1 -> V2, AVISOS puede seguir apuntando a V1
+ * porque la API actual no permite cambiar su vehículo. El plan
+ * guardado de V2 es la referencia de la asignación real; la copia
+ * reconstruida de V1 se retira al cargar.
+ *
+ * Solo se eliminan paradas con `reconstruidaDesdeAviso === true`.
+ * Si el mismo aviso aparece persistido en dos planes, no se elige
+ * uno arbitrariamente: se conserva tal cual para que el conflicto
+ * siga visible.
+ */
+function eliminarReconstruidasDuplicadasEnOtroPlan() {
+
+    const planes =
+        Object.keys(planificacionDia).map(
+            function(vehiculoId) {
+
+                return planificacionDia[
+                    vehiculoId
+                ];
+            }
+        );
+
+
+    const planesPersistidosPorAviso =
+        {};
+
+
+    planes.forEach(
+        function(plan) {
+
+            if (
+                !plan ||
+                !Array.isArray(plan.paradas)
+            ) {
+                return;
+            }
+
+
+            plan.paradas.forEach(
+                function(parada) {
+
+                    if (
+                        !parada ||
+                        parada.reconstruidaDesdeAviso ===
+                            true
+                    ) {
+                        return;
+                    }
+
+
+                    const clave =
+                        obtenerClaveAvisoParada(
+                            parada
+                        );
+
+
+                    if (clave === null) {
+                        return;
+                    }
+
+
+                    if (
+                        !planesPersistidosPorAviso[
+                            clave
+                        ]
+                    ) {
+
+                        planesPersistidosPorAviso[
+                            clave
+                        ] = [];
+                    }
+
+
+                    planesPersistidosPorAviso[
+                        clave
+                    ].push(plan);
+                }
+            );
+        }
+    );
+
+
+    planes.forEach(
+        function(plan) {
+
+            if (
+                !plan ||
+                !Array.isArray(plan.paradas)
+            ) {
+                return;
+            }
+
+
+            plan.paradas =
+                plan.paradas.filter(
+                    function(parada) {
+
+                        if (
+                            !parada ||
+                            parada.reconstruidaDesdeAviso !==
+                                true
+                        ) {
+                            return true;
+                        }
+
+
+                        const clave =
+                            obtenerClaveAvisoParada(
+                                parada
+                            );
+
+
+                        if (clave === null) {
+                            return true;
+                        }
+
+
+                        const planesPersistidos =
+                            planesPersistidosPorAviso[
+                                clave
+                            ] || [];
+
+
+                        return !planesPersistidos.some(
+                            function(otroPlan) {
+
+                                return otroPlan !==
+                                    plan;
+                            }
+                        );
+                    }
+                );
+        }
+    );
 }
 
 
@@ -3177,6 +4672,26 @@ function cargarPlanificacionDesdeDatos() {
     }
 
 
+    /*
+     * BLOQUE 11 · la planificación guardada es autoritativa frente
+     * a un `vehiculo_id` obsoleto de AVISOS. Se retiran solo las
+     * copias reconstruidas que ya constan en otro plan persistido.
+     */
+    eliminarReconstruidasDuplicadasEnOtroPlan();
+
+
+    /*
+     * BLOQUE 12D · reintento de asignaciones de aviso que
+     * quedaron pendientes tras un traslado cuyas escrituras
+     * parciales no confirmaron la actualización de AVISOS.
+     * En modo "carga" los datos en memoria reflejan el estado
+     * del servidor (normalizado), por lo que aquí sí se puede
+     * verificar la vigencia de cada pendiente. No bloquea la
+     * carga ni lanza errores.
+     */
+    procesarAsignacionesAvisoPendientes("carga");
+
+
     Object.values(
         planificacionDia
     ).forEach(
@@ -3491,6 +5006,247 @@ function obtenerEstadoRutaPlan(
     )
         ? "VALIDA"
         : "NO_DISPONIBLE";
+}
+
+
+/*
+ * BLOQUE 11 · ruta diaria válida para guardar.
+ *
+ * La ruta del plan es la fuente principal. Solo si está vacía se
+ * consulta ASIGNACIONES_RUTA (la ruta habitual NUNCA se usa como
+ * sustituto). Si hay más de una asignación activa no se elige una
+ * al azar: se informa de la ambigüedad y se pide selección explícita.
+ */
+function obtenerAsignacionesRutaVehiculo(vehiculoId) {
+
+    const datos =
+        obtenerDatosAplicacion();
+
+
+    const asignaciones =
+        Array.isArray(
+            datos.ASIGNACIONES_RUTA
+        )
+            ? datos.ASIGNACIONES_RUTA
+            : [];
+
+
+    return asignaciones.filter(
+        function(asignacion) {
+
+            return (
+                asignacion &&
+                String(
+                    asignacion.vehiculo_id ||
+                    ""
+                ).trim() ===
+                    String(vehiculoId) &&
+                asignacion.activa === true &&
+                String(
+                    asignacion.ruta_id ||
+                    ""
+                ).trim() !== ""
+            );
+        }
+    );
+}
+
+
+function resolverRutaDiariaPlan(plan) {
+
+    const rutaActiva =
+        plan &&
+        plan.rutaActiva !== null &&
+        plan.rutaActiva !== undefined
+            ? String(plan.rutaActiva).trim()
+            : "";
+
+
+    const catalogo =
+        obtenerRutasDisponibles();
+
+
+    function validarEnCatalogo(ruta) {
+
+        if (
+            catalogo.length > 0 &&
+            !buscarRutaEnCatalogo(ruta)
+        ) {
+
+            return {
+                ok: false,
+                motivo: "RUTA_NO_CATALOGO",
+                error:
+                    "La ruta diaria \"" + ruta + "\" no existe " +
+                    "en el catálogo de rutas."
+            };
+        }
+
+
+        return {
+            ok: true,
+            ruta: ruta
+        };
+    }
+
+
+    if (rutaActiva !== "") {
+
+        const validacion =
+            validarEnCatalogo(
+                rutaActiva
+            );
+
+
+        if (!validacion.ok) {
+            return validacion;
+        }
+
+
+        return {
+            ok: true,
+            ruta: rutaActiva,
+            desdeAsignacion: false
+        };
+    }
+
+
+    const asignaciones =
+        obtenerAsignacionesRutaVehiculo(
+            plan ? plan.vehiculoId : ""
+        );
+
+
+    const rutas =
+        Array.from(
+            new Set(
+                asignaciones.map(
+                    function(asignacion) {
+                        return String(
+                            asignacion.ruta_id
+                        ).trim();
+                    }
+                )
+            )
+        );
+
+
+    if (rutas.length === 0) {
+
+        return {
+            ok: false,
+            motivo: "SIN_RUTA",
+            error:
+                "No hay una ruta diaria activa asignada al " +
+                "vehículo. Selecciona una ruta en la planificación " +
+                "antes de guardar."
+        };
+    }
+
+
+    if (rutas.length > 1) {
+
+        return {
+            ok: false,
+            motivo: "RUTA_AMBIGUA",
+            error:
+                "El vehículo tiene varias rutas diarias activas (" +
+                rutas.join(", ") +
+                "). Selecciona una ruta en la planificación antes " +
+                "de guardar."
+        };
+    }
+
+
+    const validacion =
+        validarEnCatalogo(
+            rutas[0]
+        );
+
+
+    if (!validacion.ok) {
+        return validacion;
+    }
+
+
+    return {
+        ok: true,
+        ruta: rutas[0],
+        desdeAsignacion: true
+    };
+}
+
+
+function validarPlanParaGuardado(plan, opciones) {
+
+    if (
+        !plan ||
+        typeof plan !== "object"
+    ) {
+
+        return {
+            ok: false,
+            motivo: "SIN_PLAN",
+            error: "No se ha encontrado la planificación."
+        };
+    }
+
+
+    const resolucionRuta =
+        resolverRutaDiariaPlan(
+            plan
+        );
+
+
+    if (!resolucionRuta.ok) {
+        return resolucionRuta;
+    }
+
+
+    const horaSalida =
+        plan.horaSalida === null ||
+        plan.horaSalida === undefined
+            ? ""
+            : String(plan.horaSalida);
+
+
+    if (
+        !/^([01][0-9]|2[0-3]):[0-5][0-9]$/.test(
+            horaSalida
+        )
+    ) {
+
+        return {
+            ok: false,
+            motivo: "HORA_INVALIDA",
+            error:
+                "La hora de salida \"" + horaSalida + "\" no tiene " +
+                "el formato HH:MM que exige el servidor (por " +
+                "ejemplo 08:00)."
+        };
+    }
+
+
+    if (
+        opciones &&
+        opciones.aplicarRutaAsignada === true &&
+        resolucionRuta.desdeAsignacion === true
+    ) {
+
+        plan.rutaActiva =
+            resolucionRuta.ruta;
+    }
+
+
+    return {
+        ok: true,
+        ruta:
+            resolucionRuta.ruta,
+        horaSalida:
+            horaSalida,
+        rutaDesdeAsignacion:
+            resolucionRuta.desdeAsignacion === true
+    };
 }
 
 
@@ -7360,11 +9116,10 @@ const plan =
      ).toUpperCase() ===
      "AVISO"
  ) {
-     incorporarAvisoAPlan(
+     return incorporarAvisoAPlan(
          vehiculoId,
          elementoId
      );
-     return;
  }
  /* --------------------------------------------------------
     PUNTO HABITUAL
@@ -9665,6 +11420,46 @@ function construirPayloadPlanificacion(plan) {
     }
 
 
+    const rutaId =
+        planOrigen.rutaActiva === null ||
+        planOrigen.rutaActiva === undefined
+            ? ""
+            : String(planOrigen.rutaActiva).trim();
+
+
+    const horaSalida =
+        planOrigen.horaSalida === null ||
+        planOrigen.horaSalida === undefined
+            ? ""
+            : String(planOrigen.horaSalida);
+
+
+    /*
+     * BLOQUE 11 · defensa del contrato: nunca se construye un
+     * payload con ruta_id vacío ni con una hora inválida. La
+     * validación visible se hace antes de guardar; esta comprobación
+     * impide que una llamada directa al constructor lo eluda.
+     */
+    if (rutaId === "") {
+
+        throw new Error(
+            "Planificación sin ruta diaria válida: guardado bloqueado"
+        );
+    }
+
+
+    if (
+        !/^([01][0-9]|2[0-3]):[0-5][0-9]$/.test(
+            horaSalida
+        )
+    ) {
+
+        throw new Error(
+            "Planificación con hora de salida inválida: guardado bloqueado"
+        );
+    }
+
+
     return {
         accion: "guardar_planificacion",
         fecha: fechaPertenencia,
@@ -9674,15 +11469,9 @@ function construirPayloadPlanificacion(plan) {
                 ? ""
                 : String(planOrigen.vehiculoId),
         ruta_id:
-            planOrigen.rutaActiva === null ||
-            planOrigen.rutaActiva === undefined
-                ? ""
-                : String(planOrigen.rutaActiva),
+            rutaId,
         horaSalida:
-            planOrigen.horaSalida === null ||
-            planOrigen.horaSalida === undefined
-                ? ""
-                : String(planOrigen.horaSalida),
+            horaSalida,
         paradas: paradasPayload
     };
 }
@@ -9790,6 +11579,48 @@ async function guardarPlanificacionVehiculo(vehiculoId, opciones) {
                 "Una planificación sin paradas no se puede " +
                 "guardar. Use la eliminación explícita si " +
                 "desea quitarla del servidor."
+        };
+    }
+
+
+    /*
+     * BLOQUE 11 · validación común antes de cualquier POST. Se
+     * aplica igual al guardado automático y al manual. Un plan con
+     * ruta diaria única en ASIGNACIONES_RUTA puede adoptarla; si no
+     * hay ruta o hay varias, se detiene con un mensaje claro.
+     */
+    const validacionPlan =
+        validarPlanParaGuardado(
+            plan,
+            { aplicarRutaAsignada: true }
+        );
+
+
+    if (!validacionPlan.ok) {
+
+        plan.modificado = true;
+
+        establecerFeedbackGuardadoPlanificacion(
+            vehiculoId,
+            "error"
+        );
+
+        renderizarPlanificacion();
+
+
+        if (!automatico) {
+
+            alert(
+                "No se ha guardado la planificación:\n\n" +
+                validacionPlan.error
+            );
+        }
+
+
+        return {
+            ok: false,
+            error: validacionPlan.error,
+            motivo: validacionPlan.motivo
         };
     }
 
